@@ -6,7 +6,10 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 internal object OverlayMotion {
-    private const val HEIGHT_DP = 52f
+    private const val WIDTH_DP = 156f
+    private const val ACTION_HEIGHT_DP = 52f
+    private const val GAP_DP = 8f
+    private const val HEIGHT_DP = ACTION_HEIGHT_DP * 2 + GAP_DP
     private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
     private const val TOP_MARGIN_DP = 16f
@@ -29,6 +32,12 @@ internal object OverlayMotion {
     }
 
     fun heightPx(density: Float): Int = dpToPx(HEIGHT_DP, density)
+
+    fun widthPx(density: Float): Int = dpToPx(WIDTH_DP, density)
+
+    fun actionHeightPx(density: Float): Int = dpToPx(ACTION_HEIGHT_DP, density)
+
+    fun gapPx(density: Float): Int = dpToPx(GAP_DP, density)
 
     private fun dpToPx(dp: Float, density: Float): Int = (dp * density).toInt()
 }

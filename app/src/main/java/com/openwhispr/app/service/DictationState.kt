@@ -12,9 +12,15 @@ enum class DictationPhase {
     ERROR,
 }
 
+enum class DictationOperation {
+    DICTATION,
+    TRANSFORMATION,
+}
+
 data class DictationState(
     val sessionId: Long = 0,
     val phase: DictationPhase = DictationPhase.IDLE,
+    val operation: DictationOperation = DictationOperation.DICTATION,
     val transcript: String = "",
     val message: String? = null,
 ) {
@@ -32,4 +38,3 @@ object DictationStateBus {
         mutableState.value = value
     }
 }
-

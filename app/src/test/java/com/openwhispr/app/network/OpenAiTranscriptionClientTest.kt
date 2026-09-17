@@ -1,11 +1,14 @@
 package com.openwhispr.app.network
 
 import com.openwhispr.app.model.DictationLanguage
+import com.openwhispr.app.model.TextTransformationModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.URI
+import org.json.JSONArray
+import org.json.JSONObject
 
 class OpenAiTranscriptionClientTest {
     @Test
@@ -42,5 +45,44 @@ class OpenAiTranscriptionClientTest {
         })
         assertFalse(transcription.has("delay"))
         assertTrue(input.isNull("turn_detection"))
+    }
+
+    @Test
+    fun `text transformation request uses selected model without storage`() {
+        val request = textTransformationRequest(
+            model = TextTransformationModel.LUNA,
+            sourceText = "Черновик",
+            instruction = "Сделай вежливее",
+        )
+
+        assertEquals("gpt-5.6-luna", request.getString("model"))
+        assertFalse(request.getBoolean("store"))
+        assertEquals("low", request.getJSONObject("reasoning").getString("effort"))
+        val input = JSONObject(request.getString("input"))
+        assertEquals("Сделай вежливее", input.getString("instruction"))
+        assertEquals("Черновик", input.getString("text"))
+    }
+
+    @Test
+    fun `response text extraction skips reasoning and joins text parts`() {
+        val response = JSONObject()
+            .put(
+                "output",
+                JSONArray()
+                    .put(JSONObject().put("type", "reasoning"))
+                    .put(
+                        JSONObject()
+                            .put("type", "message")
+                            .put(
+                                "content",
+                                JSONArray()
+                                    .put(JSONObject().put("type", "refusal").put("refusal", "no"))
+                                    .put(JSONObject().put("type", "output_text").put("text", "Готовый "))
+                                    .put(JSONObject().put("type", "output_text").put("text", "текст")),
+                            ),
+                    ),
+            )
+
+        assertEquals("Готовый текст", extractResponseText(response))
     }
 }

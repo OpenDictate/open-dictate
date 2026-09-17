@@ -32,6 +32,7 @@ class DictationForegroundService : Service() {
     private val apiClient by lazy { OpenAiTranscriptionClient(resources) }
     private var activeJob: Job? = null
     private var stopSignal = CompletableDeferred<Unit>()
+    private var activeOperation = DictationOperation.DICTATION
 
     override fun onCreate() {
         super.onCreate()
@@ -41,7 +42,15 @@ class DictationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> requestStop()
-            ACTION_START -> if (activeJob?.isActive != true) startDictation()
+            ACTION_START -> if (activeJob?.isActive != true) {
+                startDictation(DictationOperation.DICTATION)
+            }
+            ACTION_START_TRANSFORMATION -> if (activeJob?.isActive != true) {
+                startDictation(
+                    operation = DictationOperation.TRANSFORMATION,
+                    sourceText = intent.getStringExtra(EXTRA_SOURCE_TEXT),
+                )
+            }
         }
         return START_NOT_STICKY
     }
@@ -54,19 +63,37 @@ class DictationForegroundService : Service() {
         super.onDestroy()
     }
 
-    private fun startDictation() {
+    private fun startDictation(
+        operation: DictationOperation,
+        sourceText: String? = null,
+    ) {
         val apiKey = SecureApiKeyStore(this).get()
         if (apiKey.isNullOrBlank()) {
             publishError(getString(R.string.error_add_api_key))
             stopSelf()
             return
         }
+        if (operation == DictationOperation.TRANSFORMATION && sourceText.isNullOrBlank()) {
+            publishError(
+                getString(R.string.error_nothing_to_transform),
+                operation = operation,
+            )
+            stopSelf()
+            return
+        }
         val settings = SettingsStore(this)
         val keepTrailingPeriod = settings.keepTrailingPeriod
         val sessionId = nextSession.incrementAndGet()
+        activeOperation = operation
         stopSignal = CompletableDeferred()
-        startForeground(NOTIFICATION_ID, notification(false))
-        DictationStateBus.set(DictationState(sessionId, DictationPhase.CONNECTING))
+        startForeground(NOTIFICATION_ID, notification(false, operation))
+        DictationStateBus.set(
+            DictationState(
+                sessionId = sessionId,
+                phase = DictationPhase.CONNECTING,
+                operation = operation,
+            ),
+        )
 
         activeJob = scope.launch {
             val recorder = PcmAudioRecorder(this@DictationForegroundService)
@@ -83,11 +110,14 @@ class DictationForegroundService : Service() {
                         waitForStop = { stopSignal.await() },
                         onReady = {
                             DictationStateBus.set(
-                                DictationState(sessionId, DictationPhase.LISTENING),
+                                DictationState(
+                                    sessionId = sessionId,
+                                    phase = DictationPhase.LISTENING,
+                                    operation = operation,
+                                ),
                             )
                         },
                         onPartial = { text ->
-                            val formatted = TranscriptFormatter.format(text, keepTrailingPeriod)
                             val phase = if (
                                 DictationStateBus.state.value.phase == DictationPhase.PROCESSING
                             ) {
@@ -96,7 +126,16 @@ class DictationForegroundService : Service() {
                                 DictationPhase.LISTENING
                             }
                             DictationStateBus.set(
-                                DictationState(sessionId, phase, formatted),
+                                DictationState(
+                                    sessionId = sessionId,
+                                    phase = phase,
+                                    operation = operation,
+                                    transcript = if (operation == DictationOperation.DICTATION) {
+                                        TranscriptFormatter.format(text, keepTrailingPeriod)
+                                    } else {
+                                        ""
+                                    },
+                                ),
                             )
                         },
                     )
@@ -107,15 +146,23 @@ class DictationForegroundService : Service() {
                         wavFile = wav
                         recorder.start(scope, wav::write)
                         DictationStateBus.set(
-                            DictationState(sessionId, DictationPhase.LISTENING),
+                            DictationState(
+                                sessionId = sessionId,
+                                phase = DictationPhase.LISTENING,
+                                operation = operation,
+                            ),
                         )
                         stopSignal.await()
                         recorder.stop()
                         wav.close()
                         DictationStateBus.set(
-                            DictationState(sessionId, DictationPhase.PROCESSING),
+                            DictationState(
+                                sessionId = sessionId,
+                                phase = DictationPhase.PROCESSING,
+                                operation = operation,
+                            ),
                         )
-                        updateNotification(true)
+                        updateNotification(true, operation)
                         apiClient.transcribeFile(
                             apiKey,
                             file,
@@ -124,24 +171,62 @@ class DictationForegroundService : Service() {
                         )
                     }
                 }
-                val formattedTranscript = TranscriptFormatter.format(transcript, keepTrailingPeriod)
-                if (formattedTranscript.isBlank()) {
+                if (transcript.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_speech_not_recognized))
                 }
+                val result = if (operation == DictationOperation.TRANSFORMATION) {
+                    DictationStateBus.set(
+                        DictationState(
+                            sessionId = sessionId,
+                            phase = DictationPhase.PROCESSING,
+                            operation = operation,
+                        ),
+                    )
+                    updateNotification(true, operation)
+                    apiClient.transformText(
+                        apiKey = apiKey,
+                        model = settings.transformationModel,
+                        sourceText = requireNotNull(sourceText),
+                        instruction = transcript.trim(),
+                    )
+                } else {
+                    TranscriptFormatter.format(transcript, keepTrailingPeriod)
+                }
+                if (result.isBlank()) {
+                    throw IllegalStateException(getString(R.string.error_transformation_empty))
+                }
                 DictationStateBus.set(
-                    DictationState(sessionId, DictationPhase.COMPLETED, formattedTranscript),
+                    DictationState(
+                        sessionId = sessionId,
+                        phase = DictationPhase.COMPLETED,
+                        operation = operation,
+                        transcript = result,
+                    ),
                 )
                 delay(1_200)
-                DictationStateBus.set(DictationState(sessionId, DictationPhase.IDLE))
+                DictationStateBus.set(
+                    DictationState(
+                        sessionId = sessionId,
+                        phase = DictationPhase.IDLE,
+                        operation = operation,
+                    ),
+                )
             } catch (error: Throwable) {
                 recorder.stop()
                 if (error !is kotlinx.coroutines.CancellationException) {
                     publishError(
                         error.message ?: getString(R.string.error_transcription_failed),
                         sessionId,
+                        operation,
                     )
                     delay(3_000)
-                    DictationStateBus.set(DictationState(sessionId, DictationPhase.IDLE))
+                    DictationStateBus.set(
+                        DictationState(
+                            sessionId = sessionId,
+                            phase = DictationPhase.IDLE,
+                            operation = operation,
+                        ),
+                    )
                 }
             } finally {
                 runCatching { wavFile?.close() }
@@ -157,13 +242,22 @@ class DictationForegroundService : Service() {
         val state = DictationStateBus.state.value
         if (state.isActive) {
             DictationStateBus.set(state.copy(phase = DictationPhase.PROCESSING))
-            updateNotification(true)
+            updateNotification(true, activeOperation)
         }
     }
 
-    private fun publishError(message: String, sessionId: Long = nextSession.get()) {
+    private fun publishError(
+        message: String,
+        sessionId: Long = nextSession.get(),
+        operation: DictationOperation = DictationOperation.DICTATION,
+    ) {
         DictationStateBus.set(
-            DictationState(sessionId, DictationPhase.ERROR, message = message),
+            DictationState(
+                sessionId = sessionId,
+                phase = DictationPhase.ERROR,
+                operation = operation,
+                message = message,
+            ),
         )
     }
 
@@ -179,7 +273,10 @@ class DictationForegroundService : Service() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    private fun notification(processing: Boolean): Notification {
+    private fun notification(
+        processing: Boolean,
+        operation: DictationOperation,
+    ): Notification {
         val stopIntent = Intent(this, DictationForegroundService::class.java).setAction(ACTION_STOP)
         val contentIntent = PendingIntent.getActivity(
             this,
@@ -196,14 +293,26 @@ class DictationForegroundService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(
-                getString(if (processing) R.string.notification_processing else R.string.notification_recording),
+                getString(
+                    when {
+                        operation == DictationOperation.TRANSFORMATION && processing ->
+                            R.string.notification_transforming
+                        operation == DictationOperation.TRANSFORMATION ->
+                            R.string.notification_instruction_recording
+                        processing -> R.string.notification_processing
+                        else -> R.string.notification_recording
+                    },
+                ),
             )
             .setContentText(
                 getString(
-                    if (processing) {
-                        R.string.notification_text_processing
-                    } else {
-                        R.string.notification_text_recording
+                    when {
+                        operation == DictationOperation.TRANSFORMATION && processing ->
+                            R.string.notification_text_transforming
+                        operation == DictationOperation.TRANSFORMATION ->
+                            R.string.notification_text_instruction_recording
+                        processing -> R.string.notification_text_processing
+                        else -> R.string.notification_text_recording
                     },
                 ),
             )
@@ -214,16 +323,22 @@ class DictationForegroundService : Service() {
             .build()
     }
 
-    private fun updateNotification(processing: Boolean) {
+    private fun updateNotification(
+        processing: Boolean,
+        operation: DictationOperation,
+    ) {
         getSystemService(NotificationManager::class.java).notify(
             NOTIFICATION_ID,
-            notification(processing),
+            notification(processing, operation),
         )
     }
 
     companion object {
         const val ACTION_START = "com.openwhispr.app.action.START_DICTATION"
+        const val ACTION_START_TRANSFORMATION =
+            "com.openwhispr.app.action.START_TEXT_TRANSFORMATION"
         const val ACTION_STOP = "com.openwhispr.app.action.STOP_DICTATION"
+        const val EXTRA_SOURCE_TEXT = "source_text"
         private const val CHANNEL_ID = "dictation"
         private const val NOTIFICATION_ID = 41
         private val nextSession = AtomicLong(System.currentTimeMillis())

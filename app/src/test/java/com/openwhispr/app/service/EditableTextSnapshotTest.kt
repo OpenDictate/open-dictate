@@ -1,6 +1,7 @@
 package com.openwhispr.app.service
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class EditableTextSnapshotTest {
@@ -45,5 +46,31 @@ class EditableTextSnapshotTest {
     fun `normalizes reversed selection`() {
         val snapshot = EditableTextSnapshot("one two", 7, 4)
         assertEquals("one three", snapshot.compose("three"))
+    }
+
+    @Test
+    fun `transformation targets selected text`() {
+        val target = EditableTextSnapshot("Make this clearer", 5, 9)
+            .transformationTarget()!!
+
+        assertEquals("this", target.sourceText)
+        assertEquals(
+            "Make everything clearer",
+            target.replacementSnapshot.compose("everything"),
+        )
+    }
+
+    @Test
+    fun `transformation targets whole field when selection is collapsed`() {
+        val target = EditableTextSnapshot("Make this clearer", 9, 9)
+            .transformationTarget()!!
+
+        assertEquals("Make this clearer", target.sourceText)
+        assertEquals("Clearer", target.replacementSnapshot.compose("Clearer"))
+    }
+
+    @Test
+    fun `blank field has no transformation target`() {
+        assertNull(EditableTextSnapshot("   ", 0, 0).transformationTarget())
     }
 }

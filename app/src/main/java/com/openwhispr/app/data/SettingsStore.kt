@@ -3,6 +3,7 @@ package com.openwhispr.app.data
 import android.content.Context
 import androidx.core.content.edit
 import com.openwhispr.app.model.DictationLanguage
+import com.openwhispr.app.model.TextTransformationModel
 import com.openwhispr.app.model.TranscriptionModel
 
 class SettingsStore(context: Context) {
@@ -11,6 +12,12 @@ class SettingsStore(context: Context) {
     var model: TranscriptionModel
         get() = TranscriptionModel.fromStored(prefs.getString(KEY_MODEL, null))
         set(value) = prefs.edit { putString(KEY_MODEL, value.name) }
+
+    var transformationModel: TextTransformationModel
+        get() = TextTransformationModel.fromStored(
+            prefs.getString(KEY_TRANSFORMATION_MODEL, null),
+        )
+        set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL, value.name) }
 
     var languages: Set<DictationLanguage>
         get() = DictationLanguage.fromStored(
@@ -33,6 +40,7 @@ class SettingsStore(context: Context) {
     companion object {
         private const val FILE_NAME = "openwhispr_settings"
         private const val KEY_MODEL = "model"
+        private const val KEY_TRANSFORMATION_MODEL = "transformation_model"
         private const val KEY_LANGUAGES = "languages"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_PROMPT = "prompt"

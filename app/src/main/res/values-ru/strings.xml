@@ -7,12 +7,13 @@
     <string name="language_english">English</string>
 
     <string name="section_mode">РЕЖИМ</string>
+    <string name="section_transformation">ПРЕОБРАЗОВАНИЕ</string>
     <string name="section_readiness">ГОТОВНОСТЬ</string>
     <string name="section_accuracy">ТОЧНОСТЬ</string>
 
     <string name="hero_active">Говорите.\nЯ уже пишу.</string>
     <string name="hero_idle">Говорите.\nТекст уже там.</string>
-    <string name="hero_subtitle">Одна кнопка над клавиатурой — в любом приложении.</string>
+    <string name="hero_subtitle">Две кнопки над клавиатурой — в любом приложении.</string>
 
     <string name="model_live_title">Мгновенно</string>
     <string name="model_live_description">Показывает слова прямо во время речи.</string>
@@ -20,6 +21,12 @@
     <string name="model_accurate_title">Точнее</string>
     <string name="model_accurate_description">Сначала слушает, затем вставляет готовый текст.</string>
     <string name="model_accurate_badge">ПО УМОЛЧАНИЮ</string>
+
+    <string name="transformation_model_title">Преобразование текста</string>
+    <string name="transformation_model_subtitle">Выделите текст или оставьте курсор в поле, нажмите «Изменить» и надиктуйте инструкцию</string>
+    <string name="transformation_model_luna_description">Самая быстрая и экономичная · по умолчанию</string>
+    <string name="transformation_model_terra_description">Баланс качества и стоимости</string>
+    <string name="transformation_model_sol_description">Лучшее качество для сложных правок</string>
 
     <string name="api_key_saved">Сохранён в Android Keystore</string>
     <string name="api_key_needed">Нужен ваш личный ключ</string>
@@ -47,7 +54,7 @@
     <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
     <string name="test_field_label">Попробуйте здесь</string>
     <string name="test_field_placeholder">Откройте клавиатуру — кнопка появится над ней</string>
-    <string name="privacy_note">Ключ и записи не проходят через сервер OpenWhispr. Аудио отправляется напрямую в OpenAI только во время диктовки.</string>
+    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenWhispr. Аудио и выбранный для преобразования текст отправляются напрямую в OpenAI.</string>
 
     <string name="api_key_dialog_replace">Заменить API key</string>
     <string name="api_key_dialog_connect">Подключить OpenAI</string>
@@ -57,25 +64,36 @@
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
 
-    <string name="accessibility_description">Показывает кнопку диктовки над клавиатурой и вставляет распознанную речь в активное поле ввода.</string>
+    <string name="accessibility_description">Показывает над клавиатурой кнопки диктовки и преобразования текста и обновляет активное поле ввода.</string>
     <string name="overlay_start_dictation">Начать диктовку</string>
+    <string name="overlay_start_transformation">Надиктовать инструкцию для преобразования текста</string>
     <string name="overlay_stop_dictation">Остановить диктовку</string>
     <string name="overlay_connecting">СОЕДИНЯЮ</string>
     <string name="overlay_listening">СТОП</string>
     <string name="overlay_processing">ПИШУ…</string>
     <string name="overlay_retry">ЕЩЁ РАЗ</string>
     <string name="overlay_idle">ГОВОРИТЬ</string>
+    <string name="overlay_transform">ИЗМЕНИТЬ</string>
+    <string name="overlay_transforming">МЕНЯЮ…</string>
 
     <string name="notification_channel">Диктовка</string>
     <string name="notification_recording">OpenWhispr слушает</string>
     <string name="notification_processing">OpenWhispr распознаёт запись</string>
     <string name="notification_text_recording">Нажмите ещё раз, чтобы закончить</string>
     <string name="notification_text_processing">Текст скоро появится в поле</string>
+    <string name="notification_instruction_recording">Опишите, как изменить текст</string>
+    <string name="notification_transforming">OpenWhispr преобразует текст</string>
+    <string name="notification_text_instruction_recording">Нажмите ещё раз, когда закончите инструкцию</string>
+    <string name="notification_text_transforming">Преобразованный текст скоро появится в поле</string>
     <string name="stop">Остановить</string>
 
     <string name="error_add_api_key">Добавьте OpenAI API key в приложении</string>
     <string name="error_speech_not_recognized">Речь не распознана</string>
     <string name="error_transcription_failed">Не удалось распознать речь</string>
+    <string name="error_nothing_to_transform">Введите или выделите текст для преобразования</string>
+    <string name="error_password_field_transformation">Поля паролей нельзя преобразовывать</string>
+    <string name="error_text_too_long">Выбранный текст слишком длинный для преобразования</string>
+    <string name="error_transformation_empty">OpenAI не вернул преобразованный текст</string>
     <string name="error_openai_response_code">OpenAI вернул %1$d</string>
     <string name="error_connection_closed">Соединение закрыто до получения текста</string>
     <string name="error_audio_send_failed">Не удалось отправить звук</string>

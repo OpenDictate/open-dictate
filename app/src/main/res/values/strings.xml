@@ -9,12 +9,13 @@
     <string name="language_english">English</string>
 
     <string name="section_mode">MODE</string>
+    <string name="section_transformation">TRANSFORM</string>
     <string name="section_readiness">SETUP</string>
     <string name="section_accuracy">ACCURACY</string>
 
     <string name="hero_active">Speak.\nI’m already typing.</string>
     <string name="hero_idle">Speak.\nThe text is already there.</string>
-    <string name="hero_subtitle">One button above the keyboard — in any app.</string>
+    <string name="hero_subtitle">Two buttons above the keyboard — in any app.</string>
 
     <string name="model_live_title">Instant</string>
     <string name="model_live_description">Shows words as you speak.</string>
@@ -22,6 +23,12 @@
     <string name="model_accurate_title">More accurate</string>
     <string name="model_accurate_description">Listens first, then inserts the finished text.</string>
     <string name="model_accurate_badge">DEFAULT</string>
+
+    <string name="transformation_model_title">Text transformation</string>
+    <string name="transformation_model_subtitle">Select text or leave the cursor in the field, tap Transform, and speak the instruction</string>
+    <string name="transformation_model_luna_description">Fastest and most economical · default</string>
+    <string name="transformation_model_terra_description">Balanced quality and cost</string>
+    <string name="transformation_model_sol_description">Highest quality for complex edits</string>
 
     <string name="api_key_title" translatable="false">OpenAI API key</string>
     <string name="api_key_saved">Stored in Android Keystore</string>
@@ -50,7 +57,7 @@
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
     <string name="test_field_label">Try it here</string>
     <string name="test_field_placeholder">Open the keyboard — the button will appear above it</string>
-    <string name="privacy_note">Your key and recordings never pass through an OpenWhispr server. Audio is sent directly to OpenAI only while you dictate.</string>
+    <string name="privacy_note">Your key, recordings, and text never pass through an OpenWhispr server. Audio and text you choose to transform are sent directly to OpenAI.</string>
 
     <string name="api_key_dialog_replace">Replace API key</string>
     <string name="api_key_dialog_connect">Connect OpenAI</string>
@@ -60,25 +67,36 @@
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
 
-    <string name="accessibility_description">Shows a dictation button above the keyboard and inserts recognized speech into the active text field.</string>
+    <string name="accessibility_description">Shows dictation and text transformation buttons above the keyboard and updates the active text field.</string>
     <string name="overlay_start_dictation">Start dictation</string>
+    <string name="overlay_start_transformation">Dictate a text transformation instruction</string>
     <string name="overlay_stop_dictation">Stop dictation</string>
     <string name="overlay_connecting">CONNECTING</string>
     <string name="overlay_listening">STOP</string>
     <string name="overlay_processing">WRITING…</string>
     <string name="overlay_retry">TRY AGAIN</string>
     <string name="overlay_idle">SPEAK</string>
+    <string name="overlay_transform">TRANSFORM</string>
+    <string name="overlay_transforming">EDITING…</string>
 
     <string name="notification_channel">Dictation</string>
     <string name="notification_recording">OpenWhispr is listening</string>
     <string name="notification_processing">OpenWhispr is transcribing</string>
     <string name="notification_text_recording">Tap again to finish</string>
     <string name="notification_text_processing">The text will appear in the field shortly</string>
+    <string name="notification_instruction_recording">Describe how to transform the text</string>
+    <string name="notification_transforming">OpenWhispr is transforming text</string>
+    <string name="notification_text_instruction_recording">Tap again when the instruction is complete</string>
+    <string name="notification_text_transforming">The transformed text will appear in the field shortly</string>
     <string name="stop">Stop</string>
 
     <string name="error_add_api_key">Add an OpenAI API key in the app</string>
     <string name="error_speech_not_recognized">No speech was recognized</string>
     <string name="error_transcription_failed">Could not transcribe speech</string>
+    <string name="error_nothing_to_transform">Enter or select text to transform</string>
+    <string name="error_password_field_transformation">Password fields cannot be transformed</string>
+    <string name="error_text_too_long">The selected text is too long to transform</string>
+    <string name="error_transformation_empty">OpenAI returned no transformed text</string>
     <string name="error_openai_response_code">OpenAI returned %1$d</string>
     <string name="error_connection_closed">The connection closed before text was received</string>
     <string name="error_audio_send_failed">Could not send audio</string>

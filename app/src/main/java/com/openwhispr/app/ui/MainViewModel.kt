@@ -11,6 +11,7 @@ import androidx.lifecycle.AndroidViewModel
 import com.openwhispr.app.data.SecureApiKeyStore
 import com.openwhispr.app.data.SettingsStore
 import com.openwhispr.app.model.DictationLanguage
+import com.openwhispr.app.model.TextTransformationModel
 import com.openwhispr.app.model.TranscriptionModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ data class MainUiState(
     val accessibilityEnabled: Boolean = false,
     val microphoneGranted: Boolean = false,
     val model: TranscriptionModel = TranscriptionModel.ACCURATE,
+    val transformationModel: TextTransformationModel = TextTransformationModel.LUNA,
     val languages: Set<DictationLanguage> = emptySet(),
     val keepTrailingPeriod: Boolean = true,
 )
@@ -60,6 +62,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(model = model) }
     }
 
+    fun selectTransformationModel(model: TextTransformationModel) {
+        settings.transformationModel = model
+        mutableState.update { it.copy(transformationModel = model) }
+    }
+
     fun toggleLanguage(language: DictationLanguage) {
         val languages = mutableState.value.languages.toMutableSet().apply {
             if (!add(language)) remove(language)
@@ -87,6 +94,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
         microphoneGranted = hasMicrophonePermission(getApplication()),
         model = settings.model,
+        transformationModel = settings.transformationModel,
         languages = settings.languages,
         keepTrailingPeriod = settings.keepTrailingPeriod,
     )

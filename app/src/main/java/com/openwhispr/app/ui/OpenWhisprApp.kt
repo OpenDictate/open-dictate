@@ -38,6 +38,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Key
@@ -103,6 +105,7 @@ import com.openwhispr.app.R
 import com.openwhispr.app.data.normalizeDictionaryTerms
 import com.openwhispr.app.model.AppLanguage
 import com.openwhispr.app.model.DictationLanguage
+import com.openwhispr.app.model.TextTransformationModel
 import com.openwhispr.app.model.TranscriptionModel
 import com.openwhispr.app.service.DictationPhase
 import com.openwhispr.app.service.DictationStateBus
@@ -157,6 +160,13 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
                 SectionLabel(stringResource(R.string.section_mode))
                 Spacer(Modifier.height(10.dp))
                 ModelDeck(state.model, viewModel::selectModel)
+                Spacer(Modifier.height(26.dp))
+                SectionLabel(stringResource(R.string.section_transformation))
+                Spacer(Modifier.height(10.dp))
+                TransformationModelCard(
+                    selected = state.transformationModel,
+                    onSelect = viewModel::selectTransformationModel,
+                )
                 Spacer(Modifier.height(26.dp))
                 SectionLabel(stringResource(R.string.section_readiness))
                 Spacer(Modifier.height(10.dp))
@@ -399,6 +409,98 @@ private fun ModelDeck(selected: TranscriptionModel, onSelect: (TranscriptionMode
             badge = stringResource(R.string.model_live_badge),
             onClick = { onSelect(TranscriptionModel.LIVE) },
         )
+    }
+}
+
+@Composable
+private fun TransformationModelCard(
+    selected: TextTransformationModel,
+    onSelect: (TextTransformationModel) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Panel),
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(40.dp).background(PanelLight, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.AutoFixHigh, contentDescription = null, tint = Mint)
+                }
+                Spacer(Modifier.width(13.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.transformation_model_title),
+                        color = White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    )
+                    Text(
+                        stringResource(R.string.transformation_model_subtitle),
+                        color = Fog,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(PanelLight, RoundedCornerShape(12.dp)),
+            ) {
+                TextButton(
+                    onClick = { expanded = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        selected.title(),
+                        color = Mint,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        Icons.Outlined.ArrowDropDown,
+                        contentDescription = null,
+                        tint = Fog,
+                    )
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    TextTransformationModel.entries.forEach { model ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(model.title(), fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        stringResource(model.descriptionRes()),
+                                        color = Fog,
+                                        fontSize = 12.sp,
+                                    )
+                                }
+                            },
+                            onClick = {
+                                onSelect(model)
+                                expanded = false
+                            },
+                            leadingIcon = {
+                                if (model == selected) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null, tint = Mint)
+                                } else {
+                                    Spacer(Modifier.size(24.dp))
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -793,6 +895,18 @@ private fun DictationLanguage.title(): String = when (this) {
     DictationLanguage.KOREAN -> "한국어"
     DictationLanguage.ARABIC -> "العربية"
     DictationLanguage.HINDI -> "हिन्दी"
+}
+
+private fun TextTransformationModel.title(): String = when (this) {
+    TextTransformationModel.LUNA -> "GPT-5.6 Luna"
+    TextTransformationModel.TERRA -> "GPT-5.6 Terra"
+    TextTransformationModel.SOL -> "GPT-5.6 Sol"
+}
+
+private fun TextTransformationModel.descriptionRes(): Int = when (this) {
+    TextTransformationModel.LUNA -> R.string.transformation_model_luna_description
+    TextTransformationModel.TERRA -> R.string.transformation_model_terra_description
+    TextTransformationModel.SOL -> R.string.transformation_model_sol_description
 }
 
 @Composable

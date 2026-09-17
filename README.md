@@ -9,6 +9,8 @@ active input field through the Android Accessibility API.
 - **GPT Live Transcribe** (`gpt-live-transcribe`) — streams text as you speak
   with minimal latency.
 - **GPT Transcribe** (`gpt-transcribe`) — accurately transcribes a completed recording.
+- Voice-directed text transformation through the Responses API, with
+  **GPT-5.6 Luna** (`gpt-5.6-luna`) as the default and Terra or Sol selectable.
 - Your own OpenAI API key, encrypted with Android Keystore.
 - No backend, analytics, or stored recordings.
 - A floating button that appears only while the keyboard is open.
@@ -20,10 +22,13 @@ active input field through the Android Accessibility API.
 2. Open OpenWhispr and save your OpenAI API key.
 3. Grant microphone access.
 4. Enable the OpenWhispr service in the system accessibility settings.
-5. Open an input field in any app and tap the button above the keyboard.
+5. Open an input field in any app. Use the lower button for dictation, or the
+   upper button to speak an instruction that transforms selected text (or the
+   whole field when nothing is selected).
 
-> Accessibility access is used only to detect the open keyboard and insert
-> transcripts into the selected field. OpenWhispr does not collect screen contents.
+> Accessibility access is used to detect the open keyboard and update the
+> focused field. Text is sent to OpenAI only when you explicitly start a
+> transformation; unrelated screen contents are not collected.
 
 ## Building
 
@@ -49,7 +54,8 @@ for `v*` tags. The repository requires four Actions secrets:
 ## Privacy and security
 
 The API key is encrypted using hardware-backed Android Keystore when supported
-by the device. Audio is sent directly from your phone to OpenAI. See
+by the device. Audio and text chosen for transformation are sent directly from
+your phone to OpenAI. See
 [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md) for details.
 
 ## License

@@ -18,6 +18,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.core.content.ContextCompat
 import com.openwhispr.app.MainActivity
+import com.openwhispr.app.R
 import com.openwhispr.app.data.SecureApiKeyStore
 import com.openwhispr.app.overlay.DictationOverlayView
 import com.openwhispr.app.overlay.OverlayMotion
@@ -49,7 +50,11 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WindowManager::class.java)
-        overlay = DictationOverlayView(this, ::onOverlayTapped)
+        overlay = DictationOverlayView(
+            context = this,
+            onDictationClick = ::onOverlayTapped,
+            onTransformationClick = ::onTransformationTapped,
+        )
         scope.launch {
             DictationStateBus.state.collectLatest { state ->
                 overlay?.render(state)
@@ -183,7 +188,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
             displayHeight - (DEFAULT_KEYBOARD_HEIGHT_DP * density).toInt()
         }
         return WindowManager.LayoutParams(
-            (132 * density).toInt(),
+            OverlayMotion.widthPx(density),
             OverlayMotion.heightPx(density),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -221,16 +226,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
             stopDictation()
             return
         }
-        if (!SecureApiKeyStore(this).hasKey() ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            startActivity(
-                Intent(this, MainActivity::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-            return
-        }
+        if (!isReadyToStart()) return
         val focused = findFocusedEditable()
         if (focused?.isTextInput() != true) {
             return
@@ -249,6 +245,85 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         ContextCompat.startForegroundService(this, intent)
     }
 
+    private fun onTransformationTapped() {
+        if (DictationStateBus.state.value.isActive) {
+            stopDictation()
+            return
+        }
+        if (!isReadyToStart()) return
+        val focused = findFocusedEditable()
+        if (focused?.isTextInput() != true) return
+        if (focused.isPassword) {
+            showOverlayError(R.string.error_password_field_transformation)
+            return
+        }
+        val captured = EditableTextSnapshot.capture(
+            displayedText = focused.text,
+            selectionStart = focused.textSelectionStart.coerceAtLeast(0),
+            selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
+            isShowingHintText = focused.isShowingHintText,
+        )
+        val target = captured.transformationTarget()
+        if (target == null) {
+            showOverlayError(R.string.error_nothing_to_transform)
+            return
+        }
+        if (target.sourceText.length > MAX_TRANSFORMATION_CHARS) {
+            showOverlayError(R.string.error_text_too_long)
+            return
+        }
+        editableSnapshot = target.replacementSnapshot
+        targetPackage = focused.packageName
+        activeSessionId = 0L
+        lastAppliedTranscript = ""
+        val intent = Intent(this, DictationForegroundService::class.java)
+            .setAction(DictationForegroundService.ACTION_START_TRANSFORMATION)
+            .putExtra(DictationForegroundService.EXTRA_SOURCE_TEXT, target.sourceText)
+        ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun isReadyToStart(): Boolean {
+        if (
+            SecureApiKeyStore(this).hasKey() &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return true
+        }
+        startActivity(
+            Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+        return false
+    }
+
+    private fun showOverlayError(message: Int) {
+        val sessionId = SystemClock.elapsedRealtimeNanos()
+        activeSessionId = sessionId
+        DictationStateBus.set(
+            DictationState(
+                sessionId = sessionId,
+                phase = DictationPhase.ERROR,
+                operation = DictationOperation.TRANSFORMATION,
+                message = getString(message),
+            ),
+        )
+        handler.postDelayed(
+            {
+                if (DictationStateBus.state.value.sessionId == sessionId) {
+                    DictationStateBus.set(
+                        DictationState(
+                            sessionId = sessionId,
+                            phase = DictationPhase.IDLE,
+                            operation = DictationOperation.TRANSFORMATION,
+                        ),
+                    )
+                }
+            },
+            ERROR_DISPLAY_DURATION_MS,
+        )
+    }
+
     private fun stopDictation() {
         startService(
             Intent(this, DictationForegroundService::class.java)
@@ -260,11 +335,14 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         if (state.sessionId != 0L && activeSessionId == 0L) activeSessionId = state.sessionId
         if (state.sessionId != activeSessionId || state.transcript.isBlank()) return
         if (state.transcript == lastAppliedTranscript) return
-        if (
-            state.phase == DictationPhase.LISTENING ||
-            state.phase == DictationPhase.PROCESSING ||
+        val shouldInsert = if (state.operation == DictationOperation.TRANSFORMATION) {
             state.phase == DictationPhase.COMPLETED
-        ) {
+        } else {
+            state.phase == DictationPhase.LISTENING ||
+                state.phase == DictationPhase.PROCESSING ||
+                state.phase == DictationPhase.COMPLETED
+        }
+        if (shouldInsert) {
             insertTranscript(state.transcript)
         }
     }
@@ -334,5 +412,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         private const val OVERLAY_UPDATE_DELAY_MS = 32L
         private const val DEFAULT_FRAME_MILLIS = 16L
         private const val NANOS_PER_MILLISECOND = 1_000_000L
+        private const val ERROR_DISPLAY_DURATION_MS = 3_000L
+        private const val MAX_TRANSFORMATION_CHARS = 80_000
     }
 }
