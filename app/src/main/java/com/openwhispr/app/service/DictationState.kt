@@ -28,6 +28,9 @@ data class DictationState(
         get() = phase == DictationPhase.CONNECTING ||
             phase == DictationPhase.LISTENING ||
             phase == DictationPhase.PROCESSING
+
+    internal fun acceptsActiveUpdate(sessionId: Long): Boolean =
+        this.sessionId == sessionId && isActive
 }
 
 object DictationStateBus {

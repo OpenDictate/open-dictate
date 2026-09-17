@@ -1,10 +1,29 @@
 package com.openwhispr.app.overlay
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OverlayMotionTest {
+    @Test
+    fun `swipe to cancel follows leftward motion and clamps its travel`() {
+        val density = 2f
+
+        assertEquals(0f, OverlaySwipeToCancel.dragOffsetPx(500f, 540f, density), 0.001f)
+        assertEquals(80f, OverlaySwipeToCancel.dragOffsetPx(500f, 420f, density), 0.001f)
+        assertEquals(208f, OverlaySwipeToCancel.dragOffsetPx(500f, 100f, density), 0.001f)
+    }
+
+    @Test
+    fun `swipe arms only after a deliberate mostly horizontal pull`() {
+        val density = 2f
+
+        assertFalse(OverlaySwipeToCancel.isArmed(500f, 300f, 357f, 300f, density))
+        assertTrue(OverlaySwipeToCancel.isArmed(500f, 300f, 356f, 340f, density))
+        assertFalse(OverlaySwipeToCancel.isArmed(500f, 300f, 356f, 460f, density))
+    }
+
     @Test
     fun `retarget preserves position and velocity`() {
         val motion = OverlayPositionMotion(initialPositionPx = 800)

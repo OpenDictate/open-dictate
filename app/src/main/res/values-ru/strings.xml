@@ -68,6 +68,9 @@
     <string name="overlay_start_dictation">Начать диктовку</string>
     <string name="overlay_start_transformation">Надиктовать инструкцию для преобразования текста</string>
     <string name="overlay_stop_dictation">Остановить диктовку</string>
+    <string name="overlay_active_dictation_description">Остановить диктовку. Потяните влево, чтобы отменить изменения.</string>
+    <string name="overlay_cancel_dictation">Отменить диктовку и изменения</string>
+    <string name="overlay_cancel">ОТМЕНА</string>
     <string name="overlay_connecting">СОЕДИНЯЮ</string>
     <string name="overlay_listening">СТОП</string>
     <string name="overlay_processing">ПИШУ…</string>

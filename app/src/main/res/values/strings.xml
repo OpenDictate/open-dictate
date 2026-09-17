@@ -71,6 +71,9 @@
     <string name="overlay_start_dictation">Start dictation</string>
     <string name="overlay_start_transformation">Dictate a text transformation instruction</string>
     <string name="overlay_stop_dictation">Stop dictation</string>
+    <string name="overlay_active_dictation_description">Stop dictation. Swipe left to cancel and undo changes.</string>
+    <string name="overlay_cancel_dictation">Cancel dictation and undo changes</string>
+    <string name="overlay_cancel">CANCEL</string>
     <string name="overlay_connecting">CONNECTING</string>
     <string name="overlay_listening">STOP</string>
     <string name="overlay_processing">WRITING…</string>

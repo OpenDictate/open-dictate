@@ -21,9 +21,11 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
@@ -42,6 +44,7 @@ class DictationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> requestStop()
+            ACTION_CANCEL -> requestCancel(intent.getLongExtra(EXTRA_SESSION_ID, 0L))
             ACTION_START -> if (activeJob?.isActive != true) {
                 startDictation(DictationOperation.DICTATION)
             }
@@ -109,7 +112,8 @@ class DictationForegroundService : Service() {
                         prompt = settings.prompt,
                         waitForStop = { stopSignal.await() },
                         onReady = {
-                            DictationStateBus.set(
+                            publishWhileActive(
+                                sessionId,
                                 DictationState(
                                     sessionId = sessionId,
                                     phase = DictationPhase.LISTENING,
@@ -125,7 +129,8 @@ class DictationForegroundService : Service() {
                             } else {
                                 DictationPhase.LISTENING
                             }
-                            DictationStateBus.set(
+                            publishWhileActive(
+                                sessionId,
                                 DictationState(
                                     sessionId = sessionId,
                                     phase = phase,
@@ -145,7 +150,8 @@ class DictationForegroundService : Service() {
                         val wav = WavFile(file)
                         wavFile = wav
                         recorder.start(scope, wav::write)
-                        DictationStateBus.set(
+                        publishWhileActive(
+                            sessionId,
                             DictationState(
                                 sessionId = sessionId,
                                 phase = DictationPhase.LISTENING,
@@ -155,7 +161,8 @@ class DictationForegroundService : Service() {
                         stopSignal.await()
                         recorder.stop()
                         wav.close()
-                        DictationStateBus.set(
+                        publishWhileActive(
+                            sessionId,
                             DictationState(
                                 sessionId = sessionId,
                                 phase = DictationPhase.PROCESSING,
@@ -175,7 +182,8 @@ class DictationForegroundService : Service() {
                     throw IllegalStateException(getString(R.string.error_speech_not_recognized))
                 }
                 val result = if (operation == DictationOperation.TRANSFORMATION) {
-                    DictationStateBus.set(
+                    publishWhileActive(
+                        sessionId,
                         DictationState(
                             sessionId = sessionId,
                             phase = DictationPhase.PROCESSING,
@@ -195,7 +203,8 @@ class DictationForegroundService : Service() {
                 if (result.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_transformation_empty))
                 }
-                DictationStateBus.set(
+                publishWhileActive(
+                    sessionId,
                     DictationState(
                         sessionId = sessionId,
                         phase = DictationPhase.COMPLETED,
@@ -204,34 +213,29 @@ class DictationForegroundService : Service() {
                     ),
                 )
                 delay(1_200)
-                DictationStateBus.set(
-                    DictationState(
-                        sessionId = sessionId,
-                        phase = DictationPhase.IDLE,
-                        operation = operation,
-                    ),
-                )
+                clearSessionIfCurrent(sessionId)
             } catch (error: Throwable) {
-                recorder.stop()
+                withContext(NonCancellable) { recorder.stop() }
                 if (error !is kotlinx.coroutines.CancellationException) {
-                    publishError(
-                        error.message ?: getString(R.string.error_transcription_failed),
+                    publishWhileActive(
                         sessionId,
-                        operation,
-                    )
-                    delay(3_000)
-                    DictationStateBus.set(
                         DictationState(
                             sessionId = sessionId,
-                            phase = DictationPhase.IDLE,
+                            phase = DictationPhase.ERROR,
                             operation = operation,
+                            message = error.message ?: getString(R.string.error_transcription_failed),
                         ),
                     )
+                    delay(3_000)
+                    clearSessionIfCurrent(sessionId)
                 }
             } finally {
                 runCatching { wavFile?.close() }
                 tempFile?.delete()
-                ServiceCompat.stopForeground(this@DictationForegroundService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                ServiceCompat.stopForeground(
+                    this@DictationForegroundService,
+                    ServiceCompat.STOP_FOREGROUND_REMOVE,
+                )
                 stopSelf()
             }
         }
@@ -243,6 +247,45 @@ class DictationForegroundService : Service() {
         if (state.isActive) {
             DictationStateBus.set(state.copy(phase = DictationPhase.PROCESSING))
             updateNotification(true, activeOperation)
+        }
+    }
+
+    private fun requestCancel(sessionId: Long) {
+        val state = DictationStateBus.state.value
+        if (
+            !state.isActive ||
+            state.operation != DictationOperation.DICTATION ||
+            sessionId == 0L ||
+            state.sessionId != sessionId
+        ) {
+            return
+        }
+        activeJob?.cancel()
+        DictationStateBus.set(
+            DictationState(
+                sessionId = sessionId,
+                phase = DictationPhase.IDLE,
+                operation = DictationOperation.DICTATION,
+            ),
+        )
+    }
+
+    private fun publishWhileActive(sessionId: Long, state: DictationState) {
+        if (DictationStateBus.state.value.acceptsActiveUpdate(sessionId)) {
+            DictationStateBus.set(state)
+        }
+    }
+
+    private fun clearSessionIfCurrent(sessionId: Long) {
+        val state = DictationStateBus.state.value
+        if (state.sessionId == sessionId) {
+            DictationStateBus.set(
+                DictationState(
+                    sessionId = sessionId,
+                    phase = DictationPhase.IDLE,
+                    operation = state.operation,
+                ),
+            )
         }
     }
 
@@ -338,7 +381,9 @@ class DictationForegroundService : Service() {
         const val ACTION_START_TRANSFORMATION =
             "com.openwhispr.app.action.START_TEXT_TRANSFORMATION"
         const val ACTION_STOP = "com.openwhispr.app.action.STOP_DICTATION"
+        const val ACTION_CANCEL = "com.openwhispr.app.action.CANCEL_DICTATION"
         const val EXTRA_SOURCE_TEXT = "source_text"
+        const val EXTRA_SESSION_ID = "com.openwhispr.app.extra.SESSION_ID"
         private const val CHANNEL_ID = "dictation"
         private const val NOTIFICATION_ID = 41
         private val nextSession = AtomicLong(System.currentTimeMillis())

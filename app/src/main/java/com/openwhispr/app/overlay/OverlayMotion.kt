@@ -42,6 +42,29 @@ internal object OverlayMotion {
     private fun dpToPx(dp: Float, density: Float): Int = (dp * density).toInt()
 }
 
+internal object OverlaySwipeToCancel {
+    private const val CANCEL_THRESHOLD_DP = 72f
+    private const val MAX_DRAG_DP = 104f
+
+    fun dragOffsetPx(downRawX: Float, currentRawX: Float, density: Float): Float =
+        (downRawX - currentRawX).coerceIn(0f, MAX_DRAG_DP * density)
+
+    fun isArmed(
+        downRawX: Float,
+        downRawY: Float,
+        currentRawX: Float,
+        currentRawY: Float,
+        density: Float,
+    ): Boolean {
+        val horizontal = downRawX - currentRawX
+        val vertical = abs(currentRawY - downRawY)
+        return horizontal >= CANCEL_THRESHOLD_DP * density && horizontal >= vertical
+    }
+
+    fun progress(offsetPx: Float, density: Float): Float =
+        (offsetPx / (CANCEL_THRESHOLD_DP * density)).coerceIn(0f, 1f)
+}
+
 /**
  * A critically damped position follower whose velocity survives target changes.
  *

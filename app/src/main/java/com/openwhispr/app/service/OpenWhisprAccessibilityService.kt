@@ -45,6 +45,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
     private var editableSnapshot: EditableTextSnapshot? = null
     private var targetPackage: CharSequence? = null
     private var activeSessionId = 0L
+    private var ignoredSessionId = 0L
     private var lastAppliedTranscript = ""
 
     override fun onServiceConnected() {
@@ -53,6 +54,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         overlay = DictationOverlayView(
             context = this,
             onDictationClick = ::onOverlayTapped,
+            onDictationCancel = ::onOverlayCancelled,
             onTransformationClick = ::onTransformationTapped,
         )
         scope.launch {
@@ -197,7 +199,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.END or Gravity.BOTTOM
-            x = (14 * density).toInt()
+            x = (OVERLAY_END_MARGIN_DP * density).toInt()
             y = OverlayMotion.windowOffsetY(
                 displayHeightPx = displayHeight,
                 keyboardTopPx = keyboardTop,
@@ -228,9 +230,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         }
         if (!isReadyToStart()) return
         val focused = findFocusedEditable()
-        if (focused?.isTextInput() != true) {
-            return
-        }
+        if (focused?.isTextInput() != true) return
         editableSnapshot = EditableTextSnapshot.capture(
             displayedText = focused.text,
             selectionStart = focused.textSelectionStart.coerceAtLeast(0),
@@ -239,6 +239,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         )
         targetPackage = focused.packageName
         activeSessionId = 0L
+        ignoredSessionId = 0L
         lastAppliedTranscript = ""
         val intent = Intent(this, DictationForegroundService::class.java)
             .setAction(DictationForegroundService.ACTION_START)
@@ -275,6 +276,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         editableSnapshot = target.replacementSnapshot
         targetPackage = focused.packageName
         activeSessionId = 0L
+        ignoredSessionId = 0L
         lastAppliedTranscript = ""
         val intent = Intent(this, DictationForegroundService::class.java)
             .setAction(DictationForegroundService.ACTION_START_TRANSFORMATION)
@@ -331,7 +333,20 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         )
     }
 
+    private fun onOverlayCancelled() {
+        val state = DictationStateBus.state.value
+        if (!state.isActive || state.operation != DictationOperation.DICTATION) return
+        ignoredSessionId = state.sessionId
+        restoreEditableSnapshot()
+        startService(
+            Intent(this, DictationForegroundService::class.java)
+                .setAction(DictationForegroundService.ACTION_CANCEL)
+                .putExtra(DictationForegroundService.EXTRA_SESSION_ID, state.sessionId),
+        )
+    }
+
     private fun handleTranscriptState(state: DictationState) {
+        if (state.sessionId != 0L && state.sessionId == ignoredSessionId) return
         if (state.sessionId != 0L && activeSessionId == 0L) activeSessionId = state.sessionId
         if (state.sessionId != activeSessionId || state.transcript.isBlank()) return
         if (state.transcript == lastAppliedTranscript) return
@@ -342,16 +357,40 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
                 state.phase == DictationPhase.PROCESSING ||
                 state.phase == DictationPhase.COMPLETED
         }
-        if (shouldInsert) {
-            insertTranscript(state.transcript)
-        }
+        if (shouldInsert) insertTranscript(state.transcript)
     }
 
     private fun insertTranscript(transcript: String) {
         val snapshot = editableSnapshot ?: return
-        val focused = findFocusedEditable() ?: return
-        if (!focused.isTextInput() || focused.packageName != targetPackage) return
-        val text = snapshot.compose(transcript)
+        if (
+            replaceFocusedText(
+                text = snapshot.compose(transcript),
+                selectionStart = snapshot.cursorAfter(transcript),
+                selectionEnd = snapshot.cursorAfter(transcript),
+            )
+        ) {
+            lastAppliedTranscript = transcript
+        }
+    }
+
+    private fun restoreEditableSnapshot() {
+        val snapshot = editableSnapshot ?: return
+        val start = minOf(snapshot.selectionStart, snapshot.selectionEnd)
+            .coerceIn(0, snapshot.original.length)
+        val end = maxOf(snapshot.selectionStart, snapshot.selectionEnd)
+            .coerceIn(start, snapshot.original.length)
+        if (replaceFocusedText(snapshot.original, start, end)) {
+            lastAppliedTranscript = ""
+        }
+    }
+
+    private fun replaceFocusedText(
+        text: String,
+        selectionStart: Int,
+        selectionEnd: Int,
+    ): Boolean {
+        val focused = findFocusedEditable() ?: return false
+        if (!focused.isTextInput() || focused.packageName != targetPackage) return false
         val setText = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
@@ -359,16 +398,17 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
             val selection = Bundle().apply {
                 putInt(
                     AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT,
-                    snapshot.cursorAfter(transcript),
+                    selectionStart,
                 )
                 putInt(
                     AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT,
-                    snapshot.cursorAfter(transcript),
+                    selectionEnd,
                 )
             }
             focused.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selection)
-            lastAppliedTranscript = transcript
+            return true
         }
+        return false
     }
 
     private fun findFocusedEditable(): AccessibilityNodeInfo? {
@@ -409,6 +449,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         private const val TAG = "OpenWhisprA11y"
         private const val MAX_NODE_SCAN = 200
         private const val DEFAULT_KEYBOARD_HEIGHT_DP = 300
+        private const val OVERLAY_END_MARGIN_DP = 14
         private const val OVERLAY_UPDATE_DELAY_MS = 32L
         private const val DEFAULT_FRAME_MILLIS = 16L
         private const val NANOS_PER_MILLISECOND = 1_000_000L
