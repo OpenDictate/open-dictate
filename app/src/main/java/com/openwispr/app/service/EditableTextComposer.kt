@@ -16,6 +16,12 @@ data class EditableTextSnapshot(
 
     fun cursorAfter(transcript: String): Int = safeStart + transcript.length
 
+    fun restoration(): EditableTextUpdate = EditableTextUpdate(
+        text = original,
+        selectionStart = safeStart,
+        selectionEnd = safeEnd,
+    )
+
     fun transformationTarget(): TextTransformationTarget? {
         val targetStart = if (safeStart == safeEnd) 0 else safeStart
         val targetEnd = if (safeStart == safeEnd) original.length else safeEnd
@@ -37,6 +43,48 @@ data class EditableTextSnapshot(
             val original = if (isShowingHintText) "" else displayedText?.toString().orEmpty()
             return EditableTextSnapshot(original, selectionStart, selectionEnd)
         }
+    }
+}
+
+data class EditableTextUpdate(
+    val text: String,
+    val selectionStart: Int,
+    val selectionEnd: Int,
+)
+
+internal class PendingEditableTextRestoration(
+    private val maxAttempts: Int = 5,
+) {
+    private var snapshot: EditableTextSnapshot? = null
+    private var attemptsRemaining = 0
+
+    init {
+        require(maxAttempts > 0)
+    }
+
+    val isPending: Boolean
+        get() = snapshot != null
+
+    fun begin(snapshot: EditableTextSnapshot) {
+        this.snapshot = snapshot
+        attemptsRemaining = maxAttempts
+    }
+
+    fun nextAttempt(): EditableTextUpdate? {
+        val current = snapshot ?: return null
+        if (attemptsRemaining <= 0) {
+            clear()
+            return null
+        }
+        attemptsRemaining -= 1
+        return current.restoration()
+    }
+
+    fun complete() = clear()
+
+    fun clear() {
+        snapshot = null
+        attemptsRemaining = 0
     }
 }
 

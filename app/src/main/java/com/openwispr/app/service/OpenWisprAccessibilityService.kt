@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 class OpenWisprAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val handler = Handler(Looper.getMainLooper())
+    private val pendingTextRestoration = PendingEditableTextRestoration()
     private lateinit var windowManager: WindowManager
     private lateinit var settings: SettingsStore
     private var overlay: DictationOverlayView? = null
@@ -70,6 +71,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (pendingTextRestoration.isPending) restoreEditableSnapshot()
         scheduleOverlayUpdate()
     }
 
@@ -260,6 +262,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
             isShowingHintText = focused.isShowingHintText,
         )
+        clearPendingTextRestoration()
         targetPackage = focused.packageName
         activeSessionId = 0L
         ignoredSessionId = 0L
@@ -297,6 +300,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             return
         }
         editableSnapshot = target.replacementSnapshot
+        clearPendingTextRestoration()
         targetPackage = focused.packageName
         activeSessionId = 0L
         ignoredSessionId = 0L
@@ -360,6 +364,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         val state = DictationStateBus.state.value
         if (!state.isActive || state.operation != DictationOperation.DICTATION) return
         ignoredSessionId = state.sessionId
+        editableSnapshot?.let(pendingTextRestoration::begin)
         restoreEditableSnapshot()
         startService(
             Intent(this, DictationForegroundService::class.java)
@@ -397,14 +402,21 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     }
 
     private fun restoreEditableSnapshot() {
-        val snapshot = editableSnapshot ?: return
-        val start = minOf(snapshot.selectionStart, snapshot.selectionEnd)
-            .coerceIn(0, snapshot.original.length)
-        val end = maxOf(snapshot.selectionStart, snapshot.selectionEnd)
-            .coerceIn(start, snapshot.original.length)
-        if (replaceFocusedText(snapshot.original, start, end)) {
+        handler.removeCallbacks(restoreEditableSnapshotRunnable)
+        val update = pendingTextRestoration.nextAttempt() ?: return
+        if (replaceFocusedText(update.text, update.selectionStart, update.selectionEnd)) {
+            pendingTextRestoration.complete()
             lastAppliedTranscript = ""
+        } else if (pendingTextRestoration.isPending) {
+            handler.postDelayed(restoreEditableSnapshotRunnable, RESTORE_RETRY_DELAY_MS)
         }
+    }
+
+    private val restoreEditableSnapshotRunnable = Runnable(::restoreEditableSnapshot)
+
+    private fun clearPendingTextRestoration() {
+        handler.removeCallbacks(restoreEditableSnapshotRunnable)
+        pendingTextRestoration.clear()
     }
 
     private fun replaceFocusedText(
@@ -477,6 +489,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         private const val DEFAULT_FRAME_MILLIS = 16L
         private const val NANOS_PER_MILLISECOND = 1_000_000L
         private const val ERROR_DISPLAY_DURATION_MS = 3_000L
+        private const val RESTORE_RETRY_DELAY_MS = 80L
         private const val MAX_TRANSFORMATION_CHARS = 80_000
     }
 }

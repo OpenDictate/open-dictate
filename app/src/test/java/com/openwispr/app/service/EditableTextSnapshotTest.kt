@@ -59,6 +59,16 @@ class EditableTextSnapshotTest {
     }
 
     @Test
+    fun `restoration returns the original text and selection`() {
+        val snapshot = EditableTextSnapshot("wrong answer", 5, 0)
+
+        assertEquals(
+            EditableTextUpdate("wrong answer", 0, 5),
+            snapshot.restoration(),
+        )
+    }
+
+    @Test
     fun `normalizes reversed selection`() {
         val snapshot = EditableTextSnapshot("one two", 7, 4)
         assertEquals("one three", snapshot.compose("three"))
@@ -88,5 +98,32 @@ class EditableTextSnapshotTest {
     @Test
     fun `blank field has no transformation target`() {
         assertNull(EditableTextSnapshot("   ", 0, 0).transformationTarget())
+    }
+
+    @Test
+    fun `failed restoration can be retried until it succeeds`() {
+        val snapshot = EditableTextSnapshot("Draft", 5, 5)
+        val restoration = PendingEditableTextRestoration(maxAttempts = 3)
+
+        restoration.begin(snapshot)
+        assertEquals(snapshot.restoration(), restoration.nextAttempt())
+        assertEquals(snapshot.restoration(), restoration.nextAttempt())
+
+        restoration.complete()
+
+        assertNull(restoration.nextAttempt())
+        assertFalse(restoration.isPending)
+    }
+
+    @Test
+    fun `restoration retries are bounded`() {
+        val snapshot = EditableTextSnapshot("Draft", 5, 5)
+        val restoration = PendingEditableTextRestoration(maxAttempts = 2)
+
+        restoration.begin(snapshot)
+        assertEquals(snapshot.restoration(), restoration.nextAttempt())
+        assertEquals(snapshot.restoration(), restoration.nextAttempt())
+        assertNull(restoration.nextAttempt())
+        assertFalse(restoration.isPending)
     }
 }
