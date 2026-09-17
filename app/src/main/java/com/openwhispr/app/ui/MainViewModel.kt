@@ -23,6 +23,7 @@ data class MainUiState(
     val model: TranscriptionModel = TranscriptionModel.LIVE,
     val language: LanguageHint = LanguageHint.AUTO,
     val prompt: String = "",
+    val keepTrailingPeriod: Boolean = true,
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -66,6 +67,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(prompt = settings.prompt) }
     }
 
+    fun setKeepTrailingPeriod(enabled: Boolean) {
+        settings.keepTrailingPeriod = enabled
+        mutableState.update { it.copy(keepTrailingPeriod = enabled) }
+    }
+
     private fun loadState() = MainUiState(
         hasApiKey = apiKeyStore.hasKey(),
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
@@ -73,6 +79,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         model = settings.model,
         language = settings.language,
         prompt = settings.prompt,
+        keepTrailingPeriod = settings.keepTrailingPeriod,
     )
 
     private fun isAccessibilityEnabled(context: Context): Boolean {
@@ -85,4 +92,3 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
 }
-
