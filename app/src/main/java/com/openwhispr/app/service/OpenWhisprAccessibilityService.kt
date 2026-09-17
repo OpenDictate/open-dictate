@@ -16,10 +16,10 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.core.content.ContextCompat
-import com.openwhispr.app.BuildConfig
 import com.openwhispr.app.MainActivity
 import com.openwhispr.app.data.SecureApiKeyStore
 import com.openwhispr.app.overlay.DictationOverlayView
+import com.openwhispr.app.overlay.OverlayMotion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,6 +33,8 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
     private lateinit var windowManager: WindowManager
     private var overlay: DictationOverlayView? = null
     private var overlayAttached = false
+    private var overlayWindowOffsetY: Int? = null
+    private var overlayUpdateScheduled = false
     private var editableSnapshot: EditableTextSnapshot? = null
     private var targetPackage: CharSequence? = null
     private var activeSessionId = 0L
@@ -67,17 +69,16 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
     }
 
     private fun scheduleOverlayUpdate() {
-        handler.removeCallbacks(updateOverlayRunnable)
-        handler.postDelayed(updateOverlayRunnable, 80)
+        if (overlayUpdateScheduled) return
+        overlayUpdateScheduled = true
+        handler.postDelayed(updateOverlayRunnable, OVERLAY_UPDATE_DELAY_MS)
     }
 
     private val updateOverlayRunnable = Runnable {
+        overlayUpdateScheduled = false
         val ime = windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
         val focused = findFocusedEditable()
         val shouldShow = ime != null && focused?.isTextInput() == true
-        if (BuildConfig.DEBUG) {
-            Log.d(TAG, "overlay check: ime=${ime != null}, editable=${focused?.isTextInput() == true}")
-        }
         if (shouldShow) {
             showOrMoveOverlay(ime)
         } else {
@@ -90,12 +91,21 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         val view = overlay ?: return
         val params = overlayParams(ime)
         if (overlayAttached) {
+            val currentOffsetY = overlayWindowOffsetY
+            if (currentOffsetY == params.y) return
             runCatching { windowManager.updateViewLayout(view, params) }
+                .onSuccess {
+                    if (currentOffsetY != null) {
+                        view.animateWindowOffsetChange(currentOffsetY, params.y)
+                    }
+                    overlayWindowOffsetY = params.y
+                }
                 .onFailure { Log.w(TAG, "Could not move accessibility overlay", it) }
         } else {
             runCatching {
                 windowManager.addView(view, params)
                 overlayAttached = true
+                overlayWindowOffsetY = params.y
             }.onFailure { Log.w(TAG, "Could not add accessibility overlay", it) }
         }
     }
@@ -105,10 +115,14 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         val displayHeight = resources.displayMetrics.heightPixels
         val imeBounds = Rect()
         ime?.getBoundsInScreen(imeBounds)
-        val keyboardHeight = if (!imeBounds.isEmpty) displayHeight - imeBounds.top else (300 * density).toInt()
+        val keyboardTop = if (!imeBounds.isEmpty) {
+            imeBounds.top
+        } else {
+            displayHeight - (DEFAULT_KEYBOARD_HEIGHT_DP * density).toInt()
+        }
         return WindowManager.LayoutParams(
             (132 * density).toInt(),
-            (52 * density).toInt(),
+            OverlayMotion.heightPx(density),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -117,7 +131,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         ).apply {
             gravity = Gravity.END or Gravity.BOTTOM
             x = (14 * density).toInt()
-            y = keyboardHeight + (10 * density).toInt()
+            y = OverlayMotion.windowOffsetY(displayHeight, keyboardTop, density)
         }
     }
 
@@ -126,6 +140,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         if (overlayAttached) {
             runCatching { windowManager.removeView(view) }
             overlayAttached = false
+            overlayWindowOffsetY = null
         }
     }
 
@@ -243,5 +258,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
     companion object {
         private const val TAG = "OpenWhisprA11y"
         private const val MAX_NODE_SCAN = 200
+        private const val DEFAULT_KEYBOARD_HEIGHT_DP = 300
+        private const val OVERLAY_UPDATE_DELAY_MS = 32L
     }
 }
