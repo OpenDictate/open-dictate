@@ -22,7 +22,6 @@ data class MainUiState(
     val microphoneGranted: Boolean = false,
     val model: TranscriptionModel = TranscriptionModel.LIVE,
     val languages: Set<DictationLanguage> = emptySet(),
-    val prompt: String = "",
     val keepTrailingPeriod: Boolean = true,
 )
 
@@ -31,6 +30,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val apiKeyStore = SecureApiKeyStore(application)
     private val mutableState = MutableStateFlow(loadState())
     val state = mutableState.asStateFlow()
+    val prompt: String
+        get() = settings.prompt
 
     fun refreshPermissions() {
         mutableState.update {
@@ -72,7 +73,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun savePrompt(prompt: String) {
         settings.prompt = prompt
-        mutableState.update { it.copy(prompt = settings.prompt) }
     }
 
     fun setKeepTrailingPeriod(enabled: Boolean) {
@@ -86,7 +86,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         microphoneGranted = hasMicrophonePermission(getApplication()),
         model = settings.model,
         languages = settings.languages,
-        prompt = settings.prompt,
         keepTrailingPeriod = settings.keepTrailingPeriod,
     )
 

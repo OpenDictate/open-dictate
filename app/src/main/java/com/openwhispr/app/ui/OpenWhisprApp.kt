@@ -62,6 +62,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -177,7 +178,7 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
                 Spacer(Modifier.height(10.dp))
                 PreferencesCard(
                     languages = state.languages,
-                    prompt = state.prompt,
+                    initialPrompt = viewModel.prompt,
                     keepTrailingPeriod = state.keepTrailingPeriod,
                     onToggleLanguage = viewModel::toggleLanguage,
                     onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
@@ -418,7 +419,7 @@ private fun SetupCard(
 @Composable
 private fun PreferencesCard(
     languages: Set<DictationLanguage>,
-    prompt: String,
+    initialPrompt: String,
     keepTrailingPeriod: Boolean,
     onToggleLanguage: (DictationLanguage) -> Unit,
     onAutomaticLanguageDetection: () -> Unit,
@@ -426,7 +427,7 @@ private fun PreferencesCard(
     onKeepTrailingPeriod: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var promptText by remember(prompt) { mutableStateOf(prompt) }
+    var promptText by rememberSaveable { mutableStateOf(initialPrompt) }
     Card(
         colors = CardDefaults.cardColors(containerColor = Panel),
         shape = RoundedCornerShape(20.dp),
