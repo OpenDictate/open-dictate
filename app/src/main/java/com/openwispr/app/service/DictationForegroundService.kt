@@ -198,7 +198,7 @@ class DictationForegroundService : Service() {
                         instruction = transcript.trim(),
                     )
                 } else {
-                    TranscriptFormatter.format(transcript, keepTrailingPeriod)
+                    TranscriptFormatter.formatFinal(transcript, keepTrailingPeriod)
                 }
                 if (result.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_transformation_empty))

@@ -21,6 +21,34 @@ class TranscriptFormatterTest {
     }
 
     @Test
+    fun `adds trailing period to final transcript when enabled`() {
+        assertEquals(
+            "Предложение.",
+            TranscriptFormatter.formatFinal("Предложение", keepTrailingPeriod = true),
+        )
+    }
+
+    @Test
+    fun `adds final period before trailing whitespace`() {
+        assertEquals(
+            "Предложение.  ",
+            TranscriptFormatter.formatFinal("Предложение  ", keepTrailingPeriod = true),
+        )
+    }
+
+    @Test
+    fun `does not add final period after terminal punctuation`() {
+        assertEquals(
+            "Вопрос?",
+            TranscriptFormatter.formatFinal("Вопрос?", keepTrailingPeriod = true),
+        )
+        assertEquals(
+            "Ответ!",
+            TranscriptFormatter.formatFinal("Ответ!", keepTrailingPeriod = true),
+        )
+    }
+
+    @Test
     fun `does not remove question mark or ellipsis`() {
         assertEquals(
             "Вопрос?",
