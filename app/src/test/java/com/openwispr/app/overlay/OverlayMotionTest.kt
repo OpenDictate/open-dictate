@@ -15,6 +15,13 @@ class OverlayMotionTest {
     }
 
     @Test
+    fun `overlay actions are square icon buttons`() {
+        val density = 2f
+
+        assertEquals(OverlayMotion.actionHeightPx(density), OverlayMotion.widthPx(density))
+    }
+
+    @Test
     fun `single action overlay can sit closer to the top edge`() {
         val offset = OverlayMotion.windowOffsetY(
             displayHeightPx = 600,

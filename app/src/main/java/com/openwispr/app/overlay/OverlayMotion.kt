@@ -6,7 +6,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 internal object OverlayMotion {
-    private const val WIDTH_DP = 156f
+    private const val WIDTH_DP = 52f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
     private const val FIELD_CLEARANCE_DP = 8f

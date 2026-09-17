@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -100,13 +101,11 @@ private class OverlayActionView(
     private val idleBackgroundColor = Color.rgb(16, 20, 38)
     private val cancelBackgroundColor = Color.rgb(91, 28, 39)
     private val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = idleBackgroundColor }
-    private val status = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(255, 106, 110)
-    }
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        textSize = 13f * density
-        typeface = android.graphics.Typeface.create("sans", android.graphics.Typeface.BOLD)
+    private val spinner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = idleIconColor
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeWidth = 2.5f * density
     }
     private val bounds = RectF()
     private var phase = DictationPhase.IDLE
@@ -140,6 +139,11 @@ private class OverlayActionView(
     private fun updateContentDescription(active: Boolean) {
         contentDescription = context.getString(
             when {
+                phase == DictationPhase.PROCESSING &&
+                    operation == DictationOperation.TRANSFORMATION ->
+                    R.string.overlay_transforming
+                phase == DictationPhase.PROCESSING -> R.string.overlay_processing
+                phase == DictationPhase.ERROR -> R.string.overlay_retry
                 active && operation == DictationOperation.DICTATION ->
                     R.string.overlay_active_dictation_description
                 active -> R.string.overlay_stop_dictation
@@ -173,46 +177,43 @@ private class OverlayActionView(
                 closeIcon,
                 if (cancelArmed) Color.WHITE else Color.rgb(255, 106, 110),
             )
+        } else if (phase == DictationPhase.PROCESSING) {
+            drawSpinner(canvas)
         } else if (active) {
             drawIcon(canvas, stopIcon, idleIconColor)
         } else {
             drawIcon(canvas, idleIcon, idleIconColor)
         }
-        val label = if (isDragging) {
-            R.string.overlay_cancel
-        } else {
-            when (phase) {
-                DictationPhase.CONNECTING -> R.string.overlay_connecting
-                DictationPhase.LISTENING -> R.string.overlay_listening
-                DictationPhase.PROCESSING -> if (operation == DictationOperation.TRANSFORMATION) {
-                    R.string.overlay_transforming
-                } else {
-                    R.string.overlay_processing
-                }
-                DictationPhase.ERROR -> R.string.overlay_retry
-                else -> if (operation == DictationOperation.TRANSFORMATION) {
-                    R.string.overlay_transform
-                } else {
-                    R.string.overlay_idle
-                }
-            }
-        }
-        val baseline = height / 2f - (text.ascent() + text.descent()) / 2f
-        canvas.drawText(context.getString(label), 54f * density, baseline, text)
-        if (active && !isDragging) {
-            canvas.drawCircle(width - 13f * density, height / 2f, 3.5f * density, status)
-        }
     }
 
     private fun drawIcon(canvas: Canvas, icon: Drawable, color: Int) {
         val size = (24f * density).roundToInt()
-        val centerX = (28f * density).roundToInt()
+        val centerX = width / 2
         val centerY = height / 2
         val left = centerX - size / 2
         val top = centerY - size / 2
         icon.setTint(color)
         icon.setBounds(left, top, left + size, top + size)
         icon.draw(canvas)
+    }
+
+    private fun drawSpinner(canvas: Canvas) {
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val radius = 10f * density
+        val rotation = SystemClock.uptimeMillis() % SPINNER_PERIOD_MS *
+            360f / SPINNER_PERIOD_MS
+        canvas.drawArc(
+            centerX - radius,
+            centerY - radius,
+            centerX + radius,
+            centerY + radius,
+            rotation,
+            SPINNER_SWEEP_DEGREES,
+            false,
+            spinner,
+        )
+        postInvalidateOnAnimation()
     }
 
     private fun icon(resourceId: Int): Drawable = requireNotNull(
@@ -338,5 +339,10 @@ private class OverlayActionView(
             channel(Color.green(from), Color.green(to)),
             channel(Color.blue(from), Color.blue(to)),
         )
+    }
+
+    private companion object {
+        const val SPINNER_PERIOD_MS = 900L
+        const val SPINNER_SWEEP_DEGREES = 270f
     }
 }
