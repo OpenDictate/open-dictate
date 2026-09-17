@@ -26,11 +26,16 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_PROMPT, "").orEmpty()
         set(value) = prefs.edit { putString(KEY_PROMPT, value.trim()) }
 
+    var keepTrailingPeriod: Boolean
+        get() = prefs.getBoolean(KEY_KEEP_TRAILING_PERIOD, true)
+        set(value) = prefs.edit { putBoolean(KEY_KEEP_TRAILING_PERIOD, value) }
+
     companion object {
         private const val FILE_NAME = "openwhispr_settings"
         private const val KEY_MODEL = "model"
         private const val KEY_LANGUAGES = "languages"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_PROMPT = "prompt"
+        private const val KEY_KEEP_TRAILING_PERIOD = "keep_trailing_period"
     }
 }

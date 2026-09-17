@@ -12,5 +12,16 @@ data class EditableTextSnapshot(
         original.substring(0, safeStart) + transcript + original.substring(safeEnd)
 
     fun cursorAfter(transcript: String): Int = safeStart + transcript.length
-}
 
+    companion object {
+        fun capture(
+            displayedText: CharSequence?,
+            selectionStart: Int,
+            selectionEnd: Int,
+            isShowingHintText: Boolean,
+        ): EditableTextSnapshot {
+            val original = if (isShowingHintText) "" else displayedText?.toString().orEmpty()
+            return EditableTextSnapshot(original, selectionStart, selectionEnd)
+        }
+    }
+}

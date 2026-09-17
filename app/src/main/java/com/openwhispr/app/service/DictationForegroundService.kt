@@ -62,6 +62,7 @@ class DictationForegroundService : Service() {
             return
         }
         val settings = SettingsStore(this)
+        val keepTrailingPeriod = settings.keepTrailingPeriod
         val sessionId = nextSession.incrementAndGet()
         stopSignal = CompletableDeferred()
         startForeground(NOTIFICATION_ID, notification(false))
@@ -86,6 +87,7 @@ class DictationForegroundService : Service() {
                             )
                         },
                         onPartial = { text ->
+                            val formatted = TranscriptFormatter.format(text, keepTrailingPeriod)
                             val phase = if (
                                 DictationStateBus.state.value.phase == DictationPhase.PROCESSING
                             ) {
@@ -94,7 +96,7 @@ class DictationForegroundService : Service() {
                                 DictationPhase.LISTENING
                             }
                             DictationStateBus.set(
-                                DictationState(sessionId, phase, text),
+                                DictationState(sessionId, phase, formatted),
                             )
                         },
                     )
@@ -122,9 +124,10 @@ class DictationForegroundService : Service() {
                         )
                     }
                 }
-                if (transcript.isBlank()) throw IllegalStateException("Речь не распознана")
+                val formattedTranscript = TranscriptFormatter.format(transcript, keepTrailingPeriod)
+                if (formattedTranscript.isBlank()) throw IllegalStateException("Речь не распознана")
                 DictationStateBus.set(
-                    DictationState(sessionId, DictationPhase.COMPLETED, transcript),
+                    DictationState(sessionId, DictationPhase.COMPLETED, formattedTranscript),
                 )
                 delay(1_200)
                 DictationStateBus.set(DictationState(sessionId, DictationPhase.IDLE))

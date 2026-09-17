@@ -53,6 +53,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -177,9 +178,11 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
                 PreferencesCard(
                     languages = state.languages,
                     prompt = state.prompt,
+                    keepTrailingPeriod = state.keepTrailingPeriod,
                     onToggleLanguage = viewModel::toggleLanguage,
                     onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
                     onPrompt = viewModel::savePrompt,
+                    onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
                 )
                 Spacer(Modifier.height(20.dp))
                 TestField()
@@ -416,9 +419,11 @@ private fun SetupCard(
 private fun PreferencesCard(
     languages: Set<DictationLanguage>,
     prompt: String,
+    keepTrailingPeriod: Boolean,
     onToggleLanguage: (DictationLanguage) -> Unit,
     onAutomaticLanguageDetection: () -> Unit,
     onPrompt: (String) -> Unit,
+    onKeepTrailingPeriod: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var promptText by remember(prompt) { mutableStateOf(prompt) }
@@ -463,6 +468,17 @@ private fun PreferencesCard(
                         }
                     }
                 }
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Точка в конце", color = White, fontWeight = FontWeight.SemiBold)
+                    Text("Добавлять точку после последней фразы", color = Fog, fontSize = 12.sp)
+                }
+                Switch(
+                    checked = keepTrailingPeriod,
+                    onCheckedChange = onKeepTrailingPeriod,
+                )
             }
             Spacer(Modifier.height(14.dp))
             OutlinedTextField(

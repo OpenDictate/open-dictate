@@ -148,10 +148,11 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         if (focused?.isTextInput() != true) {
             return
         }
-        editableSnapshot = EditableTextSnapshot(
-            original = focused.text?.toString().orEmpty(),
+        editableSnapshot = EditableTextSnapshot.capture(
+            displayedText = focused.text,
             selectionStart = focused.textSelectionStart.coerceAtLeast(0),
             selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
+            isShowingHintText = focused.isShowingHintText,
         )
         targetPackage = focused.packageName
         activeSessionId = 0L

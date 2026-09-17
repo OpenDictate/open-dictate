@@ -5,6 +5,30 @@ import org.junit.Test
 
 class EditableTextSnapshotTest {
     @Test
+    fun `does not capture a field hint as user text`() {
+        val snapshot = EditableTextSnapshot.capture(
+            displayedText = "Ask anything",
+            selectionStart = 0,
+            selectionEnd = 0,
+            isShowingHintText = true,
+        )
+
+        assertEquals("hello", snapshot.compose("hello"))
+    }
+
+    @Test
+    fun `preserves actual user text when hint is not showing`() {
+        val snapshot = EditableTextSnapshot.capture(
+            displayedText = "Draft",
+            selectionStart = 5,
+            selectionEnd = 5,
+            isShowingHintText = false,
+        )
+
+        assertEquals("Draft text", snapshot.compose(" text"))
+    }
+
+    @Test
     fun `inserts transcript at cursor`() {
         val snapshot = EditableTextSnapshot("Hello world", 6, 6)
         assertEquals("Hello brave world", snapshot.compose("brave "))
@@ -23,4 +47,3 @@ class EditableTextSnapshotTest {
         assertEquals("one three", snapshot.compose("three"))
     }
 }
-

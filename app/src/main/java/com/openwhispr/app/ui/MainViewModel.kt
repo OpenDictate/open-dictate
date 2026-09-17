@@ -23,6 +23,7 @@ data class MainUiState(
     val model: TranscriptionModel = TranscriptionModel.LIVE,
     val languages: Set<DictationLanguage> = emptySet(),
     val prompt: String = "",
+    val keepTrailingPeriod: Boolean = true,
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -74,6 +75,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(prompt = settings.prompt) }
     }
 
+    fun setKeepTrailingPeriod(enabled: Boolean) {
+        settings.keepTrailingPeriod = enabled
+        mutableState.update { it.copy(keepTrailingPeriod = enabled) }
+    }
+
     private fun loadState() = MainUiState(
         hasApiKey = apiKeyStore.hasKey(),
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
@@ -81,6 +87,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         model = settings.model,
         languages = settings.languages,
         prompt = settings.prompt,
+        keepTrailingPeriod = settings.keepTrailingPeriod,
     )
 
     private fun isAccessibilityEnabled(context: Context): Boolean {
