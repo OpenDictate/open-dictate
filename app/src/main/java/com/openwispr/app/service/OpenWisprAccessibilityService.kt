@@ -35,6 +35,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val handler = Handler(Looper.getMainLooper())
     private val pendingTextRestoration = PendingEditableTextRestoration()
+    private var textRestorationScheduled = false
     private lateinit var windowManager: WindowManager
     private lateinit var settings: SettingsStore
     private var overlay: DictationOverlayView? = null
@@ -71,7 +72,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (pendingTextRestoration.isPending) restoreEditableSnapshot()
+        scheduleEditableSnapshotRestoration()
         scheduleOverlayUpdate()
     }
 
@@ -402,20 +403,39 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     }
 
     private fun restoreEditableSnapshot() {
-        handler.removeCallbacks(restoreEditableSnapshotRunnable)
-        val update = pendingTextRestoration.nextAttempt() ?: return
-        if (replaceFocusedText(update.text, update.selectionStart, update.selectionEnd)) {
-            pendingTextRestoration.complete()
+        val focused = findFocusedEditable()
+        if (
+            focused != null &&
+            focused.isTextInput() &&
+            focused.packageName == targetPackage &&
+            pendingTextRestoration.confirmApplied(
+                displayedText = if (focused.isShowingHintText) null else focused.text,
+                selectionStart = focused.textSelectionStart,
+                selectionEnd = focused.textSelectionEnd,
+            )
+        ) {
             lastAppliedTranscript = ""
-        } else if (pendingTextRestoration.isPending) {
-            handler.postDelayed(restoreEditableSnapshotRunnable, RESTORE_RETRY_DELAY_MS)
+            return
         }
+        val update = pendingTextRestoration.nextAttempt() ?: return
+        replaceFocusedText(update.text, update.selectionStart, update.selectionEnd)
+        scheduleEditableSnapshotRestoration()
     }
 
-    private val restoreEditableSnapshotRunnable = Runnable(::restoreEditableSnapshot)
+    private val restoreEditableSnapshotRunnable = Runnable {
+        textRestorationScheduled = false
+        restoreEditableSnapshot()
+    }
+
+    private fun scheduleEditableSnapshotRestoration() {
+        if (!pendingTextRestoration.isPending || textRestorationScheduled) return
+        textRestorationScheduled = true
+        handler.postDelayed(restoreEditableSnapshotRunnable, RESTORE_RETRY_DELAY_MS)
+    }
 
     private fun clearPendingTextRestoration() {
         handler.removeCallbacks(restoreEditableSnapshotRunnable)
+        textRestorationScheduled = false
         pendingTextRestoration.clear()
     }
 

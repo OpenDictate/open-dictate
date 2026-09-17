@@ -80,7 +80,20 @@ internal class PendingEditableTextRestoration(
         return current.restoration()
     }
 
-    fun complete() = clear()
+    fun confirmApplied(
+        displayedText: CharSequence?,
+        selectionStart: Int,
+        selectionEnd: Int,
+    ): Boolean {
+        val expected = snapshot?.restoration() ?: return false
+        val actualStart = minOf(selectionStart, selectionEnd)
+        val actualEnd = maxOf(selectionStart, selectionEnd)
+        val matches = displayedText?.toString().orEmpty() == expected.text &&
+            actualStart == expected.selectionStart &&
+            actualEnd == expected.selectionEnd
+        if (matches) clear()
+        return matches
+    }
 
     fun clear() {
         snapshot = null

@@ -101,17 +101,30 @@ class EditableTextSnapshotTest {
     }
 
     @Test
-    fun `failed restoration can be retried until it succeeds`() {
+    fun `accepted restoration remains pending until the field reports the original state`() {
         val snapshot = EditableTextSnapshot("Draft", 5, 5)
         val restoration = PendingEditableTextRestoration(maxAttempts = 3)
 
         restoration.begin(snapshot)
         assertEquals(snapshot.restoration(), restoration.nextAttempt())
+        assertFalse(restoration.confirmApplied("Draft live words", 5, 5))
+        assertTrue(restoration.isPending)
         assertEquals(snapshot.restoration(), restoration.nextAttempt())
-
-        restoration.complete()
+        assertTrue(restoration.confirmApplied("Draft", 5, 5))
 
         assertNull(restoration.nextAttempt())
+        assertFalse(restoration.isPending)
+    }
+
+    @Test
+    fun `restoration waits for both original text and selection`() {
+        val snapshot = EditableTextSnapshot("Draft", 2, 4)
+        val restoration = PendingEditableTextRestoration()
+
+        restoration.begin(snapshot)
+
+        assertFalse(restoration.confirmApplied("Draft", 5, 5))
+        assertTrue(restoration.confirmApplied("Draft", 4, 2))
         assertFalse(restoration.isPending)
     }
 
