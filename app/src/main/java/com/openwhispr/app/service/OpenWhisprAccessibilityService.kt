@@ -9,6 +9,7 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
@@ -20,6 +21,7 @@ import com.openwhispr.app.MainActivity
 import com.openwhispr.app.data.SecureApiKeyStore
 import com.openwhispr.app.overlay.DictationOverlayView
 import com.openwhispr.app.overlay.OverlayMotion
+import com.openwhispr.app.overlay.OverlayPositionMotion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,6 +36,10 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
     private var overlay: DictationOverlayView? = null
     private var overlayAttached = false
     private var overlayWindowOffsetY: Int? = null
+    private var overlayLayoutParams: WindowManager.LayoutParams? = null
+    private var overlayPositionMotion: OverlayPositionMotion? = null
+    private var overlayPositionAnimationScheduled = false
+    private var lastOverlayPositionFrameNanos = 0L
     private var overlayUpdateScheduled = false
     private var editableSnapshot: EditableTextSnapshot? = null
     private var targetPackage: CharSequence? = null
@@ -94,22 +100,70 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         val view = overlay ?: return
         val params = overlayParams(ime, focused)
         if (overlayAttached) {
-            val currentOffsetY = overlayWindowOffsetY
-            if (currentOffsetY == params.y) return
-            runCatching { windowManager.updateViewLayout(view, params) }
-                .onSuccess {
-                    if (currentOffsetY != null) {
-                        view.animateWindowOffsetChange(currentOffsetY, params.y)
-                    }
-                    overlayWindowOffsetY = params.y
-                }
-                .onFailure { Log.w(TAG, "Could not move accessibility overlay", it) }
+            val motion = overlayPositionMotion ?: OverlayPositionMotion(
+                overlayWindowOffsetY ?: params.y,
+            ).also { overlayPositionMotion = it }
+            motion.retarget(params.y)
+            if (!motion.isAtRest) scheduleOverlayPositionAnimation()
         } else {
             runCatching {
                 windowManager.addView(view, params)
                 overlayAttached = true
                 overlayWindowOffsetY = params.y
+                overlayLayoutParams = params
+                overlayPositionMotion = OverlayPositionMotion(params.y)
             }.onFailure { Log.w(TAG, "Could not add accessibility overlay", it) }
+        }
+    }
+
+    private fun scheduleOverlayPositionAnimation() {
+        if (overlayPositionAnimationScheduled) return
+        val view = overlay ?: return
+        overlayPositionAnimationScheduled = true
+        view.postOnAnimation(updateOverlayPositionRunnable)
+    }
+
+    private val updateOverlayPositionRunnable = Runnable {
+        overlayPositionAnimationScheduled = false
+        val view = overlay
+        val params = overlayLayoutParams
+        val motion = overlayPositionMotion
+        if (!overlayAttached || view == null || params == null || motion == null) {
+            lastOverlayPositionFrameNanos = 0L
+            return@Runnable
+        }
+
+        val frameNanos = SystemClock.elapsedRealtimeNanos()
+        val elapsedMillis = if (lastOverlayPositionFrameNanos == 0L) {
+            DEFAULT_FRAME_MILLIS
+        } else {
+            (frameNanos - lastOverlayPositionFrameNanos) / NANOS_PER_MILLISECOND
+        }
+        lastOverlayPositionFrameNanos = frameNanos
+        val nextOffsetY = motion.advanceByMillis(elapsedMillis)
+        if (params.y != nextOffsetY) {
+            params.y = nextOffsetY
+            val moved = runCatching { windowManager.updateViewLayout(view, params) }
+                .fold(
+                    onSuccess = {
+                        overlayWindowOffsetY = nextOffsetY
+                        true
+                    },
+                    onFailure = {
+                        Log.w(TAG, "Could not move accessibility overlay", it)
+                        false
+                    },
+                )
+            if (!moved) {
+                lastOverlayPositionFrameNanos = 0L
+                return@Runnable
+            }
+        }
+
+        if (motion.isAtRest) {
+            lastOverlayPositionFrameNanos = 0L
+        } else {
+            scheduleOverlayPositionAnimation()
         }
     }
 
@@ -150,10 +204,15 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
 
     private fun removeOverlay() {
         val view = overlay ?: return
+        view.removeCallbacks(updateOverlayPositionRunnable)
+        overlayPositionAnimationScheduled = false
+        lastOverlayPositionFrameNanos = 0L
         if (overlayAttached) {
             runCatching { windowManager.removeView(view) }
             overlayAttached = false
             overlayWindowOffsetY = null
+            overlayLayoutParams = null
+            overlayPositionMotion = null
         }
     }
 
@@ -273,5 +332,7 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         private const val MAX_NODE_SCAN = 200
         private const val DEFAULT_KEYBOARD_HEIGHT_DP = 300
         private const val OVERLAY_UPDATE_DELAY_MS = 32L
+        private const val DEFAULT_FRAME_MILLIS = 16L
+        private const val NANOS_PER_MILLISECOND = 1_000_000L
     }
 }

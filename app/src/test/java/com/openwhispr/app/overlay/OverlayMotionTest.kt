@@ -1,51 +1,75 @@
 package com.openwhispr.app.overlay
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OverlayMotionTest {
     @Test
-    fun `retarget keeps the overlay at the same screen position`() {
-        val previousScreenTop = screenTop(
-            displayHeight = 2_400,
-            windowOffsetY = 800,
-            overlayHeight = 156,
-            translationY = -18f,
-        )
+    fun `retarget preserves position and velocity`() {
+        val motion = OverlayPositionMotion(initialPositionPx = 800)
+        motion.retarget(980)
+        motion.advanceByMillis(32)
 
-        val compensatedTranslation = OverlayMotion.compensatedTranslationY(
-            currentWindowOffsetY = 800,
-            targetWindowOffsetY = 980,
-            currentTranslationY = -18f,
-        )
+        val positionBeforeRetarget = motion.positionPx
+        val velocityBeforeRetarget = motion.velocityPxPerSecond
 
-        assertEquals(
-            previousScreenTop,
-            screenTop(2_400, 980, 156, compensatedTranslation),
-            0.001f,
-        )
+        motion.retarget(1_070)
+
+        assertEquals(positionBeforeRetarget, motion.positionPx, 0.001f)
+        assertEquals(velocityBeforeRetarget, motion.velocityPxPerSecond, 0.001f)
     }
 
     @Test
-    fun `successive retargets remain continuous during an animation`() {
-        val screenTopBeforeRetarget = screenTop(
-            displayHeight = 2_400,
-            windowOffsetY = 980,
-            overlayHeight = 156,
-            translationY = 72f,
-        )
+    fun `successive keyboard positions produce continuous monotonic motion`() {
+        val motion = OverlayPositionMotion(initialPositionPx = 800)
+        val renderedPositions = mutableListOf(motion.positionPx)
 
-        val compensatedTranslation = OverlayMotion.compensatedTranslationY(
-            currentWindowOffsetY = 980,
-            targetWindowOffsetY = 1_070,
-            currentTranslationY = 72f,
-        )
+        listOf(860, 940, 1_020, 1_070).forEach { keyboardPosition ->
+            motion.retarget(keyboardPosition)
+            repeat(3) {
+                motion.advanceByMillis(16)
+                renderedPositions += motion.positionPx
+            }
+        }
+        repeat(120) {
+            if (!motion.isAtRest) {
+                motion.advanceByMillis(16)
+                renderedPositions += motion.positionPx
+            }
+        }
 
-        assertEquals(
-            screenTopBeforeRetarget,
-            screenTop(2_400, 1_070, 156, compensatedTranslation),
-            0.001f,
-        )
+        renderedPositions.zipWithNext().forEach { (previous, current) ->
+            assertTrue("$current moved backwards from $previous", current >= previous)
+        }
+        assertTrue("motion did not settle", motion.isAtRest)
+        assertEquals(1_070f, renderedPositions.last(), 0.001f)
+    }
+
+    @Test
+    fun `closing keyboard produces continuous downward motion`() {
+        val motion = OverlayPositionMotion(initialPositionPx = 1_070)
+        val renderedPositions = mutableListOf(motion.positionPx)
+
+        listOf(1_020, 940, 860, 800).forEach { keyboardPosition ->
+            motion.retarget(keyboardPosition)
+            repeat(3) {
+                motion.advanceByMillis(16)
+                renderedPositions += motion.positionPx
+            }
+        }
+        repeat(120) {
+            if (!motion.isAtRest) {
+                motion.advanceByMillis(16)
+                renderedPositions += motion.positionPx
+            }
+        }
+
+        renderedPositions.zipWithNext().forEach { (previous, current) ->
+            assertTrue("$current moved upwards from $previous", current <= previous)
+        }
+        assertTrue("motion did not settle", motion.isAtRest)
+        assertEquals(800f, renderedPositions.last(), 0.001f)
     }
 
     @Test
@@ -116,11 +140,4 @@ class OverlayMotionTest {
 
         assertEquals(16f * density, buttonTop.toFloat(), 0.001f)
     }
-
-    private fun screenTop(
-        displayHeight: Int,
-        windowOffsetY: Int,
-        overlayHeight: Int,
-        translationY: Float,
-    ): Float = displayHeight - windowOffsetY - overlayHeight + translationY
 }
