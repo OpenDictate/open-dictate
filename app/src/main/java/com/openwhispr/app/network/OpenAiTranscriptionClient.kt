@@ -104,13 +104,13 @@ class OpenAiTranscriptionClient {
         fun connect() {
             val request = authorizedRequest(
                 apiKey,
-                "$REALTIME_URL?model=gpt-live-transcribe",
+                realtimeTranscriptionUrl(),
             ).build()
             socket = client.newWebSocket(request, this)
         }
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            webSocket.send(sessionUpdate(languages, prompt).toString())
+            webSocket.send(realtimeTranscriptionSessionUpdate(languages, prompt).toString())
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -141,6 +141,9 @@ class OpenAiTranscriptionClient {
                     }
                     onPartial(transcript)
                     completed.complete(transcript)
+                }
+                "conversation.item.input_audio_transcription.failed" -> {
+                    fail(OpenAiException(readRealtimeError(event)))
                 }
                 "error" -> fail(OpenAiException(readRealtimeError(event)))
             }
@@ -191,28 +194,6 @@ class OpenAiTranscriptionClient {
         }
     }
 
-    private fun sessionUpdate(languages: Set<DictationLanguage>, prompt: String): JSONObject {
-        val transcription = JSONObject()
-            .put("model", "gpt-live-transcribe")
-            .put("delay", "minimal")
-        if (prompt.isNotBlank()) transcription.put("prompt", prompt)
-        if (languages.isNotEmpty()) {
-            transcription.put("languages", JSONArray(languages.map { it.code }))
-        }
-        val input = JSONObject()
-            .put("format", JSONObject().put("type", "audio/pcm").put("rate", PcmAudioRecorder.SAMPLE_RATE))
-            .put("transcription", transcription)
-            .put("turn_detection", JSONObject.NULL)
-        return JSONObject()
-            .put("type", "session.update")
-            .put(
-                "session",
-                JSONObject()
-                    .put("type", "transcription")
-                    .put("audio", JSONObject().put("input", input)),
-            )
-    }
-
     private fun authorizedRequest(apiKey: String, url: String): Request.Builder =
         Request.Builder()
             .url(url)
@@ -253,12 +234,38 @@ class OpenAiTranscriptionClient {
 
     companion object {
         private const val TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
-        private const val REALTIME_URL = "wss://api.openai.com/v1/realtime"
         private const val CONNECT_TIMEOUT_MS = 12_000L
         private const val FINAL_TIMEOUT_MS = 25_000L
         private const val MAX_QUEUED_CHUNKS = 300
         private val WAV = "audio/wav".toMediaType()
     }
+}
+
+internal fun realtimeTranscriptionUrl(): String =
+    "wss://api.openai.com/v1/realtime?intent=transcription"
+
+internal fun realtimeTranscriptionSessionUpdate(
+    languages: Set<DictationLanguage>,
+    prompt: String,
+): JSONObject {
+    val transcription = JSONObject()
+        .put("model", "gpt-live-transcribe")
+    if (prompt.isNotBlank()) transcription.put("prompt", prompt)
+    if (languages.isNotEmpty()) {
+        transcription.put("languages", JSONArray(languages.map { it.code }))
+    }
+    val input = JSONObject()
+        .put("format", JSONObject().put("type", "audio/pcm").put("rate", PcmAudioRecorder.SAMPLE_RATE))
+        .put("transcription", transcription)
+        .put("turn_detection", JSONObject.NULL)
+    return JSONObject()
+        .put("type", "session.update")
+        .put(
+            "session",
+            JSONObject()
+                .put("type", "transcription")
+                .put("audio", JSONObject().put("input", input)),
+        )
 }
 
 class OpenAiException(message: String, cause: Throwable? = null) : IOException(message, cause)
