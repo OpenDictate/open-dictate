@@ -49,12 +49,52 @@ class OverlayMotionTest {
     }
 
     @Test
-    fun `button clears the keyboard action row`() {
+    fun `button sits just above the focused field`() {
+        val density = 3f
+        val displayHeight = 2_400
+        val keyboardTop = 1_600
+        val fieldTop = 1_200
+
+        val offset = OverlayMotion.windowOffsetY(
+            displayHeightPx = displayHeight,
+            keyboardTopPx = keyboardTop,
+            focusedFieldTopPx = fieldTop,
+            density = density,
+        )
+        val buttonBottom = displayHeight - offset
+
+        assertEquals(8f * density, (fieldTop - buttonBottom).toFloat(), 0.001f)
+    }
+
+    @Test
+    fun `button falls back to clearing the keyboard when field bounds are unavailable`() {
         val density = 3f
         val displayHeight = 2_400
         val keyboardTop = 1_600
 
-        val offset = OverlayMotion.windowOffsetY(displayHeight, keyboardTop, density)
+        val offset = OverlayMotion.windowOffsetY(
+            displayHeightPx = displayHeight,
+            keyboardTopPx = keyboardTop,
+            focusedFieldTopPx = null,
+            density = density,
+        )
+        val buttonBottom = displayHeight - offset
+
+        assertEquals(72f * density, (keyboardTop - buttonBottom).toFloat(), 0.001f)
+    }
+
+    @Test
+    fun `button ignores field bounds below the keyboard`() {
+        val density = 3f
+        val displayHeight = 2_400
+        val keyboardTop = 1_600
+
+        val offset = OverlayMotion.windowOffsetY(
+            displayHeightPx = displayHeight,
+            keyboardTopPx = keyboardTop,
+            focusedFieldTopPx = 1_700,
+            density = density,
+        )
         val buttonBottom = displayHeight - offset
 
         assertEquals(72f * density, (keyboardTop - buttonBottom).toFloat(), 0.001f)
@@ -66,7 +106,12 @@ class OverlayMotionTest {
         val displayHeight = 500
         val keyboardTop = 260
 
-        val offset = OverlayMotion.windowOffsetY(displayHeight, keyboardTop, density)
+        val offset = OverlayMotion.windowOffsetY(
+            displayHeightPx = displayHeight,
+            keyboardTopPx = keyboardTop,
+            focusedFieldTopPx = 80,
+            density = density,
+        )
         val buttonTop = displayHeight - offset - OverlayMotion.heightPx(density)
 
         assertEquals(16f * density, buttonTop.toFloat(), 0.001f)

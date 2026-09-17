@@ -80,16 +80,19 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         val focused = findFocusedEditable()
         val shouldShow = ime != null && focused?.isTextInput() == true
         if (shouldShow) {
-            showOrMoveOverlay(ime)
+            showOrMoveOverlay(ime, focused)
         } else {
             removeOverlay()
             if (DictationStateBus.state.value.isActive) stopDictation()
         }
     }
 
-    private fun showOrMoveOverlay(ime: AccessibilityWindowInfo?) {
+    private fun showOrMoveOverlay(
+        ime: AccessibilityWindowInfo?,
+        focused: AccessibilityNodeInfo,
+    ) {
         val view = overlay ?: return
-        val params = overlayParams(ime)
+        val params = overlayParams(ime, focused)
         if (overlayAttached) {
             val currentOffsetY = overlayWindowOffsetY
             if (currentOffsetY == params.y) return
@@ -110,11 +113,16 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun overlayParams(ime: AccessibilityWindowInfo?): WindowManager.LayoutParams {
+    private fun overlayParams(
+        ime: AccessibilityWindowInfo?,
+        focused: AccessibilityNodeInfo,
+    ): WindowManager.LayoutParams {
         val density = resources.displayMetrics.density
         val displayHeight = resources.displayMetrics.heightPixels
         val imeBounds = Rect()
         ime?.getBoundsInScreen(imeBounds)
+        val focusedBounds = Rect()
+        focused.getBoundsInScreen(focusedBounds)
         val keyboardTop = if (!imeBounds.isEmpty) {
             imeBounds.top
         } else {
@@ -131,7 +139,12 @@ class OpenWhisprAccessibilityService : AccessibilityService() {
         ).apply {
             gravity = Gravity.END or Gravity.BOTTOM
             x = (14 * density).toInt()
-            y = OverlayMotion.windowOffsetY(displayHeight, keyboardTop, density)
+            y = OverlayMotion.windowOffsetY(
+                displayHeightPx = displayHeight,
+                keyboardTopPx = keyboardTop,
+                focusedFieldTopPx = focusedBounds.takeUnless(Rect::isEmpty)?.top,
+                density = density,
+            )
         }
     }
 

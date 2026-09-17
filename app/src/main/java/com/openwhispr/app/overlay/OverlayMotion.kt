@@ -4,6 +4,7 @@ import kotlin.math.min
 
 internal object OverlayMotion {
     private const val HEIGHT_DP = 52f
+    private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
     private const val TOP_MARGIN_DP = 16f
 
@@ -16,10 +17,14 @@ internal object OverlayMotion {
     fun windowOffsetY(
         displayHeightPx: Int,
         keyboardTopPx: Int,
+        focusedFieldTopPx: Int?,
         density: Float,
     ): Int {
-        val keyboardHeight = (displayHeightPx - keyboardTopPx).coerceAtLeast(0)
-        val preferredOffset = keyboardHeight + dpToPx(KEYBOARD_CLEARANCE_DP, density)
+        val fieldTop = focusedFieldTopPx?.takeIf { it in 0..keyboardTopPx }
+        val anchorTop = fieldTop ?: keyboardTopPx
+        val clearance = if (fieldTop != null) FIELD_CLEARANCE_DP else KEYBOARD_CLEARANCE_DP
+        val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
+            dpToPx(clearance, density)
         val maximumOffset = (
             displayHeightPx - heightPx(density) - dpToPx(TOP_MARGIN_DP, density)
         ).coerceAtLeast(0)
