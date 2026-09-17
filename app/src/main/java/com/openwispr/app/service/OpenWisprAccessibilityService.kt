@@ -105,8 +105,25 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         focused: AccessibilityNodeInfo,
     ) {
         val view = overlay ?: return
-        val params = overlayParams(ime, focused)
+        val showTransformation = EditableTextSnapshot.capture(
+            displayedText = focused.text,
+            selectionStart = focused.textSelectionStart.coerceAtLeast(0),
+            selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
+            isShowingHintText = focused.isShowingHintText,
+        ).hasText
+        view.setTransformationVisible(showTransformation)
+        val params = overlayParams(ime, focused, showTransformation)
         if (overlayAttached) {
+            val currentParams = overlayLayoutParams ?: return
+            if (currentParams.height != params.height) {
+                val previousHeight = currentParams.height
+                currentParams.height = params.height
+                runCatching { windowManager.updateViewLayout(view, currentParams) }
+                    .onFailure {
+                        currentParams.height = previousHeight
+                        Log.w(TAG, "Could not resize accessibility overlay", it)
+                    }
+            }
             val motion = overlayPositionMotion ?: OverlayPositionMotion(
                 overlayWindowOffsetY ?: params.y,
             ).also { overlayPositionMotion = it }
@@ -177,6 +194,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     private fun overlayParams(
         ime: AccessibilityWindowInfo?,
         focused: AccessibilityNodeInfo,
+        showTransformation: Boolean,
     ): WindowManager.LayoutParams {
         val density = resources.displayMetrics.density
         val displayHeight = resources.displayMetrics.heightPixels
@@ -191,7 +209,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         }
         return WindowManager.LayoutParams(
             OverlayMotion.widthPx(density),
-            OverlayMotion.heightPx(density),
+            OverlayMotion.heightPx(density, showTransformation),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -205,6 +223,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
                 keyboardTopPx = keyboardTop,
                 focusedFieldTopPx = focusedBounds.takeUnless(Rect::isEmpty)?.top,
                 density = density,
+                showTransformation = showTransformation,
             )
         }
     }

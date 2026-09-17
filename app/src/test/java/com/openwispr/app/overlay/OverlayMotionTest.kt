@@ -7,6 +7,14 @@ import org.junit.Test
 
 class OverlayMotionTest {
     @Test
+    fun `window height matches visible actions`() {
+        val density = 2f
+
+        assertEquals(224, OverlayMotion.heightPx(density, showTransformation = true))
+        assertEquals(104, OverlayMotion.heightPx(density, showTransformation = false))
+    }
+
+    @Test
     fun `swipe to cancel follows leftward motion and clamps its travel`() {
         val density = 2f
 

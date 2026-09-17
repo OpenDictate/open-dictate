@@ -8,6 +8,9 @@ data class EditableTextSnapshot(
     private val safeStart = minOf(selectionStart, selectionEnd).coerceIn(0, original.length)
     private val safeEnd = maxOf(selectionStart, selectionEnd).coerceIn(safeStart, original.length)
 
+    val hasText: Boolean
+        get() = original.isNotBlank()
+
     fun compose(transcript: String): String =
         original.substring(0, safeStart) + transcript + original.substring(safeEnd)
 

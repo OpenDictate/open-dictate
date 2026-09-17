@@ -71,6 +71,10 @@ class DictationOverlayView(
         transformationButton.render(state)
         dictationButton.render(state)
     }
+
+    fun setTransformationVisible(visible: Boolean) {
+        transformationButton.visibility = if (visible) VISIBLE else GONE
+    }
 }
 
 private enum class OverlayIcon {

@@ -9,7 +9,6 @@ internal object OverlayMotion {
     private const val WIDTH_DP = 156f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
-    private const val HEIGHT_DP = ACTION_HEIGHT_DP * 2 + GAP_DP
     private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
     private const val TOP_MARGIN_DP = 16f
@@ -19,6 +18,7 @@ internal object OverlayMotion {
         keyboardTopPx: Int,
         focusedFieldTopPx: Int?,
         density: Float,
+        showTransformation: Boolean = true,
     ): Int {
         val fieldTop = focusedFieldTopPx?.takeIf { it in 0..keyboardTopPx }
         val anchorTop = fieldTop ?: keyboardTopPx
@@ -26,12 +26,20 @@ internal object OverlayMotion {
         val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
             dpToPx(clearance, density)
         val maximumOffset = (
-            displayHeightPx - heightPx(density) - dpToPx(TOP_MARGIN_DP, density)
+            displayHeightPx - heightPx(density, showTransformation) -
+                dpToPx(TOP_MARGIN_DP, density)
         ).coerceAtLeast(0)
         return min(preferredOffset, maximumOffset)
     }
 
-    fun heightPx(density: Float): Int = dpToPx(HEIGHT_DP, density)
+    fun heightPx(density: Float, showTransformation: Boolean = true): Int {
+        val heightDp = if (showTransformation) {
+            ACTION_HEIGHT_DP * 2 + GAP_DP
+        } else {
+            ACTION_HEIGHT_DP
+        }
+        return dpToPx(heightDp, density)
+    }
 
     fun widthPx(density: Float): Int = dpToPx(WIDTH_DP, density)
 

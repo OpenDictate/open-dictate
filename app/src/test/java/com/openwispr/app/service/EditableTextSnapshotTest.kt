@@ -1,7 +1,9 @@
 package com.openwispr.app.service
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EditableTextSnapshotTest {
@@ -27,6 +29,20 @@ class EditableTextSnapshotTest {
         )
 
         assertEquals("Draft text", snapshot.compose(" text"))
+    }
+
+    @Test
+    fun `reports whether field contains user text`() {
+        assertTrue(EditableTextSnapshot("Draft", 0, 0).hasText)
+        assertFalse(EditableTextSnapshot("   ", 0, 0).hasText)
+        assertFalse(
+            EditableTextSnapshot.capture(
+                displayedText = "Ask anything",
+                selectionStart = 0,
+                selectionEnd = 0,
+                isShowingHintText = true,
+            ).hasText,
+        )
     }
 
     @Test
