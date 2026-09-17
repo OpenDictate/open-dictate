@@ -23,8 +23,8 @@ class SettingsStore(context: Context) {
         }
 
     var prompt: String
-        get() = prefs.getString(KEY_PROMPT, DEFAULT_PROMPT).orEmpty()
-        set(value) = prefs.edit { putString(KEY_PROMPT, value.trim()) }
+        get() = normalizeDictionaryTerms(prefs.getString(KEY_PROMPT, DEFAULT_PROMPT).orEmpty())
+        set(value) = prefs.edit { putString(KEY_PROMPT, normalizeDictionaryTerms(value).trim()) }
 
     var keepTrailingPeriod: Boolean
         get() = prefs.getBoolean(KEY_KEEP_TRAILING_PERIOD, true)
@@ -37,6 +37,6 @@ class SettingsStore(context: Context) {
         private const val KEY_LANGUAGE = "language"
         private const val KEY_PROMPT = "prompt"
         private const val KEY_KEEP_TRAILING_PERIOD = "keep_trailing_period"
-        private const val DEFAULT_PROMPT = "OpenWhispr, Whispr"
+        private const val DEFAULT_PROMPT = "OpenWhispr\nWhispr"
     }
 }

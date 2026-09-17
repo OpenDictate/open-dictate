@@ -83,6 +83,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.openwhispr.app.data.normalizeDictionaryTerms
 import com.openwhispr.app.model.DictationLanguage
 import com.openwhispr.app.model.TranscriptionModel
 import com.openwhispr.app.service.DictationPhase
@@ -485,13 +486,13 @@ private fun PreferencesCard(
             OutlinedTextField(
                 value = promptText,
                 onValueChange = {
-                    promptText = it.take(300)
+                    promptText = normalizeDictionaryTerms(it).take(300)
                     onPrompt(promptText)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Словарь (необязательно)") },
-                placeholder = { Text("Например: Kotlin, OpenWhispr, Compose") },
-                supportingText = { Text("Имена, термины и редкие слова через запятую") },
+                placeholder = { Text("Kotlin\nOpenWhispr\nCompose") },
+                supportingText = { Text("Каждое имя, термин или редкое слово — с новой строки") },
                 minLines = 2,
                 shape = RoundedCornerShape(14.dp),
             )
