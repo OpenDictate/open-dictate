@@ -6,8 +6,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
@@ -16,16 +16,14 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
 import com.openwispr.app.R
 import com.openwispr.app.service.DictationOperation
 import com.openwispr.app.service.DictationPhase
 import com.openwispr.app.service.DictationState
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 @SuppressLint("ViewConstructor")
 class DictationOverlayView(
@@ -77,11 +75,6 @@ class DictationOverlayView(
     }
 }
 
-private enum class OverlayIcon {
-    MICROPHONE,
-    TRANSFORM,
-}
-
 @SuppressLint("ViewConstructor")
 private class OverlayActionView(
     context: Context,
@@ -90,33 +83,25 @@ private class OverlayActionView(
     private val onCancel: (() -> Unit)? = null,
 ) : View(context) {
     private val density = resources.displayMetrics.density
-    private val icon = if (operation == DictationOperation.DICTATION) {
-        OverlayIcon.MICROPHONE
+    private val idleIcon = icon(
+        if (operation == DictationOperation.DICTATION) {
+            R.drawable.ic_mic_rounded_24
+        } else {
+            R.drawable.ic_auto_fix_high_rounded_24
+        },
+    )
+    private val stopIcon = icon(R.drawable.ic_stop_rounded_24)
+    private val closeIcon = icon(R.drawable.ic_close_rounded_24)
+    private val idleIconColor = if (operation == DictationOperation.DICTATION) {
+        Color.rgb(125, 228, 196)
     } else {
-        OverlayIcon.TRANSFORM
+        Color.rgb(181, 163, 255)
     }
     private val idleBackgroundColor = Color.rgb(16, 20, 38)
     private val cancelBackgroundColor = Color.rgb(91, 28, 39)
     private val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = idleBackgroundColor }
-    private val accent = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (operation == DictationOperation.DICTATION) {
-            Color.rgb(125, 228, 196)
-        } else {
-            Color.rgb(181, 163, 255)
-        }
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-        strokeWidth = 2.4f * density
-        style = Paint.Style.STROKE
-    }
     private val status = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(255, 106, 110)
-    }
-    private val cancel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(255, 106, 110)
-        strokeCap = Paint.Cap.ROUND
-        strokeWidth = 2.4f * density
-        style = Paint.Style.STROKE
     }
     private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -126,7 +111,6 @@ private class OverlayActionView(
     private val bounds = RectF()
     private var phase = DictationPhase.IDLE
     private var ownsState = false
-    private var animationPhase = 0f
     private var downX = 0f
     private var downY = 0f
     private var dragOffsetPx = 0f
@@ -134,15 +118,6 @@ private class OverlayActionView(
     private var cancelArmed = false
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private var dragReturnAnimator: ValueAnimator? = null
-    private val waveformAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-        duration = 900
-        repeatCount = ValueAnimator.INFINITE
-        interpolator = LinearInterpolator()
-        addUpdateListener {
-            animationPhase = it.animatedValue as Float
-            invalidate()
-        }
-    }
 
     init {
         elevation = 12f * density
@@ -158,8 +133,6 @@ private class OverlayActionView(
         isEnabled = !state.isActive || ownsState
         alpha = if (isEnabled) 1f else 0.46f
         updateContentDescription(active)
-        if (active && !waveformAnimator.isStarted) waveformAnimator.start()
-        if (!active && waveformAnimator.isStarted) waveformAnimator.cancel()
         if (!active && dragOffsetPx > 0f) settleDrag()
         invalidate()
     }
@@ -178,7 +151,6 @@ private class OverlayActionView(
     }
 
     override fun onDetachedFromWindow() {
-        waveformAnimator.cancel()
         dragReturnAnimator?.cancel()
         dragReturnAnimator = null
         dragOffsetPx = 0f
@@ -196,13 +168,15 @@ private class OverlayActionView(
         val active = isActionActive()
         val isDragging = active && dragOffsetPx > touchSlop
         if (isDragging) {
-            drawCancel(canvas)
+            drawIcon(
+                canvas,
+                closeIcon,
+                if (cancelArmed) Color.WHITE else Color.rgb(255, 106, 110),
+            )
         } else if (active) {
-            drawWave(canvas)
-        } else if (icon == OverlayIcon.MICROPHONE) {
-            drawMic(canvas)
+            drawIcon(canvas, stopIcon, idleIconColor)
         } else {
-            drawTransform(canvas)
+            drawIcon(canvas, idleIcon, idleIconColor)
         }
         val label = if (isDragging) {
             R.string.overlay_cancel
@@ -230,75 +204,20 @@ private class OverlayActionView(
         }
     }
 
-    private fun drawWave(canvas: Canvas) {
-        val path = Path()
-        val startX = 15f * density
-        val centerY = height / 2f
-        val waveWidth = 27f * density
-        repeat(18) { index ->
-            val fraction = index / 17f
-            val x = startX + waveWidth * fraction
-            val envelope = sin(PI * fraction).toFloat()
-            val y = centerY +
-                sin((fraction + animationPhase) * PI.toFloat() * 4f) * 8f * density * envelope
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        canvas.drawPath(path, accent)
+    private fun drawIcon(canvas: Canvas, icon: Drawable, color: Int) {
+        val size = (24f * density).roundToInt()
+        val centerX = (28f * density).roundToInt()
+        val centerY = height / 2
+        val left = centerX - size / 2
+        val top = centerY - size / 2
+        icon.setTint(color)
+        icon.setBounds(left, top, left + size, top + size)
+        icon.draw(canvas)
     }
 
-    private fun drawMic(canvas: Canvas) {
-        val cx = 28f * density
-        val cy = height / 2f - 3f * density
-        canvas.drawRoundRect(
-            cx - 4.5f * density,
-            cy - 10f * density,
-            cx + 4.5f * density,
-            cy + 5f * density,
-            5f * density,
-            5f * density,
-            accent,
-        )
-        val path = Path().apply {
-            moveTo(cx - 9f * density, cy + 1f * density)
-            cubicTo(
-                cx - 9f * density,
-                cy + 11f * density,
-                cx + 9f * density,
-                cy + 11f * density,
-                cx + 9f * density,
-                cy + 1f * density,
-            )
-            moveTo(cx, cy + 11f * density)
-            lineTo(cx, cy + 16f * density)
-        }
-        canvas.drawPath(path, accent)
-    }
-
-    private fun drawTransform(canvas: Canvas) {
-        val path = Path().apply {
-            moveTo(18f * density, 35f * density)
-            lineTo(35f * density, 18f * density)
-            moveTo(30f * density, 17f * density)
-            lineTo(36f * density, 23f * density)
-        }
-        canvas.drawPath(path, accent)
-        drawSpark(canvas, 20f * density, 17f * density, 4f * density)
-        drawSpark(canvas, 39f * density, 34f * density, 3f * density)
-    }
-
-    private fun drawSpark(canvas: Canvas, x: Float, y: Float, radius: Float) {
-        canvas.drawLine(x - radius, y, x + radius, y, accent)
-        canvas.drawLine(x, y - radius, x, y + radius, accent)
-    }
-
-    private fun drawCancel(canvas: Canvas) {
-        val cx = 28f * density
-        val cy = height / 2f
-        val radius = 7f * density
-        cancel.color = if (cancelArmed) Color.WHITE else Color.rgb(255, 106, 110)
-        canvas.drawLine(cx - radius, cy - radius, cx + radius, cy + radius, cancel)
-        canvas.drawLine(cx + radius, cy - radius, cx - radius, cy + radius, cancel)
-    }
+    private fun icon(resourceId: Int): Drawable = requireNotNull(
+        ContextCompat.getDrawable(context, resourceId),
+    ).mutate()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
