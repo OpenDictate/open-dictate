@@ -89,6 +89,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.relocation.bringIntoView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -165,7 +167,10 @@ fun OpenWisprApp(viewModel: MainViewModel = viewModel()) {
                 Spacer(Modifier.height(10.dp))
                 TransformationModelCard(
                     selected = state.transformationModel,
+                    buttonEnabled = state.transformationButtonEnabled,
+                    settingEnabled = !dictation.isActive,
                     onSelect = viewModel::selectTransformationModel,
+                    onButtonEnabledChange = viewModel::setTransformationButtonEnabled,
                 )
                 Spacer(Modifier.height(26.dp))
                 SectionLabel(stringResource(R.string.section_readiness))
@@ -415,9 +420,13 @@ private fun ModelDeck(selected: TranscriptionModel, onSelect: (TranscriptionMode
 @Composable
 private fun TransformationModelCard(
     selected: TextTransformationModel,
+    buttonEnabled: Boolean,
+    settingEnabled: Boolean,
     onSelect: (TextTransformationModel) -> Unit,
+    onButtonEnabledChange: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val buttonToggleDescription = stringResource(R.string.transformation_button_toggle)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Panel),
@@ -446,6 +455,15 @@ private fun TransformationModelCard(
                         lineHeight = 17.sp,
                     )
                 }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = buttonEnabled,
+                    onCheckedChange = onButtonEnabledChange,
+                    enabled = settingEnabled,
+                    modifier = Modifier.semantics {
+                        contentDescription = buttonToggleDescription
+                    },
+                )
             }
             Spacer(Modifier.height(12.dp))
             Box(

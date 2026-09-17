@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.openwispr.app.MainActivity
 import com.openwispr.app.R
 import com.openwispr.app.data.SecureApiKeyStore
+import com.openwispr.app.data.SettingsStore
 import com.openwispr.app.overlay.DictationOverlayView
 import com.openwispr.app.overlay.OverlayMotion
 import com.openwispr.app.overlay.OverlayPositionMotion
@@ -34,6 +35,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var windowManager: WindowManager
+    private lateinit var settings: SettingsStore
     private var overlay: DictationOverlayView? = null
     private var overlayAttached = false
     private var overlayWindowOffsetY: Int? = null
@@ -51,6 +53,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WindowManager::class.java)
+        settings = SettingsStore(this)
         overlay = DictationOverlayView(
             context = this,
             onDictationClick = ::onOverlayTapped,
@@ -105,12 +108,13 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         focused: AccessibilityNodeInfo,
     ) {
         val view = overlay ?: return
-        val showTransformation = EditableTextSnapshot.capture(
-            displayedText = focused.text,
-            selectionStart = focused.textSelectionStart.coerceAtLeast(0),
-            selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
-            isShowingHintText = focused.isShowingHintText,
-        ).hasText
+        val showTransformation = settings.transformationButtonEnabled &&
+            EditableTextSnapshot.capture(
+                displayedText = focused.text,
+                selectionStart = focused.textSelectionStart.coerceAtLeast(0),
+                selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
+                isShowingHintText = focused.isShowingHintText,
+            ).hasText
         view.setTransformationVisible(showTransformation)
         val params = overlayParams(ime, focused, showTransformation)
         if (overlayAttached) {

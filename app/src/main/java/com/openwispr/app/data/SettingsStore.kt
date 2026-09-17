@@ -37,6 +37,10 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_KEEP_TRAILING_PERIOD, true)
         set(value) = prefs.edit { putBoolean(KEY_KEEP_TRAILING_PERIOD, value) }
 
+    var transformationButtonEnabled: Boolean
+        get() = prefs.getBoolean(KEY_TRANSFORMATION_BUTTON_ENABLED, true)
+        set(value) = prefs.edit { putBoolean(KEY_TRANSFORMATION_BUTTON_ENABLED, value) }
+
     companion object {
         private const val FILE_NAME = "openwispr_settings"
         private const val KEY_MODEL = "model"
@@ -45,6 +49,7 @@ class SettingsStore(context: Context) {
         private const val KEY_LANGUAGE = "language"
         private const val KEY_PROMPT = "prompt"
         private const val KEY_KEEP_TRAILING_PERIOD = "keep_trailing_period"
+        private const val KEY_TRANSFORMATION_BUTTON_ENABLED = "transformation_button_enabled"
         private const val DEFAULT_PROMPT = "OpenWispr\nWispr"
     }
 }

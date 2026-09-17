@@ -23,6 +23,7 @@ data class MainUiState(
     val microphoneGranted: Boolean = false,
     val model: TranscriptionModel = TranscriptionModel.ACCURATE,
     val transformationModel: TextTransformationModel = TextTransformationModel.LUNA,
+    val transformationButtonEnabled: Boolean = true,
     val languages: Set<DictationLanguage> = emptySet(),
     val keepTrailingPeriod: Boolean = true,
 )
@@ -67,6 +68,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(transformationModel = model) }
     }
 
+    fun setTransformationButtonEnabled(enabled: Boolean) {
+        settings.transformationButtonEnabled = enabled
+        mutableState.update { it.copy(transformationButtonEnabled = enabled) }
+    }
+
     fun toggleLanguage(language: DictationLanguage) {
         val languages = mutableState.value.languages.toMutableSet().apply {
             if (!add(language)) remove(language)
@@ -95,6 +101,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         microphoneGranted = hasMicrophonePermission(getApplication()),
         model = settings.model,
         transformationModel = settings.transformationModel,
+        transformationButtonEnabled = settings.transformationButtonEnabled,
         languages = settings.languages,
         keepTrailingPeriod = settings.keepTrailingPeriod,
     )

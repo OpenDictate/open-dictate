@@ -26,6 +26,7 @@
 
     <string name="transformation_model_title">Text transformation</string>
     <string name="transformation_model_subtitle">Select text or leave the cursor in the field, tap Transform, and speak the instruction</string>
+    <string name="transformation_button_toggle">Show the Transform button above the keyboard</string>
     <string name="transformation_model_luna_description">Fastest and most economical · default</string>
     <string name="transformation_model_terra_description">Balanced quality and cost</string>
     <string name="transformation_model_sol_description">Highest quality for complex edits</string>

@@ -15,6 +15,23 @@ class OverlayMotionTest {
     }
 
     @Test
+    fun `single action overlay can sit closer to the top edge`() {
+        val offset = OverlayMotion.windowOffsetY(
+            displayHeightPx = 600,
+            keyboardTopPx = 80,
+            focusedFieldTopPx = null,
+            density = 2f,
+            showTransformation = false,
+        )
+
+        val buttonTop = 600 - offset - OverlayMotion.heightPx(
+            density = 2f,
+            showTransformation = false,
+        )
+        assertEquals(32f, buttonTop.toFloat(), 0.001f)
+    }
+
+    @Test
     fun `swipe to cancel follows leftward motion and clamps its travel`() {
         val density = 2f
 
