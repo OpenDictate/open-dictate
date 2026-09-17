@@ -20,7 +20,7 @@ data class MainUiState(
     val hasApiKey: Boolean = false,
     val accessibilityEnabled: Boolean = false,
     val microphoneGranted: Boolean = false,
-    val model: TranscriptionModel = TranscriptionModel.LIVE,
+    val model: TranscriptionModel = TranscriptionModel.ACCURATE,
     val languages: Set<DictationLanguage> = emptySet(),
     val keepTrailingPeriod: Boolean = true,
 )

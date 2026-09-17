@@ -6,7 +6,7 @@ enum class TranscriptionModel(val apiName: String) {
 
     companion object {
         fun fromStored(value: String?): TranscriptionModel =
-            entries.firstOrNull { it.name == value } ?: LIVE
+            entries.firstOrNull { it.name == value } ?: ACCURATE
     }
 }
 

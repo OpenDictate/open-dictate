@@ -298,20 +298,20 @@ private fun SectionLabel(text: String) {
 private fun ModelDeck(selected: TranscriptionModel, onSelect: (TranscriptionModel) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         ModelOption(
-            selected = selected == TranscriptionModel.LIVE,
-            eyebrow = "GPT LIVE TRANSCRIBE",
-            title = "Мгновенно",
-            description = "Показывает слова прямо во время речи.",
-            badge = "ПО УМОЛЧАНИЮ",
-            onClick = { onSelect(TranscriptionModel.LIVE) },
-        )
-        ModelOption(
             selected = selected == TranscriptionModel.ACCURATE,
             eyebrow = "GPT TRANSCRIBE",
             title = "Точнее",
             description = "Сначала слушает, затем вставляет готовый текст.",
-            badge = "ПОСЛЕ СТОП",
+            badge = "ПО УМОЛЧАНИЮ",
             onClick = { onSelect(TranscriptionModel.ACCURATE) },
+        )
+        ModelOption(
+            selected = selected == TranscriptionModel.LIVE,
+            eyebrow = "GPT LIVE TRANSCRIBE",
+            title = "Мгновенно",
+            description = "Показывает слова прямо во время речи.",
+            badge = "ВО ВРЕМЯ РЕЧИ",
+            onClick = { onSelect(TranscriptionModel.LIVE) },
         )
     }
 }
