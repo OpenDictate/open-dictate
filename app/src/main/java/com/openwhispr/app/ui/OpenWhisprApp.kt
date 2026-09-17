@@ -68,17 +68,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.relocation.BringIntoViewModifierNode
+import androidx.compose.ui.relocation.bringIntoView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -594,12 +601,58 @@ private fun TestField() {
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .keepFullBoundsInView(),
         label = { Text(stringResource(R.string.test_field_label)) },
         placeholder = { Text(stringResource(R.string.test_field_placeholder)) },
         minLines = 3,
+        maxLines = 3,
         shape = RoundedCornerShape(18.dp),
     )
+}
+
+/** Keeps cursor relocation from moving the parent settings list after the field is focused. */
+private fun Modifier.keepFullBoundsInView(): Modifier =
+    this then FullBoundsBringIntoViewElement
+
+private object FullBoundsBringIntoViewElement : ModifierNodeElement<FullBoundsBringIntoViewNode>() {
+    override fun create() = FullBoundsBringIntoViewNode()
+
+    override fun update(node: FullBoundsBringIntoViewNode) = Unit
+
+    override fun equals(other: Any?) = other === this
+
+    override fun hashCode() = javaClass.hashCode()
+}
+
+private class FullBoundsBringIntoViewNode :
+    Modifier.Node(),
+    BringIntoViewModifierNode,
+    LayoutAwareModifierNode {
+    private var size = IntSize.Zero
+
+    override fun onRemeasured(size: IntSize) {
+        this.size = size
+    }
+
+    override suspend fun bringIntoView(
+        childCoordinates: LayoutCoordinates,
+        boundsProvider: () -> Rect?,
+    ) {
+        bringIntoView {
+            if (size == IntSize.Zero) {
+                boundsProvider()
+            } else {
+                Rect(
+                    left = 0f,
+                    top = 0f,
+                    right = size.width.toFloat(),
+                    bottom = size.height.toFloat(),
+                )
+            }
+        }
+    }
 }
 
 @Composable
