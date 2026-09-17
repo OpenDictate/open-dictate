@@ -693,11 +693,15 @@ private fun PreferencesCard(
                     promptText = normalizeDictionaryTerms(it).take(300)
                     onPrompt(promptText)
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .keepFullBoundsInView(),
                 label = { Text(stringResource(R.string.dictionary_label)) },
                 placeholder = { Text(stringResource(R.string.dictionary_placeholder)) },
                 supportingText = { Text(stringResource(R.string.dictionary_supporting)) },
-                minLines = 2,
+                minLines = 4,
+                maxLines = 4,
                 shape = RoundedCornerShape(14.dp),
             )
         }
