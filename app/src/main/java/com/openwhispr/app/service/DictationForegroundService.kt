@@ -99,8 +99,9 @@ class DictationForegroundService : Service() {
                         },
                     )
                     TranscriptionModel.ACCURATE -> {
-                        tempFile = File.createTempFile("dictation-", ".wav", cacheDir)
-                        val wav = WavFile(tempFile!!)
+                        val file = File.createTempFile("dictation-", ".wav", cacheDir)
+                        tempFile = file
+                        val wav = WavFile(file)
                         wavFile = wav
                         recorder.start(scope, wav::write)
                         DictationStateBus.set(
@@ -115,7 +116,7 @@ class DictationForegroundService : Service() {
                         updateNotification(true)
                         apiClient.transcribeFile(
                             apiKey,
-                            tempFile!!,
+                            file,
                             settings.language,
                             settings.prompt,
                         )

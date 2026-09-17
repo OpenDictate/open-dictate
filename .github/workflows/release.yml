@@ -31,7 +31,7 @@ jobs:
           test -n "$KEY_PASSWORD"
           test -n "$STORE_PASSWORD"
       - name: Verify and assemble release
-        run: ./gradlew testReleaseUnitTest lintRelease assembleRelease --stacktrace
+        run: ./gradlew testDebugUnitTest lintRelease assembleRelease --stacktrace
       - name: Name artifact
         run: cp app/build/outputs/apk/release/app-release.apk OpenWhispr-${GITHUB_REF_NAME}.apk
       - uses: softprops/action-gh-release@v3

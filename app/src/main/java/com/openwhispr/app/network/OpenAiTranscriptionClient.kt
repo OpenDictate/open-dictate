@@ -55,7 +55,7 @@ class OpenAiTranscriptionClient {
             .post(multipart)
             .build()
         client.newCall(request).await().use { response ->
-            val body = response.body?.string().orEmpty()
+            val body = response.body.string()
             if (!response.isSuccessful) throw OpenAiException(errorMessage(response.code, body))
             JSONObject(body).optString("text").trim()
         }

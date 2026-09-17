@@ -27,7 +27,7 @@ OpenWhispr превращает речь в текст в любом Android-п�
 
 ## Сборка
 
-Требуются JDK 17 и Android SDK 36.
+Требуются JDK 17 и Android SDK 37.0.
 
 ```bash
 ./gradlew assembleDebug
