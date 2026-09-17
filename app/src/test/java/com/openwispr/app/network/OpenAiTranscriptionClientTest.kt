@@ -58,9 +58,20 @@ class OpenAiTranscriptionClientTest {
         assertEquals("gpt-5.6-luna", request.getString("model"))
         assertFalse(request.getBoolean("store"))
         assertEquals("low", request.getJSONObject("reasoning").getString("effort"))
+        val format = request.getJSONObject("text").getJSONObject("format")
+        assertEquals("json_schema", format.getString("type"))
+        assertTrue(format.getBoolean("strict"))
+        val schema = format.getJSONObject("schema")
+        assertFalse(schema.getBoolean("additionalProperties"))
+        assertEquals(
+            listOf("transformed_text", "message"),
+            schema.getJSONArray("required").let { required ->
+                List(required.length()) { index -> required.getString(index) }
+            },
+        )
         val input = JSONObject(request.getString("input"))
         assertEquals("Сделай вежливее", input.getString("instruction"))
-        assertEquals("Черновик", input.getString("text"))
+        assertEquals("Черновик", input.getString("source_text"))
     }
 
     @Test
@@ -85,4 +96,58 @@ class OpenAiTranscriptionClientTest {
 
         assertEquals("Готовый текст", extractResponseText(response))
     }
+
+    @Test
+    fun `transformation result normally has no user message`() {
+        val response = transformationResponse(
+            transformedText = "Готовый текст",
+            message = JSONObject.NULL,
+        )
+
+        assertEquals(
+            TextTransformationResult(text = "Готовый текст", message = null),
+            extractTransformationResult(response),
+        )
+    }
+
+    @Test
+    fun `transformation result exposes an attached user message`() {
+        val response = transformationResponse(
+            transformedText = "Исходный текст",
+            message = "Не удалось определить адресата.",
+        )
+
+        assertEquals(
+            TextTransformationResult(
+                text = "Исходный текст",
+                message = "Не удалось определить адресата.",
+            ),
+            extractTransformationResult(response),
+        )
+    }
+
+    private fun transformationResponse(
+        transformedText: String,
+        message: Any,
+    ): JSONObject = JSONObject().put(
+        "output",
+        JSONArray().put(
+            JSONObject()
+                .put("type", "message")
+                .put(
+                    "content",
+                    JSONArray().put(
+                        JSONObject()
+                            .put("type", "output_text")
+                            .put(
+                                "text",
+                                JSONObject()
+                                    .put("transformed_text", transformedText)
+                                    .put("message", message)
+                                    .toString(),
+                            ),
+                    ),
+                ),
+        ),
+    )
 }

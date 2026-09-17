@@ -10,6 +10,9 @@ OpenWispr does not operate a backend and does not include analytics or ads.
   transformation, the selected text—or the focused field's text when there is
   no selection—and your spoken instruction are sent directly to OpenAI. Other
   screen contents are not collected, persisted, or transmitted.
+- A transformation may return a short answer or error as a private Android
+  notification. OpenWispr does not persist that message; Android notification
+  history is controlled by the device's system settings.
 - Android backup is disabled for the application.
 
 OpenAI processes API requests under its API data usage policies. Review those

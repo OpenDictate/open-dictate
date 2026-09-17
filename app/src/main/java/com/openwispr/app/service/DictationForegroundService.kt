@@ -102,6 +102,7 @@ class DictationForegroundService : Service() {
             val recorder = PcmAudioRecorder(this@DictationForegroundService)
             var tempFile: File? = null
             var wavFile: WavFile? = null
+            var modelMessage: String? = null
             try {
                 val transcript = when (settings.model) {
                     TranscriptionModel.LIVE -> apiClient.transcribeLive(
@@ -191,12 +192,14 @@ class DictationForegroundService : Service() {
                         ),
                     )
                     updateNotification(true, operation)
-                    apiClient.transformText(
+                    val transformation = apiClient.transformText(
                         apiKey = apiKey,
                         model = settings.transformationModel,
                         sourceText = requireNotNull(sourceText),
                         instruction = transcript.trim(),
                     )
+                    modelMessage = transformation.message
+                    transformation.text
                 } else {
                     TranscriptFormatter.formatFinal(transcript, keepTrailingPeriod)
                 }
@@ -209,9 +212,10 @@ class DictationForegroundService : Service() {
                         sessionId = sessionId,
                         phase = DictationPhase.COMPLETED,
                         operation = operation,
-                        transcript = result,
+                        transcript = if (modelMessage == null) result else "",
                     ),
                 )
+                modelMessage?.let(::showModelMessage)
                 delay(1_200)
                 clearSessionIfCurrent(sessionId)
             } catch (error: Throwable) {
@@ -298,15 +302,45 @@ class DictationForegroundService : Service() {
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.notification_channel),
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
-            description = getString(R.string.accessibility_description)
-            setSound(null, null)
-        }
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        getSystemService(NotificationManager::class.java).createNotificationChannels(
+            listOf(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    getString(R.string.notification_channel),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = getString(R.string.accessibility_description)
+                    setSound(null, null)
+                },
+                NotificationChannel(
+                    MODEL_MESSAGE_CHANNEL_ID,
+                    getString(R.string.notification_model_messages_channel),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ),
+            ),
+        )
+    }
+
+    private fun showModelMessage(message: String) {
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = NotificationCompat.Builder(this, MODEL_MESSAGE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(
+            MODEL_MESSAGE_NOTIFICATION_ID,
+            notification,
+        )
     }
 
     private fun notification(
@@ -378,7 +412,9 @@ class DictationForegroundService : Service() {
         const val EXTRA_SOURCE_TEXT = "source_text"
         const val EXTRA_SESSION_ID = "com.openwispr.app.extra.SESSION_ID"
         private const val CHANNEL_ID = "dictation"
+        private const val MODEL_MESSAGE_CHANNEL_ID = "transformation_messages"
         private const val NOTIFICATION_ID = 41
+        private const val MODEL_MESSAGE_NOTIFICATION_ID = 42
         private val nextSession = AtomicLong(System.currentTimeMillis())
     }
 }

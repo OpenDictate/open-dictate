@@ -11,6 +11,8 @@ active input field through the Android Accessibility API.
 - **GPT Transcribe** (`gpt-transcribe`) — accurately transcribes a completed recording.
 - Voice-directed text transformation through the Responses API, with
   **GPT-5.6 Luna** (`gpt-5.6-luna`) as the default and Terra or Sol selectable.
+- Text transformations stop after 30 seconds. The model can occasionally answer
+  a direct question or explain a failed edit in a private Android notification.
 - Your own OpenAI API key, encrypted with Android Keystore.
 - No backend, analytics, or stored recordings.
 - A floating button that appears only while the keyboard is open.

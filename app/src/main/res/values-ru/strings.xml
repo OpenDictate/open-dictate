@@ -93,6 +93,7 @@
     <string name="notification_transforming">OpenWispr преобразует текст</string>
     <string name="notification_text_instruction_recording">Нажмите ещё раз, когда закончите инструкцию</string>
     <string name="notification_text_transforming">Преобразованный текст скоро появится в поле</string>
+    <string name="notification_model_messages_channel">Сообщения преобразования</string>
     <string name="stop">Остановить</string>
 
     <string name="error_add_api_key">Добавьте OpenAI API key в приложении</string>
@@ -102,6 +103,7 @@
     <string name="error_password_field_transformation">Поля паролей нельзя преобразовывать</string>
     <string name="error_text_too_long">Выбранный текст слишком длинный для преобразования</string>
     <string name="error_transformation_empty">OpenAI не вернул преобразованный текст</string>
+    <string name="error_transformation_timeout">Преобразование текста заняло слишком много времени</string>
     <string name="error_openai_response_code">OpenAI вернул %1$d</string>
     <string name="error_connection_closed">Соединение закрыто до получения текста</string>
     <string name="error_audio_send_failed">Не удалось отправить звук</string>

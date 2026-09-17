@@ -96,6 +96,7 @@
     <string name="notification_transforming">OpenWispr is transforming text</string>
     <string name="notification_text_instruction_recording">Tap again when the instruction is complete</string>
     <string name="notification_text_transforming">The transformed text will appear in the field shortly</string>
+    <string name="notification_model_messages_channel">Transformation messages</string>
     <string name="stop">Stop</string>
 
     <string name="error_add_api_key">Add an OpenAI API key in the app</string>
@@ -105,6 +106,7 @@
     <string name="error_password_field_transformation">Password fields cannot be transformed</string>
     <string name="error_text_too_long">The selected text is too long to transform</string>
     <string name="error_transformation_empty">OpenAI returned no transformed text</string>
+    <string name="error_transformation_timeout">Text transformation took too long</string>
     <string name="error_openai_response_code">OpenAI returned %1$d</string>
     <string name="error_connection_closed">The connection closed before text was received</string>
     <string name="error_audio_send_failed">Could not send audio</string>
