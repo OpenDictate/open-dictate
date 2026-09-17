@@ -252,20 +252,13 @@ class DictationForegroundService : Service() {
 
     private fun requestCancel(sessionId: Long) {
         val state = DictationStateBus.state.value
-        if (
-            !state.isActive ||
-            state.operation != DictationOperation.DICTATION ||
-            sessionId == 0L ||
-            state.sessionId != sessionId
-        ) {
-            return
-        }
+        if (!state.acceptsCancellation(sessionId)) return
         activeJob?.cancel()
         DictationStateBus.set(
             DictationState(
                 sessionId = sessionId,
                 phase = DictationPhase.IDLE,
-                operation = DictationOperation.DICTATION,
+                operation = state.operation,
             ),
         )
     }

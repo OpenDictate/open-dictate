@@ -30,7 +30,7 @@ import kotlin.math.roundToInt
 class DictationOverlayView(
     context: Context,
     onDictationClick: () -> Unit,
-    onDictationCancel: () -> Unit,
+    onOperationCancel: () -> Unit,
     onTransformationClick: () -> Unit,
 ) : LinearLayout(context) {
     private val density = resources.displayMetrics.density
@@ -38,12 +38,13 @@ class DictationOverlayView(
         context = context,
         operation = DictationOperation.TRANSFORMATION,
         onClick = onTransformationClick,
+        onCancel = onOperationCancel,
     )
     private val dictationButton = OverlayActionView(
         context = context,
         operation = DictationOperation.DICTATION,
         onClick = onDictationClick,
-        onCancel = onDictationCancel,
+        onCancel = onOperationCancel,
     )
 
     init {
@@ -141,11 +142,13 @@ private class OverlayActionView(
             when {
                 phase == DictationPhase.PROCESSING &&
                     operation == DictationOperation.TRANSFORMATION ->
-                    R.string.overlay_transforming
-                phase == DictationPhase.PROCESSING -> R.string.overlay_processing
+                    R.string.overlay_transforming_description
+                phase == DictationPhase.PROCESSING -> R.string.overlay_processing_description
                 phase == DictationPhase.ERROR -> R.string.overlay_retry
                 active && operation == DictationOperation.DICTATION ->
                     R.string.overlay_active_dictation_description
+                active && operation == DictationOperation.TRANSFORMATION ->
+                    R.string.overlay_active_transformation_description
                 active -> R.string.overlay_stop_dictation
                 operation == DictationOperation.TRANSFORMATION ->
                     R.string.overlay_start_transformation
@@ -290,8 +293,8 @@ private class OverlayActionView(
         if (onCancel != null && isActionActive()) {
             info.addAction(
                 AccessibilityNodeInfo.AccessibilityAction(
-                    R.id.accessibility_action_cancel_dictation,
-                    context.getString(R.string.overlay_cancel_dictation),
+                    cancelAccessibilityActionId(),
+                    context.getString(cancelAccessibilityLabelId()),
                 ),
             )
         }
@@ -299,7 +302,7 @@ private class OverlayActionView(
 
     override fun performAccessibilityAction(action: Int, arguments: Bundle?): Boolean {
         if (
-            action == R.id.accessibility_action_cancel_dictation &&
+            action == cancelAccessibilityActionId() &&
             onCancel != null &&
             isActionActive()
         ) {
@@ -308,6 +311,20 @@ private class OverlayActionView(
         }
         return super.performAccessibilityAction(action, arguments)
     }
+
+    private fun cancelAccessibilityActionId(): Int =
+        if (operation == DictationOperation.TRANSFORMATION) {
+            R.id.accessibility_action_cancel_transformation
+        } else {
+            R.id.accessibility_action_cancel_dictation
+        }
+
+    private fun cancelAccessibilityLabelId(): Int =
+        if (operation == DictationOperation.TRANSFORMATION) {
+            R.string.overlay_cancel_transformation
+        } else {
+            R.string.overlay_cancel_dictation
+        }
 
     private fun isActionActive(): Boolean = ownsState && (
         phase == DictationPhase.CONNECTING ||

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="accessibility_action_cancel_dictation" type="id" />
+    <item name="accessibility_action_cancel_transformation" type="id" />
 </resources>

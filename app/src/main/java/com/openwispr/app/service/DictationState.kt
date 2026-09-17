@@ -31,6 +31,9 @@ data class DictationState(
 
     internal fun acceptsActiveUpdate(sessionId: Long): Boolean =
         this.sessionId == sessionId && isActive
+
+    internal fun acceptsCancellation(sessionId: Long): Boolean =
+        sessionId != 0L && acceptsActiveUpdate(sessionId)
 }
 
 object DictationStateBus {

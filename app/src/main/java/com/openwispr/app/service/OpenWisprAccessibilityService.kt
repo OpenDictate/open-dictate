@@ -59,7 +59,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         overlay = DictationOverlayView(
             context = this,
             onDictationClick = ::onOverlayTapped,
-            onDictationCancel = ::onOverlayCancelled,
+            onOperationCancel = ::onOverlayCancelled,
             onTransformationClick = ::onTransformationTapped,
         )
         scope.launch {
@@ -363,10 +363,12 @@ class OpenWisprAccessibilityService : AccessibilityService() {
 
     private fun onOverlayCancelled() {
         val state = DictationStateBus.state.value
-        if (!state.isActive || state.operation != DictationOperation.DICTATION) return
+        if (!state.isActive) return
         ignoredSessionId = state.sessionId
-        editableSnapshot?.let(pendingTextRestoration::begin)
-        restoreEditableSnapshot()
+        if (state.operation == DictationOperation.DICTATION) {
+            editableSnapshot?.let(pendingTextRestoration::begin)
+            restoreEditableSnapshot()
+        }
         startService(
             Intent(this, DictationForegroundService::class.java)
                 .setAction(DictationForegroundService.ACTION_CANCEL)
