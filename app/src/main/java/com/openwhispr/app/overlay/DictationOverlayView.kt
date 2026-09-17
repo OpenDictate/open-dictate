@@ -1,5 +1,6 @@
 package com.openwhispr.app.overlay
 
+import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
@@ -11,6 +12,7 @@ import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
+import android.view.animation.PathInterpolator
 import com.openwhispr.app.service.DictationPhase
 import com.openwhispr.app.service.DictationState
 import kotlin.math.PI
@@ -40,7 +42,7 @@ class DictationOverlayView(
     private var animationPhase = 0f
     private var downX = 0f
     private var downY = 0f
-    private val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+    private val waveformAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
         duration = 900
         repeatCount = ValueAnimator.INFINITE
         interpolator = LinearInterpolator()
@@ -49,6 +51,7 @@ class DictationOverlayView(
             invalidate()
         }
     }
+    private var positionAnimator: ObjectAnimator? = null
 
     init {
         elevation = 12f * density
@@ -60,18 +63,36 @@ class DictationOverlayView(
     fun render(state: DictationState) {
         phase = state.phase
         contentDescription = if (state.isActive) "Остановить диктовку" else "Начать диктовку"
-        if (state.isActive && !animator.isStarted) animator.start()
-        if (!state.isActive && animator.isStarted) animator.cancel()
+        if (state.isActive && !waveformAnimator.isStarted) waveformAnimator.start()
+        if (!state.isActive && waveformAnimator.isStarted) waveformAnimator.cancel()
         invalidate()
     }
 
+    fun animateWindowOffsetChange(currentOffsetY: Int, targetOffsetY: Int) {
+        val compensatedTranslation = OverlayMotion.compensatedTranslationY(
+            currentWindowOffsetY = currentOffsetY,
+            targetWindowOffsetY = targetOffsetY,
+            currentTranslationY = translationY,
+        )
+        positionAnimator?.cancel()
+        translationY = compensatedTranslation
+        positionAnimator = ObjectAnimator.ofFloat(this, TRANSLATION_Y, compensatedTranslation, 0f).apply {
+            duration = POSITION_ANIMATION_DURATION_MS
+            interpolator = POSITION_INTERPOLATOR
+            start()
+        }
+    }
+
     override fun onDetachedFromWindow() {
-        animator.cancel()
+        waveformAnimator.cancel()
+        positionAnimator?.cancel()
+        positionAnimator = null
+        translationY = 0f
         super.onDetachedFromWindow()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension((132 * density).toInt(), (52 * density).toInt())
+        setMeasuredDimension((132 * density).toInt(), OverlayMotion.heightPx(density))
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -166,5 +187,10 @@ class DictationOverlayView(
         super.performClick()
         onClick()
         return true
+    }
+
+    private companion object {
+        const val POSITION_ANIMATION_DURATION_MS = 140L
+        val POSITION_INTERPOLATOR = PathInterpolator(0.16f, 1f, 0.3f, 1f)
     }
 }
