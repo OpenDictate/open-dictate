@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           previous_tag="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
-          printf '## Что изменилось\n\n' > RELEASE_NOTES.md
+          printf '## Changelog\n\n' > RELEASE_NOTES.md
           if [[ -n "$previous_tag" ]]; then
             git log --reverse --no-merges --pretty='- %s (%h)' "$previous_tag..$GITHUB_REF_NAME" >> RELEASE_NOTES.md
           else
