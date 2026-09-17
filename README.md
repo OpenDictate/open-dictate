@@ -1,57 +1,57 @@
 # OpenWhispr for Android
 
-OpenWhispr превращает речь в текст в любом Android-приложении. Когда открывается
-клавиатура, над ней появляется небольшая кнопка диктовки. Текст попадает прямо в
-активное поле ввода через Android Accessibility API.
+OpenWhispr turns speech into text in any Android app. When the keyboard opens,
+a small dictation button appears above it. Text is inserted directly into the
+active input field through the Android Accessibility API.
 
-## Возможности
+## Features
 
-- **GPT Live Transcribe** (`gpt-live-transcribe`) — потоковые фрагменты текста во
-  время речи с минимальной задержкой.
-- **GPT Transcribe** (`gpt-transcribe`) — точная транскрипция законченной записи.
-- Пользовательский OpenAI API key, зашифрованный с помощью Android Keystore.
-- Никакого собственного сервера, аналитики или хранения записей.
-- Плавающая кнопка показывается только при открытой клавиатуре.
-- Русский и английский интерфейс распознавания, либо автоопределение языка.
+- **GPT Live Transcribe** (`gpt-live-transcribe`) — streams text as you speak
+  with minimal latency.
+- **GPT Transcribe** (`gpt-transcribe`) — accurately transcribes a completed recording.
+- Your own OpenAI API key, encrypted with Android Keystore.
+- No backend, analytics, or stored recordings.
+- A floating button that appears only while the keyboard is open.
+- Russian and English speech recognition, or automatic language detection.
 
-## Установка
+## Installation
 
-1. Скачайте APK со страницы **Releases** и установите его.
-2. Откройте OpenWhispr и сохраните свой OpenAI API key.
-3. Разрешите доступ к микрофону.
-4. Включите сервис OpenWhispr в системных настройках специальных возможностей.
-5. Откройте поле ввода в любом приложении и нажмите кнопку над клавиатурой.
+1. Download the APK from the **Releases** page and install it.
+2. Open OpenWhispr and save your OpenAI API key.
+3. Grant microphone access.
+4. Enable the OpenWhispr service in the system accessibility settings.
+5. Open an input field in any app and tap the button above the keyboard.
 
-> Accessibility-доступ нужен только для определения открытой клавиатуры и
-> вставки транскрипта в выбранное поле. OpenWhispr не собирает содержимое экрана.
+> Accessibility access is used only to detect the open keyboard and insert
+> transcripts into the selected field. OpenWhispr does not collect screen contents.
 
-## Сборка
+## Building
 
-Требуются JDK 17 и Android SDK 37.0.
+Requires JDK 17 and Android SDK 37.0.
 
 ```bash
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest lintDebug
 ```
 
-Debug APK будет находиться в `app/build/outputs/apk/debug/`.
+The debug APK will be in `app/build/outputs/apk/debug/`.
 
-## Релизы
+## Releases
 
-Workflow `.github/workflows/release.yml` собирает и публикует подписанный APK для
-тегов `v*`. Репозиторию нужны четыре Actions secret:
+The `.github/workflows/release.yml` workflow builds and publishes a signed APK
+for `v*` tags. The repository requires four Actions secrets:
 
-- `SIGNING_KEY` — base64-кодированный JKS-файл;
+- `SIGNING_KEY` — a base64-encoded JKS file;
 - `KEY_ALIAS`;
 - `KEY_PASSWORD`;
 - `STORE_PASSWORD`.
 
-## Приватность и безопасность
+## Privacy and security
 
-Ключ API шифруется аппаратно защищённым Android Keystore, когда устройство это
-поддерживает. Аудио отправляется напрямую с телефона в OpenAI. Подробности — в
-[PRIVACY.md](PRIVACY.md) и [SECURITY.md](SECURITY.md).
+The API key is encrypted using hardware-backed Android Keystore when supported
+by the device. Audio is sent directly from your phone to OpenAI. See
+[PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md) for details.
 
-## Лицензия
+## License
 
 MIT
