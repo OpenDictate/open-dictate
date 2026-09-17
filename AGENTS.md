@@ -1,8 +1,8 @@
-# OpenWhispr agent guide
+# OpenWispr agent guide
 
 ## Product contract
 
-OpenWhispr is a single-module Android app that inserts OpenAI speech
+OpenWispr is a single-module Android app that inserts OpenAI speech
 transcriptions into the currently focused text field. An accessibility overlay
 appears only while an IME window and an editable node are both present. A tap
 starts dictation; a second tap stops it.
@@ -22,7 +22,7 @@ an explicit product decision.
 
 ## Runtime flow and ownership
 
-1. `OpenWhisprAccessibilityService` detects the keyboard and focused editable
+1. `OpenWisprAccessibilityService` detects the keyboard and focused editable
    node, owns `DictationOverlayView`, snapshots the original text and selection,
    and inserts transcript updates with accessibility actions.
 2. `DictationForegroundService` owns one recording session, microphone
@@ -59,13 +59,13 @@ product.
 
 ## Project map
 
-- `app/src/main/java/com/openwhispr/app/service/`: accessibility integration,
+- `app/src/main/java/com/openwispr/app/service/`: accessibility integration,
   foreground dictation lifecycle, text composition, and session state.
-- `app/src/main/java/com/openwhispr/app/network/`: OpenAI HTTP/WebSocket client.
-- `app/src/main/java/com/openwhispr/app/audio/`: PCM capture and WAV encoding.
-- `app/src/main/java/com/openwhispr/app/data/`: encrypted credentials and local
+- `app/src/main/java/com/openwispr/app/network/`: OpenAI HTTP/WebSocket client.
+- `app/src/main/java/com/openwispr/app/audio/`: PCM capture and WAV encoding.
+- `app/src/main/java/com/openwispr/app/data/`: encrypted credentials and local
   preferences.
-- `app/src/main/java/com/openwhispr/app/ui/`: Compose setup screen and state.
+- `app/src/main/java/com/openwispr/app/ui/`: Compose setup screen and state.
 - `app/src/test/`: JVM tests for pure text and WAV logic.
 - `.github/workflows/build.yml`: main/PR verification and debug APK artifact.
 - `.github/workflows/release.yml`: signed APK publication for `v*` tags.

@@ -35,7 +35,7 @@ jobs:
       - name: Verify and assemble release
         run: ./gradlew testDebugUnitTest lintRelease assembleRelease --stacktrace
       - name: Name artifact
-        run: cp app/build/outputs/apk/release/app-release.apk "OpenWhispr-${GITHUB_REF_NAME}.apk"
+        run: cp app/build/outputs/apk/release/app-release.apk "OpenWispr-${GITHUB_REF_NAME}.apk"
       - name: Generate changelog
         shell: bash
         run: |
@@ -49,4 +49,4 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           body_path: RELEASE_NOTES.md
-          files: OpenWhispr-${{ github.ref_name }}.apk
+          files: OpenWispr-${{ github.ref_name }}.apk

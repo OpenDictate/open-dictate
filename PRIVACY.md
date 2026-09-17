@@ -1,6 +1,6 @@
 # Privacy
 
-OpenWhispr does not operate a backend and does not include analytics or ads.
+OpenWispr does not operate a backend and does not include analytics or ads.
 
 - Your OpenAI API key is encrypted locally with Android Keystore.
 - Microphone audio is sent directly to OpenAI only while dictation is active.

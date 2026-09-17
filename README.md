@@ -1,6 +1,6 @@
-# OpenWhispr for Android
+# OpenWispr for Android
 
-OpenWhispr turns speech into text in any Android app. When the keyboard opens,
+OpenWispr turns speech into text in any Android app. When the keyboard opens,
 a small dictation button appears above it. Text is inserted directly into the
 active input field through the Android Accessibility API.
 
@@ -19,9 +19,9 @@ active input field through the Android Accessibility API.
 ## Installation
 
 1. Download the APK from the **Releases** page and install it.
-2. Open OpenWhispr and save your OpenAI API key.
+2. Open OpenWispr and save your OpenAI API key.
 3. Grant microphone access.
-4. Enable the OpenWhispr service in the system accessibility settings.
+4. Enable the OpenWispr service in the system accessibility settings.
 5. Open an input field in any app. Use the lower button for dictation, or the
    upper button to speak an instruction that transforms selected text (or the
    whole field when nothing is selected).

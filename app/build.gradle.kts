@@ -9,7 +9,7 @@ val signingKey = providers.environmentVariable("SIGNING_KEY")
 val keyAliasValue = providers.environmentVariable("KEY_ALIAS")
 val keyPasswordValue = providers.environmentVariable("KEY_PASSWORD")
 val storePasswordValue = providers.environmentVariable("STORE_PASSWORD")
-val releaseStore = layout.buildDirectory.file("keystore/openwhispr-release.jks")
+val releaseStore = layout.buildDirectory.file("keystore/openwispr-release.jks")
 
 if (signingKey.isPresent) {
     val output = releaseStore.get().asFile
@@ -18,11 +18,11 @@ if (signingKey.isPresent) {
 }
 
 android {
-    namespace = "com.openwhispr.app"
+    namespace = "com.openwispr.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.openwhispr.app"
+        applicationId = "com.openwispr.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 6

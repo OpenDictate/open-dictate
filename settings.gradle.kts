@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OpenWhispr"
+rootProject.name = "OpenWispr"
 include(":app")
 

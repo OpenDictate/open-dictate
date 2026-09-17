@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name=".OpenWhisprApplication"
+        android:name=".OpenWisprApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
@@ -17,7 +17,7 @@
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.OpenWhispr"
+        android:theme="@style/Theme.OpenWispr"
         android:usesCleartextTraffic="false">
 
         <activity
@@ -44,7 +44,7 @@
         </service>
 
         <service
-            android:name=".service.OpenWhisprAccessibilityService"
+            android:name=".service.OpenWisprAccessibilityService"
             android:description="@string/accessibility_description"
             android:exported="true"
             android:label="@string/app_name"
