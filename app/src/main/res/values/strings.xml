@@ -56,6 +56,7 @@
     <string name="api_key_dialog_connect">Connect OpenAI</string>
     <string name="api_key_dialog_description">The key is encrypted with Android Keystore and stays on this device.</string>
     <string name="api_key_dialog_delete">Delete saved key</string>
+    <string name="api_key_copy">Copy API key</string>
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
 

@@ -3,8 +3,12 @@
 package com.openwhispr.app.ui
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipDescription
+import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Build
+import android.os.PersistableBundle
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
@@ -51,6 +56,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -224,6 +230,7 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
         if (showKeyDialog) {
             ApiKeyDialog(
                 hasKey = state.hasApiKey,
+                loadKey = viewModel::getApiKey,
                 onDismiss = { showKeyDialog = false },
                 onSave = {
                     viewModel.saveApiKey(it)
@@ -678,11 +685,13 @@ private fun PrivacyNote() {
 @Composable
 private fun ApiKeyDialog(
     hasKey: Boolean,
+    loadKey: () -> String,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
-    var value by remember { mutableStateOf("") }
+    var value by remember { mutableStateOf(if (hasKey) loadKey() else "") }
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -703,6 +712,25 @@ private fun ApiKeyDialog(
                     label = { Text(stringResource(R.string.api_key_title)) },
                     placeholder = { Text("sk-…") },
                     visualTransformation = PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                val clip = ClipData.newPlainText("OpenAI API key", value).apply {
+                                    description.extras = PersistableBundle().apply {
+                                        putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+                                    }
+                                }
+                                context.getSystemService(ClipboardManager::class.java)
+                                    .setPrimaryClip(clip)
+                            },
+                            enabled = value.isNotBlank(),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = stringResource(R.string.api_key_copy),
+                            )
+                        }
+                    },
                     singleLine = true,
                 )
                 if (hasKey) {

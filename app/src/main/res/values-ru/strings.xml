@@ -53,6 +53,7 @@
     <string name="api_key_dialog_connect">Подключить OpenAI</string>
     <string name="api_key_dialog_description">Ключ шифруется Android Keystore и остаётся на этом устройстве.</string>
     <string name="api_key_dialog_delete">Удалить сохранённый ключ</string>
+    <string name="api_key_copy">Скопировать API key</string>
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
 

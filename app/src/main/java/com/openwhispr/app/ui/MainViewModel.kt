@@ -48,6 +48,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         refreshPermissions()
     }
 
+    fun getApiKey(): String = apiKeyStore.get().orEmpty()
+
     fun clearApiKey() {
         apiKeyStore.clear()
         refreshPermissions()
