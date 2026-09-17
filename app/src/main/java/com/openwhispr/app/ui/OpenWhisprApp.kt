@@ -8,6 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.SettingsAccessibility
@@ -48,11 +51,9 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +74,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -83,7 +85,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.os.LocaleListCompat
+import com.openwhispr.app.R
 import com.openwhispr.app.data.normalizeDictionaryTerms
+import com.openwhispr.app.model.AppLanguage
 import com.openwhispr.app.model.DictationLanguage
 import com.openwhispr.app.model.TranscriptionModel
 import com.openwhispr.app.service.DictationPhase
@@ -136,27 +141,35 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
                 Header()
                 Hero(dictation.phase)
                 Spacer(Modifier.height(26.dp))
-                SectionLabel("РЕЖИМ")
+                SectionLabel(stringResource(R.string.section_mode))
                 Spacer(Modifier.height(10.dp))
                 ModelDeck(state.model, viewModel::selectModel)
                 Spacer(Modifier.height(26.dp))
-                SectionLabel("ГОТОВНОСТЬ")
+                SectionLabel(stringResource(R.string.section_readiness))
                 Spacer(Modifier.height(10.dp))
                 SetupCard(
                     icon = Icons.Outlined.Key,
-                    title = "OpenAI API key",
-                    subtitle = if (state.hasApiKey) "Сохранён в Android Keystore" else "Нужен ваш личный ключ",
+                    title = stringResource(R.string.api_key_title),
+                    subtitle = stringResource(
+                        if (state.hasApiKey) R.string.api_key_saved else R.string.api_key_needed,
+                    ),
                     complete = state.hasApiKey,
-                    action = if (state.hasApiKey) "ИЗМЕНИТЬ" else "ДОБАВИТЬ",
+                    action = stringResource(
+                        if (state.hasApiKey) R.string.action_change else R.string.action_add,
+                    ),
                     onClick = { showKeyDialog = true },
                 )
                 Spacer(Modifier.height(10.dp))
                 SetupCard(
                     icon = Icons.Outlined.Mic,
-                    title = "Микрофон",
-                    subtitle = if (state.microphoneGranted) "Разрешение выдано" else "Только во время диктовки",
+                    title = stringResource(R.string.microphone_title),
+                    subtitle = stringResource(
+                        if (state.microphoneGranted) R.string.microphone_granted else R.string.microphone_usage,
+                    ),
                     complete = state.microphoneGranted,
-                    action = if (state.microphoneGranted) "ГОТОВО" else "РАЗРЕШИТЬ",
+                    action = stringResource(
+                        if (state.microphoneGranted) R.string.action_ready else R.string.action_allow,
+                    ),
                     onClick = {
                         val permissions = buildList {
                             add(Manifest.permission.RECORD_AUDIO)
@@ -168,14 +181,22 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
                 Spacer(Modifier.height(10.dp))
                 SetupCard(
                     icon = Icons.Outlined.SettingsAccessibility,
-                    title = "Кнопка над клавиатурой",
-                    subtitle = if (state.accessibilityEnabled) "Сервис специальных возможностей включён" else "Включите OpenWhispr в настройках",
+                    title = stringResource(R.string.keyboard_button_title),
+                    subtitle = stringResource(
+                        if (state.accessibilityEnabled) {
+                            R.string.accessibility_enabled
+                        } else {
+                            R.string.accessibility_enable_hint
+                        },
+                    ),
                     complete = state.accessibilityEnabled,
-                    action = if (state.accessibilityEnabled) "ГОТОВО" else "ВКЛЮЧИТЬ",
+                    action = stringResource(
+                        if (state.accessibilityEnabled) R.string.action_ready else R.string.action_enable,
+                    ),
                     onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
                 )
                 Spacer(Modifier.height(26.dp))
-                SectionLabel("ТОЧНОСТЬ")
+                SectionLabel(stringResource(R.string.section_accuracy))
                 Spacer(Modifier.height(10.dp))
                 PreferencesCard(
                     languages = state.languages,
@@ -227,15 +248,66 @@ private fun Header() {
             fontSize = 14.sp,
         )
         Spacer(Modifier.weight(1f))
-        Surface(color = Mint.copy(alpha = 0.12f), shape = RoundedCornerShape(50)) {
+        AppLanguageSwitcher()
+    }
+}
+
+@Composable
+private fun AppLanguageSwitcher() {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = AppLanguage.fromLanguageTags(
+        AppCompatDelegate.getApplicationLocales().toLanguageTags(),
+    )
+    Box {
+        TextButton(
+            onClick = { expanded = true },
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.textButtonColors(
+                containerColor = Mint.copy(alpha = 0.12f),
+                contentColor = Mint,
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Language,
+                contentDescription = stringResource(R.string.language_switcher_description),
+                modifier = Modifier.size(17.dp),
+            )
+            Spacer(Modifier.width(6.dp))
             Text(
-                "ON DEVICE",
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                color = Mint,
+                selected.shortLabel(),
                 fontFamily = FontFamily.Monospace,
                 fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 0.8.sp,
             )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            AppLanguage.entries.forEach { language ->
+                DropdownMenuItem(
+                    text = { Text(language.title()) },
+                    onClick = {
+                        expanded = false
+                        AppCompatDelegate.setApplicationLocales(
+                            LocaleListCompat.forLanguageTags(language.languageTag),
+                        )
+                    },
+                    leadingIcon = {
+                        if (language == selected) {
+                            Icon(
+                                Icons.Outlined.Check,
+                                contentDescription = null,
+                                tint = Mint,
+                            )
+                        } else {
+                            Spacer(Modifier.size(24.dp))
+                        }
+                    },
+                )
+            }
         }
     }
 }
@@ -245,7 +317,7 @@ private fun Hero(phase: DictationPhase) {
     val active = phase == DictationPhase.CONNECTING || phase == DictationPhase.LISTENING
     Column {
         Text(
-            text = if (active) "Говорите.\nЯ уже пишу." else "Говорите.\nТекст уже там.",
+            text = stringResource(if (active) R.string.hero_active else R.string.hero_idle),
             color = White,
             fontSize = 42.sp,
             lineHeight = 44.sp,
@@ -254,7 +326,7 @@ private fun Hero(phase: DictationPhase) {
         )
         Spacer(Modifier.height(14.dp))
         Text(
-            "Одна кнопка над клавиатурой — в любом приложении.",
+            stringResource(R.string.hero_subtitle),
             color = Fog,
             fontSize = 16.sp,
             lineHeight = 23.sp,
@@ -300,17 +372,17 @@ private fun ModelDeck(selected: TranscriptionModel, onSelect: (TranscriptionMode
         ModelOption(
             selected = selected == TranscriptionModel.ACCURATE,
             eyebrow = "GPT TRANSCRIBE",
-            title = "Точнее",
-            description = "Сначала слушает, затем вставляет готовый текст.",
-            badge = "ПО УМОЛЧАНИЮ",
+            title = stringResource(R.string.model_accurate_title),
+            description = stringResource(R.string.model_accurate_description),
+            badge = stringResource(R.string.model_accurate_badge),
             onClick = { onSelect(TranscriptionModel.ACCURATE) },
         )
         ModelOption(
             selected = selected == TranscriptionModel.LIVE,
             eyebrow = "GPT LIVE TRANSCRIBE",
-            title = "Мгновенно",
-            description = "Показывает слова прямо во время речи.",
-            badge = "ВО ВРЕМЯ РЕЧИ",
+            title = stringResource(R.string.model_live_title),
+            description = stringResource(R.string.model_live_description),
+            badge = stringResource(R.string.model_live_badge),
             onClick = { onSelect(TranscriptionModel.LIVE) },
         )
     }
@@ -436,8 +508,16 @@ private fun PreferencesCard(
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Языки диктовки", color = White, fontWeight = FontWeight.SemiBold)
-                    Text("Выберите один или несколько", color = Fog, fontSize = 12.sp)
+                    Text(
+                        stringResource(R.string.dictation_languages_title),
+                        color = White,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        stringResource(R.string.dictation_languages_subtitle),
+                        color = Fog,
+                        fontSize = 12.sp,
+                    )
                 }
                 Box {
                     TextButton(onClick = { expanded = true }) {
@@ -445,7 +525,7 @@ private fun PreferencesCard(
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(
-                            text = { Text("Определять автоматически") },
+                            text = { Text(stringResource(R.string.dictation_languages_automatic)) },
                             onClick = onAutomaticLanguageDetection,
                             leadingIcon = {
                                 Checkbox(
@@ -474,8 +554,16 @@ private fun PreferencesCard(
             Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Точка в конце", color = White, fontWeight = FontWeight.SemiBold)
-                    Text("Добавлять точку после последней фразы", color = Fog, fontSize = 12.sp)
+                    Text(
+                        stringResource(R.string.trailing_period_title),
+                        color = White,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        stringResource(R.string.trailing_period_subtitle),
+                        color = Fog,
+                        fontSize = 12.sp,
+                    )
                 }
                 Switch(
                     checked = keepTrailingPeriod,
@@ -490,9 +578,9 @@ private fun PreferencesCard(
                     onPrompt(promptText)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Словарь (необязательно)") },
-                placeholder = { Text("Kotlin\nOpenWhispr\nCompose") },
-                supportingText = { Text("Каждое имя, термин или редкое слово — с новой строки") },
+                label = { Text(stringResource(R.string.dictionary_label)) },
+                placeholder = { Text(stringResource(R.string.dictionary_placeholder)) },
+                supportingText = { Text(stringResource(R.string.dictionary_supporting)) },
                 minLines = 2,
                 shape = RoundedCornerShape(14.dp),
             )
@@ -507,8 +595,8 @@ private fun TestField() {
         value = text,
         onValueChange = { text = it },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Попробуйте здесь") },
-        placeholder = { Text("Откройте клавиатуру — кнопка появится над ней") },
+        label = { Text(stringResource(R.string.test_field_label)) },
+        placeholder = { Text(stringResource(R.string.test_field_placeholder)) },
         minLines = 3,
         shape = RoundedCornerShape(18.dp),
     )
@@ -526,7 +614,7 @@ private fun PrivacyNote() {
         Icon(Icons.Outlined.Lock, contentDescription = null, tint = Mint, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
         Text(
-            "Ключ и записи не проходят через сервер OpenWhispr. Аудио отправляется напрямую в OpenAI только во время диктовки.",
+            stringResource(R.string.privacy_note),
             color = Fog,
             fontSize = 12.sp,
             lineHeight = 17.sp,
@@ -544,22 +632,30 @@ private fun ApiKeyDialog(
     var value by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (hasKey) "Заменить API key" else "Подключить OpenAI") },
+        title = {
+            Text(
+                stringResource(
+                    if (hasKey) R.string.api_key_dialog_replace else R.string.api_key_dialog_connect,
+                ),
+            )
+        },
         text = {
             Column {
-                Text("Ключ шифруется Android Keystore и остаётся на этом устройстве.")
+                Text(stringResource(R.string.api_key_dialog_description))
                 Spacer(Modifier.height(14.dp))
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it.trim().take(256) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("OpenAI API key") },
+                    label = { Text(stringResource(R.string.api_key_title)) },
                     placeholder = { Text("sk-…") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                 )
                 if (hasKey) {
-                    TextButton(onClick = onDelete) { Text("Удалить сохранённый ключ", color = Coral) }
+                    TextButton(onClick = onDelete) {
+                        Text(stringResource(R.string.api_key_dialog_delete), color = Coral)
+                    }
                 }
             }
         },
@@ -568,19 +664,36 @@ private fun ApiKeyDialog(
                 onClick = { onSave(value) },
                 enabled = value.length >= 20,
                 colors = ButtonDefaults.buttonColors(containerColor = Mint, contentColor = Ink),
-            ) { Text("Сохранить") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
         containerColor = Panel,
         titleContentColor = White,
         textContentColor = Fog,
     )
 }
 
+@Composable
 private fun Set<DictationLanguage>.summary(): String = when (size) {
-    0 -> "Авто"
+    0 -> stringResource(R.string.dictation_languages_summary_auto)
     1 -> first().title()
-    else -> "Выбрано: $size"
+    else -> stringResource(R.string.dictation_languages_summary_count, size)
+}
+
+@Composable
+private fun AppLanguage.shortLabel(): String = when (this) {
+    AppLanguage.SYSTEM -> stringResource(R.string.language_system_short)
+    AppLanguage.RUSSIAN -> "RU"
+    AppLanguage.ENGLISH -> "EN"
+}
+
+@Composable
+private fun AppLanguage.title(): String = when (this) {
+    AppLanguage.SYSTEM -> stringResource(R.string.language_system)
+    AppLanguage.RUSSIAN -> stringResource(R.string.language_russian)
+    AppLanguage.ENGLISH -> stringResource(R.string.language_english)
 }
 
 private fun DictationLanguage.title(): String = when (this) {

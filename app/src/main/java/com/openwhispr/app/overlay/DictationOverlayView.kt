@@ -11,6 +11,7 @@ import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
+import com.openwhispr.app.R
 import com.openwhispr.app.service.DictationPhase
 import com.openwhispr.app.service.DictationState
 import kotlin.math.PI
@@ -52,14 +53,16 @@ class DictationOverlayView(
 
     init {
         elevation = 12f * density
-        contentDescription = "Начать диктовку"
+        contentDescription = context.getString(R.string.overlay_start_dictation)
         isClickable = true
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     fun render(state: DictationState) {
         phase = state.phase
-        contentDescription = if (state.isActive) "Остановить диктовку" else "Начать диктовку"
+        contentDescription = context.getString(
+            if (state.isActive) R.string.overlay_stop_dictation else R.string.overlay_start_dictation,
+        )
         if (state.isActive && !waveformAnimator.isStarted) waveformAnimator.start()
         if (!state.isActive && waveformAnimator.isStarted) waveformAnimator.cancel()
         invalidate()
@@ -82,14 +85,14 @@ class DictationOverlayView(
             phase == DictationPhase.LISTENING || phase == DictationPhase.PROCESSING
         if (active) drawWave(canvas) else drawMic(canvas)
         val label = when (phase) {
-            DictationPhase.CONNECTING -> "СОЕДИНЯЮ"
-            DictationPhase.LISTENING -> "СТОП"
-            DictationPhase.PROCESSING -> "ПИШУ…"
-            DictationPhase.ERROR -> "ЕЩЁ РАЗ"
-            else -> "ГОВОРИТЬ"
+            DictationPhase.CONNECTING -> R.string.overlay_connecting
+            DictationPhase.LISTENING -> R.string.overlay_listening
+            DictationPhase.PROCESSING -> R.string.overlay_processing
+            DictationPhase.ERROR -> R.string.overlay_retry
+            else -> R.string.overlay_idle
         }
         val baseline = height / 2f - (text.ascent() + text.descent()) / 2f
-        canvas.drawText(label, 54f * density, baseline, text)
+        canvas.drawText(context.getString(label), 54f * density, baseline, text)
         if (active) canvas.drawCircle(width - 13f * density, height / 2f, 3.5f * density, status)
     }
 

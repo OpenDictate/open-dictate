@@ -1,6 +1,9 @@
 package com.openwhispr.app.network
 
+import android.content.res.Resources
 import android.util.Base64
+import androidx.annotation.StringRes
+import com.openwhispr.app.R
 import com.openwhispr.app.audio.PcmAudioRecorder
 import com.openwhispr.app.model.DictationLanguage
 import kotlinx.coroutines.CompletableDeferred
@@ -26,7 +29,9 @@ import java.util.ArrayDeque
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-class OpenAiTranscriptionClient {
+class OpenAiTranscriptionClient(
+    private val resources: Resources? = null,
+) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(12, TimeUnit.SECONDS)
         .readTimeout(45, TimeUnit.SECONDS)
@@ -150,11 +155,31 @@ class OpenAiTranscriptionClient {
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            fail(OpenAiException(response?.let { "OpenAI вернул ${it.code}" } ?: t.userMessage(), t))
+            fail(
+                OpenAiException(
+                    response?.let {
+                        localized(
+                            R.string.error_openai_response_code,
+                            "OpenAI returned ${it.code}",
+                            it.code,
+                        )
+                    } ?: t.userMessage(),
+                    t,
+                ),
+            )
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            if (!completed.isCompleted) fail(OpenAiException("Соединение закрыто до получения текста"))
+            if (!completed.isCompleted) {
+                fail(
+                    OpenAiException(
+                        localized(
+                            R.string.error_connection_closed,
+                            "The connection closed before text was received",
+                        ),
+                    ),
+                )
+            }
         }
 
         fun sendAudio(bytes: ByteArray) {
@@ -173,13 +198,20 @@ class OpenAiTranscriptionClient {
                 .put("type", "input_audio_buffer.append")
                 .put("audio", Base64.encodeToString(bytes, Base64.NO_WRAP))
             if (socket?.send(event.toString()) != true) {
-                fail(OpenAiException("Не удалось отправить звук"))
+                fail(
+                    OpenAiException(
+                        localized(R.string.error_audio_send_failed, "Could not send audio"),
+                    ),
+                )
             }
         }
 
         fun commit() {
             check(socket?.send("{\"type\":\"input_audio_buffer.commit\"}") == true) {
-                "Соединение уже закрыто"
+                localized(
+                    R.string.error_connection_already_closed,
+                    "The connection is already closed",
+                )
             }
         }
 
@@ -203,14 +235,15 @@ class OpenAiTranscriptionClient {
     private fun readRealtimeError(event: JSONObject): String {
         val error = event.optJSONObject("error")
         return error?.optString("message")?.takeIf { it.isNotBlank() }
-            ?: "OpenAI отклонил поток аудио"
+            ?: localized(R.string.error_stream_rejected, "OpenAI rejected the audio stream")
     }
 
     private fun errorMessage(code: Int, body: String): String {
         val apiMessage = runCatching {
             JSONObject(body).optJSONObject("error")?.optString("message")
         }.getOrNull()
-        return apiMessage?.takeIf { it.isNotBlank() } ?: "OpenAI вернул ошибку $code"
+        return apiMessage?.takeIf { it.isNotBlank() }
+            ?: localized(R.string.error_openai_code, "OpenAI returned error $code", code)
     }
 
     private suspend fun Call.await(): Response = kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
@@ -227,10 +260,22 @@ class OpenAiTranscriptionClient {
     }
 
     private fun Throwable.userMessage(): String = when (this) {
-        is java.net.UnknownHostException -> "Нет подключения к интернету"
-        is java.net.SocketTimeoutException -> "OpenAI не ответил вовремя"
-        else -> message ?: "Ошибка сети"
+        is java.net.UnknownHostException -> localized(
+            R.string.error_no_internet,
+            "No internet connection",
+        )
+        is java.net.SocketTimeoutException -> localized(
+            R.string.error_openai_timeout,
+            "OpenAI did not respond in time",
+        )
+        else -> message ?: localized(R.string.error_network, "Network error")
     }
+
+    private fun localized(
+        @StringRes id: Int,
+        fallback: String,
+        vararg formatArgs: Any,
+    ): String = resources?.getString(id, *formatArgs) ?: fallback
 
     companion object {
         private const val TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"

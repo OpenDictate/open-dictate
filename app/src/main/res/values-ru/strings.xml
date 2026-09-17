@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="language_switcher_description">Изменить язык приложения</string>
+    <string name="language_system">Язык системы</string>
+    <string name="language_system_short">АВТО</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_english">English</string>
+
+    <string name="section_mode">РЕЖИМ</string>
+    <string name="section_readiness">ГОТОВНОСТЬ</string>
+    <string name="section_accuracy">ТОЧНОСТЬ</string>
+
+    <string name="hero_active">Говорите.\nЯ уже пишу.</string>
+    <string name="hero_idle">Говорите.\nТекст уже там.</string>
+    <string name="hero_subtitle">Одна кнопка над клавиатурой — в любом приложении.</string>
+
+    <string name="model_live_title">Мгновенно</string>
+    <string name="model_live_description">Показывает слова прямо во время речи.</string>
+    <string name="model_live_badge">ВО ВРЕМЯ РЕЧИ</string>
+    <string name="model_accurate_title">Точнее</string>
+    <string name="model_accurate_description">Сначала слушает, затем вставляет готовый текст.</string>
+    <string name="model_accurate_badge">ПО УМОЛЧАНИЮ</string>
+
+    <string name="api_key_saved">Сохранён в Android Keystore</string>
+    <string name="api_key_needed">Нужен ваш личный ключ</string>
+    <string name="action_change">ИЗМЕНИТЬ</string>
+    <string name="action_add">ДОБАВИТЬ</string>
+    <string name="microphone_title">Микрофон</string>
+    <string name="microphone_granted">Разрешение выдано</string>
+    <string name="microphone_usage">Только во время диктовки</string>
+    <string name="action_ready">ГОТОВО</string>
+    <string name="action_allow">РАЗРЕШИТЬ</string>
+    <string name="keyboard_button_title">Кнопка над клавиатурой</string>
+    <string name="accessibility_enabled">Сервис специальных возможностей включён</string>
+    <string name="accessibility_enable_hint">Включите OpenWhispr в настройках</string>
+    <string name="action_enable">ВКЛЮЧИТЬ</string>
+
+    <string name="dictation_languages_title">Языки диктовки</string>
+    <string name="dictation_languages_subtitle">Выберите один или несколько</string>
+    <string name="dictation_languages_automatic">Определять автоматически</string>
+    <string name="dictation_languages_summary_auto">Авто</string>
+    <string name="dictation_languages_summary_count">Выбрано: %1$d</string>
+    <string name="trailing_period_title">Точка в конце</string>
+    <string name="trailing_period_subtitle">Добавлять точку после последней фразы</string>
+    <string name="dictionary_label">Словарь (необязательно)</string>
+    <string name="dictionary_placeholder">Kotlin\nOpenWhispr\nCompose</string>
+    <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
+    <string name="test_field_label">Попробуйте здесь</string>
+    <string name="test_field_placeholder">Откройте клавиатуру — кнопка появится над ней</string>
+    <string name="privacy_note">Ключ и записи не проходят через сервер OpenWhispr. Аудио отправляется напрямую в OpenAI только во время диктовки.</string>
+
+    <string name="api_key_dialog_replace">Заменить API key</string>
+    <string name="api_key_dialog_connect">Подключить OpenAI</string>
+    <string name="api_key_dialog_description">Ключ шифруется Android Keystore и остаётся на этом устройстве.</string>
+    <string name="api_key_dialog_delete">Удалить сохранённый ключ</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_cancel">Отмена</string>
+
+    <string name="accessibility_description">Показывает кнопку диктовки над клавиатурой и вставляет распознанную речь в активное поле ввода.</string>
+    <string name="overlay_start_dictation">Начать диктовку</string>
+    <string name="overlay_stop_dictation">Остановить диктовку</string>
+    <string name="overlay_connecting">СОЕДИНЯЮ</string>
+    <string name="overlay_listening">СТОП</string>
+    <string name="overlay_processing">ПИШУ…</string>
+    <string name="overlay_retry">ЕЩЁ РАЗ</string>
+    <string name="overlay_idle">ГОВОРИТЬ</string>
+
+    <string name="notification_channel">Диктовка</string>
+    <string name="notification_recording">OpenWhispr слушает</string>
+    <string name="notification_processing">OpenWhispr распознаёт запись</string>
+    <string name="notification_text_recording">Нажмите ещё раз, чтобы закончить</string>
+    <string name="notification_text_processing">Текст скоро появится в поле</string>
+    <string name="stop">Остановить</string>
+
+    <string name="error_add_api_key">Добавьте OpenAI API key в приложении</string>
+    <string name="error_speech_not_recognized">Речь не распознана</string>
+    <string name="error_transcription_failed">Не удалось распознать речь</string>
+    <string name="error_openai_response_code">OpenAI вернул %1$d</string>
+    <string name="error_connection_closed">Соединение закрыто до получения текста</string>
+    <string name="error_audio_send_failed">Не удалось отправить звук</string>
+    <string name="error_connection_already_closed">Соединение уже закрыто</string>
+    <string name="error_stream_rejected">OpenAI отклонил поток аудио</string>
+    <string name="error_openai_code">OpenAI вернул ошибку %1$d</string>
+    <string name="error_no_internet">Нет подключения к интернету</string>
+    <string name="error_openai_timeout">OpenAI не ответил вовремя</string>
+    <string name="error_network">Ошибка сети</string>
+</resources>

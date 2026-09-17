@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 class DictationForegroundService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val apiClient = OpenAiTranscriptionClient()
+    private val apiClient by lazy { OpenAiTranscriptionClient(resources) }
     private var activeJob: Job? = null
     private var stopSignal = CompletableDeferred<Unit>()
 
@@ -57,7 +57,7 @@ class DictationForegroundService : Service() {
     private fun startDictation() {
         val apiKey = SecureApiKeyStore(this).get()
         if (apiKey.isNullOrBlank()) {
-            publishError("Добавьте OpenAI API key в приложении")
+            publishError(getString(R.string.error_add_api_key))
             stopSelf()
             return
         }
@@ -125,7 +125,9 @@ class DictationForegroundService : Service() {
                     }
                 }
                 val formattedTranscript = TranscriptFormatter.format(transcript, keepTrailingPeriod)
-                if (formattedTranscript.isBlank()) throw IllegalStateException("Речь не распознана")
+                if (formattedTranscript.isBlank()) {
+                    throw IllegalStateException(getString(R.string.error_speech_not_recognized))
+                }
                 DictationStateBus.set(
                     DictationState(sessionId, DictationPhase.COMPLETED, formattedTranscript),
                 )
@@ -134,7 +136,10 @@ class DictationForegroundService : Service() {
             } catch (error: Throwable) {
                 recorder.stop()
                 if (error !is kotlinx.coroutines.CancellationException) {
-                    publishError(error.message ?: "Не удалось распознать речь", sessionId)
+                    publishError(
+                        error.message ?: getString(R.string.error_transcription_failed),
+                        sessionId,
+                    )
                     delay(3_000)
                     DictationStateBus.set(DictationState(sessionId, DictationPhase.IDLE))
                 }
@@ -193,7 +198,15 @@ class DictationForegroundService : Service() {
             .setContentTitle(
                 getString(if (processing) R.string.notification_processing else R.string.notification_recording),
             )
-            .setContentText(if (processing) "Текст скоро появится в поле" else "Нажмите ещё раз, чтобы закончить")
+            .setContentText(
+                getString(
+                    if (processing) {
+                        R.string.notification_text_processing
+                    } else {
+                        R.string.notification_text_recording
+                    },
+                ),
+            )
             .setOngoing(true)
             .setSilent(true)
             .setContentIntent(contentIntent)
