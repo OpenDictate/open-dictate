@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenWhispr</string>
+    <string name="accessibility_description">Показывает кнопку диктовки над клавиатурой и вставляет распознанную речь в активное поле ввода.</string>
+    <string name="notification_channel">Диктовка</string>
+    <string name="notification_recording">OpenWhispr слушает</string>
+    <string name="notification_processing">OpenWhispr распознаёт запись</string>
+    <string name="stop">Остановить</string>
+</resources>
+

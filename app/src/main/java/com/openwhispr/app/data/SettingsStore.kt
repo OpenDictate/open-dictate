@@ -1,0 +1,29 @@
+package com.openwhispr.app.data
+
+import android.content.Context
+import androidx.core.content.edit
+import com.openwhispr.app.model.LanguageHint
+import com.openwhispr.app.model.TranscriptionModel
+
+class SettingsStore(context: Context) {
+    private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+
+    var model: TranscriptionModel
+        get() = TranscriptionModel.fromStored(prefs.getString(KEY_MODEL, null))
+        set(value) = prefs.edit { putString(KEY_MODEL, value.name) }
+
+    var language: LanguageHint
+        get() = LanguageHint.fromStored(prefs.getString(KEY_LANGUAGE, null))
+        set(value) = prefs.edit { putString(KEY_LANGUAGE, value.name) }
+
+    var prompt: String
+        get() = prefs.getString(KEY_PROMPT, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_PROMPT, value.trim()) }
+
+    companion object {
+        private const val FILE_NAME = "openwhispr_settings"
+        private const val KEY_MODEL = "model"
+        private const val KEY_LANGUAGE = "language"
+        private const val KEY_PROMPT = "prompt"
+    }
+}
