@@ -10,14 +10,27 @@ enum class TranscriptionModel(val apiName: String) {
     }
 }
 
-enum class LanguageHint(val code: String?) {
-    AUTO(null),
+enum class DictationLanguage(val code: String) {
     RUSSIAN("ru"),
-    ENGLISH("en");
+    ENGLISH("en"),
+    UKRAINIAN("uk"),
+    GERMAN("de"),
+    FRENCH("fr"),
+    SPANISH("es"),
+    ITALIAN("it"),
+    PORTUGUESE("pt"),
+    POLISH("pl"),
+    TURKISH("tr"),
+    CHINESE("zh"),
+    JAPANESE("ja"),
+    KOREAN("ko"),
+    ARABIC("ar"),
+    HINDI("hi");
 
     companion object {
-        fun fromStored(value: String?): LanguageHint =
-            entries.firstOrNull { it.name == value } ?: AUTO
+        fun fromStored(values: Set<String>?, legacyValue: String? = null): Set<DictationLanguage> {
+            val storedNames = values ?: setOfNotNull(legacyValue).filterNot { it == "AUTO" }.toSet()
+            return entries.filterTo(linkedSetOf()) { it.name in storedNames }
+        }
     }
 }
-

@@ -77,7 +77,7 @@ class DictationForegroundService : Service() {
                         apiKey = apiKey,
                         scope = scope,
                         recorder = recorder,
-                        language = settings.language,
+                        languages = settings.languages,
                         prompt = settings.prompt,
                         waitForStop = { stopSignal.await() },
                         onReady = {
@@ -117,7 +117,7 @@ class DictationForegroundService : Service() {
                         apiClient.transcribeFile(
                             apiKey,
                             file,
-                            settings.language,
+                            settings.languages,
                             settings.prompt,
                         )
                     }

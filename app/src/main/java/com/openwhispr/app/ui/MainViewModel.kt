@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import com.openwhispr.app.data.SecureApiKeyStore
 import com.openwhispr.app.data.SettingsStore
-import com.openwhispr.app.model.LanguageHint
+import com.openwhispr.app.model.DictationLanguage
 import com.openwhispr.app.model.TranscriptionModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +21,7 @@ data class MainUiState(
     val accessibilityEnabled: Boolean = false,
     val microphoneGranted: Boolean = false,
     val model: TranscriptionModel = TranscriptionModel.LIVE,
-    val language: LanguageHint = LanguageHint.AUTO,
+    val languages: Set<DictationLanguage> = emptySet(),
     val prompt: String = "",
 )
 
@@ -56,9 +56,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(model = model) }
     }
 
-    fun selectLanguage(language: LanguageHint) {
-        settings.language = language
-        mutableState.update { it.copy(language = language) }
+    fun toggleLanguage(language: DictationLanguage) {
+        val languages = mutableState.value.languages.toMutableSet().apply {
+            if (!add(language)) remove(language)
+        }
+        settings.languages = languages
+        mutableState.update { it.copy(languages = languages) }
+    }
+
+    fun useAutomaticLanguageDetection() {
+        settings.languages = emptySet()
+        mutableState.update { it.copy(languages = emptySet()) }
     }
 
     fun savePrompt(prompt: String) {
@@ -71,7 +79,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
         microphoneGranted = hasMicrophonePermission(getApplication()),
         model = settings.model,
-        language = settings.language,
+        languages = settings.languages,
         prompt = settings.prompt,
     )
 
@@ -85,4 +93,3 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
 }
-

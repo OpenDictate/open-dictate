@@ -43,6 +43,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -79,7 +81,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.openwhispr.app.model.LanguageHint
+import com.openwhispr.app.model.DictationLanguage
 import com.openwhispr.app.model.TranscriptionModel
 import com.openwhispr.app.service.DictationPhase
 import com.openwhispr.app.service.DictationStateBus
@@ -173,9 +175,10 @@ fun OpenWhisprApp(viewModel: MainViewModel = viewModel()) {
                 SectionLabel("ТОЧНОСТЬ")
                 Spacer(Modifier.height(10.dp))
                 PreferencesCard(
-                    language = state.language,
+                    languages = state.languages,
                     prompt = state.prompt,
-                    onLanguage = viewModel::selectLanguage,
+                    onToggleLanguage = viewModel::toggleLanguage,
+                    onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
                     onPrompt = viewModel::savePrompt,
                 )
                 Spacer(Modifier.height(20.dp))
@@ -411,9 +414,10 @@ private fun SetupCard(
 
 @Composable
 private fun PreferencesCard(
-    language: LanguageHint,
+    languages: Set<DictationLanguage>,
     prompt: String,
-    onLanguage: (LanguageHint) -> Unit,
+    onToggleLanguage: (DictationLanguage) -> Unit,
+    onAutomaticLanguageDetection: () -> Unit,
     onPrompt: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -425,20 +429,35 @@ private fun PreferencesCard(
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Язык речи", color = White, fontWeight = FontWeight.SemiBold)
-                    Text("Подсказка ускоряет распознавание", color = Fog, fontSize = 12.sp)
+                    Text("Языки диктовки", color = White, fontWeight = FontWeight.SemiBold)
+                    Text("Выберите один или несколько", color = Fog, fontSize = 12.sp)
                 }
                 Box {
                     TextButton(onClick = { expanded = true }) {
-                        Text(language.title(), color = Mint)
+                        Text(languages.summary(), color = Mint)
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        LanguageHint.entries.forEach { item ->
+                        DropdownMenuItem(
+                            text = { Text("Определять автоматически") },
+                            onClick = onAutomaticLanguageDetection,
+                            leadingIcon = {
+                                Checkbox(
+                                    checked = languages.isEmpty(),
+                                    onCheckedChange = null,
+                                    colors = languageCheckboxColors(),
+                                )
+                            },
+                        )
+                        DictationLanguage.entries.forEach { item ->
                             DropdownMenuItem(
                                 text = { Text(item.title()) },
-                                onClick = {
-                                    expanded = false
-                                    onLanguage(item)
+                                onClick = { onToggleLanguage(item) },
+                                leadingIcon = {
+                                    Checkbox(
+                                        checked = item in languages,
+                                        onCheckedChange = null,
+                                        colors = languageCheckboxColors(),
+                                    )
                                 },
                             )
                         }
@@ -453,9 +472,9 @@ private fun PreferencesCard(
                     onPrompt(promptText)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Контекст (необязательно)") },
+                label = { Text("Словарь (необязательно)") },
                 placeholder = { Text("Например: Kotlin, OpenWhispr, Compose") },
-                supportingText = { Text("Имена и термины, которые важно услышать точно") },
+                supportingText = { Text("Имена, термины и редкие слова через запятую") },
                 minLines = 2,
                 shape = RoundedCornerShape(14.dp),
             )
@@ -540,11 +559,36 @@ private fun ApiKeyDialog(
     )
 }
 
-private fun LanguageHint.title(): String = when (this) {
-    LanguageHint.AUTO -> "Авто"
-    LanguageHint.RUSSIAN -> "Русский"
-    LanguageHint.ENGLISH -> "English"
+private fun Set<DictationLanguage>.summary(): String = when (size) {
+    0 -> "Авто"
+    1 -> first().title()
+    else -> "Выбрано: $size"
 }
+
+private fun DictationLanguage.title(): String = when (this) {
+    DictationLanguage.RUSSIAN -> "Русский"
+    DictationLanguage.ENGLISH -> "English"
+    DictationLanguage.UKRAINIAN -> "Українська"
+    DictationLanguage.GERMAN -> "Deutsch"
+    DictationLanguage.FRENCH -> "Français"
+    DictationLanguage.SPANISH -> "Español"
+    DictationLanguage.ITALIAN -> "Italiano"
+    DictationLanguage.PORTUGUESE -> "Português"
+    DictationLanguage.POLISH -> "Polski"
+    DictationLanguage.TURKISH -> "Türkçe"
+    DictationLanguage.CHINESE -> "中文"
+    DictationLanguage.JAPANESE -> "日本語"
+    DictationLanguage.KOREAN -> "한국어"
+    DictationLanguage.ARABIC -> "العربية"
+    DictationLanguage.HINDI -> "हिन्दी"
+}
+
+@Composable
+private fun languageCheckboxColors() = CheckboxDefaults.colors(
+    checkedColor = Mint,
+    checkmarkColor = Ink,
+    uncheckedColor = Fog,
+)
 
 @Composable
 private fun OpenWhisprTheme(content: @Composable () -> Unit) {

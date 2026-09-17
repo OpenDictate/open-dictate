@@ -2,7 +2,7 @@ package com.openwhispr.app.network
 
 import android.util.Base64
 import com.openwhispr.app.audio.PcmAudioRecorder
-import com.openwhispr.app.model.LanguageHint
+import com.openwhispr.app.model.DictationLanguage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +39,7 @@ class OpenAiTranscriptionClient {
     suspend fun transcribeFile(
         apiKey: String,
         audioFile: File,
-        language: LanguageHint,
+        languages: Set<DictationLanguage>,
         prompt: String,
     ): String = withContext(Dispatchers.IO) {
         val multipart = MultipartBody.Builder()
@@ -48,7 +48,7 @@ class OpenAiTranscriptionClient {
             .addFormDataPart("file", "dictation.wav", audioFile.asRequestBody(WAV))
             .apply {
                 if (prompt.isNotBlank()) addFormDataPart("prompt", prompt)
-                language.code?.let { addFormDataPart("languages[]", it) }
+                languages.forEach { addFormDataPart("languages[]", it.code) }
             }
             .build()
         val request = authorizedRequest(apiKey, TRANSCRIPTIONS_URL)
@@ -65,13 +65,13 @@ class OpenAiTranscriptionClient {
         apiKey: String,
         scope: CoroutineScope,
         recorder: PcmAudioRecorder,
-        language: LanguageHint,
+        languages: Set<DictationLanguage>,
         prompt: String,
         waitForStop: suspend () -> Unit,
         onReady: () -> Unit,
         onPartial: (String) -> Unit,
     ): String {
-        val session = LiveSession(apiKey, language, prompt, onPartial)
+        val session = LiveSession(apiKey, languages, prompt, onPartial)
         try {
             session.connect()
             recorder.start(scope, session::sendAudio)
@@ -89,7 +89,7 @@ class OpenAiTranscriptionClient {
 
     private inner class LiveSession(
         private val apiKey: String,
-        private val language: LanguageHint,
+        private val languages: Set<DictationLanguage>,
         private val prompt: String,
         private val onPartial: (String) -> Unit,
     ) : WebSocketListener() {
@@ -110,7 +110,7 @@ class OpenAiTranscriptionClient {
         }
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            webSocket.send(sessionUpdate(language, prompt).toString())
+            webSocket.send(sessionUpdate(languages, prompt).toString())
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -191,12 +191,14 @@ class OpenAiTranscriptionClient {
         }
     }
 
-    private fun sessionUpdate(language: LanguageHint, prompt: String): JSONObject {
+    private fun sessionUpdate(languages: Set<DictationLanguage>, prompt: String): JSONObject {
         val transcription = JSONObject()
             .put("model", "gpt-live-transcribe")
             .put("delay", "minimal")
         if (prompt.isNotBlank()) transcription.put("prompt", prompt)
-        language.code?.let { transcription.put("languages", JSONArray().put(it)) }
+        if (languages.isNotEmpty()) {
+            transcription.put("languages", JSONArray(languages.map { it.code }))
+        }
         val input = JSONObject()
             .put("format", JSONObject().put("type", "audio/pcm").put("rate", PcmAudioRecorder.SAMPLE_RATE))
             .put("transcription", transcription)
