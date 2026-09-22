@@ -36,11 +36,15 @@ data class EditableTextSnapshot(
     companion object {
         fun capture(
             displayedText: CharSequence?,
+            hintText: CharSequence?,
             selectionStart: Int,
             selectionEnd: Int,
             isShowingHintText: Boolean,
         ): EditableTextSnapshot {
-            val original = if (isShowingHintText) "" else displayedText?.toString().orEmpty()
+            val displayed = displayedText?.toString().orEmpty()
+            val hint = hintText?.toString()
+            val displaysHint = isShowingHintText || hint != null && displayed == hint
+            val original = if (displaysHint) "" else displayed
             return EditableTextSnapshot(original, selectionStart, selectionEnd)
         }
     }

@@ -8,9 +8,10 @@ import org.junit.Test
 
 class EditableTextSnapshotTest {
     @Test
-    fun `does not capture a field hint as user text`() {
+    fun `does not put a field placeholder into the final message when hint flag is set`() {
         val snapshot = EditableTextSnapshot.capture(
             displayedText = "Ask anything",
+            hintText = "Ask anything",
             selectionStart = 0,
             selectionEnd = 0,
             isShowingHintText = true,
@@ -20,9 +21,23 @@ class EditableTextSnapshotTest {
     }
 
     @Test
+    fun `does not put a field placeholder into the final message when hint flag is missing`() {
+        val snapshot = EditableTextSnapshot.capture(
+            displayedText = "Message",
+            hintText = "Message",
+            selectionStart = 0,
+            selectionEnd = 0,
+            isShowingHintText = false,
+        )
+
+        assertEquals("Final transcript", snapshot.compose("Final transcript"))
+    }
+
+    @Test
     fun `preserves actual user text when hint is not showing`() {
         val snapshot = EditableTextSnapshot.capture(
             displayedText = "Draft",
+            hintText = "Message",
             selectionStart = 5,
             selectionEnd = 5,
             isShowingHintText = false,
@@ -38,6 +53,7 @@ class EditableTextSnapshotTest {
         assertFalse(
             EditableTextSnapshot.capture(
                 displayedText = "Ask anything",
+                hintText = "Ask anything",
                 selectionStart = 0,
                 selectionEnd = 0,
                 isShowingHintText = true,
