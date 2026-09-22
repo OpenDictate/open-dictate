@@ -39,12 +39,30 @@ class OpenAiTranscriptionClientTest {
         assertEquals("audio/pcm", input.getJSONObject("format").getString("type"))
         assertEquals(24_000, input.getJSONObject("format").getInt("rate"))
         assertEquals("gpt-live-transcribe", transcription.getString("model"))
-        assertEquals("OpenDictate", transcription.getString("prompt"))
+        assertEquals(
+            "Cyrillic text uses Russian orthography.\nOpenDictate",
+            transcription.getString("prompt"),
+        )
         assertEquals(listOf("en", "ru"), transcription.getJSONArray("languages").let { languages ->
             List(languages.length()) { index -> languages.getString(index) }
         })
         assertFalse(transcription.has("delay"))
         assertTrue(input.isNull("turn_detection"))
+    }
+
+    @Test
+    fun `Russian transcription context does not override selected Ukrainian`() {
+        val event = realtimeTranscriptionSessionUpdate(
+            languages = setOf(DictationLanguage.RUSSIAN, DictationLanguage.UKRAINIAN),
+            prompt = "OpenDictate",
+        )
+        val transcription = event
+            .getJSONObject("session")
+            .getJSONObject("audio")
+            .getJSONObject("input")
+            .getJSONObject("transcription")
+
+        assertEquals("OpenDictate", transcription.getString("prompt"))
     }
 
     @Test
