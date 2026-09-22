@@ -1,6 +1,7 @@
 package com.opendictate.app.data
 
 import android.content.Context
+import android.content.res.Resources
 import androidx.core.content.edit
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.TextTransformationModel
@@ -23,6 +24,7 @@ class SettingsStore(context: Context) {
         get() = DictationLanguage.fromStored(
             values = prefs.getStringSet(KEY_LANGUAGES, null),
             legacyValue = prefs.getString(KEY_LANGUAGE, null),
+            defaultValues = systemDictationLanguages(),
         )
         set(value) = prefs.edit {
             putStringSet(KEY_LANGUAGES, value.mapTo(mutableSetOf()) { it.name })
@@ -52,4 +54,11 @@ class SettingsStore(context: Context) {
         private const val KEY_TRANSFORMATION_BUTTON_ENABLED = "transformation_button_enabled"
         private const val DEFAULT_PROMPT = "OpenDictate\nDictate"
     }
+}
+
+private fun systemDictationLanguages(): Set<DictationLanguage> {
+    val locales = Resources.getSystem().configuration.locales
+    return DictationLanguage.fromLanguageTags(
+        List(locales.size()) { index -> locales[index].toLanguageTag() },
+    )
 }

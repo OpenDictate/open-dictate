@@ -55,7 +55,8 @@ class OpenAiTranscriptionClient(
             .addFormDataPart("model", "gpt-transcribe")
             .addFormDataPart("file", "dictation.wav", audioFile.asRequestBody(WAV))
             .apply {
-                if (prompt.isNotBlank()) addFormDataPart("prompt", prompt)
+                val context = transcriptionPrompt(languages, prompt)
+                if (context.isNotBlank()) addFormDataPart("prompt", context)
                 languages.forEach { addFormDataPart("languages[]", it.code) }
             }
             .build()
@@ -622,7 +623,8 @@ internal fun realtimeTranscriptionSessionUpdate(
 ): JSONObject {
     val transcription = JSONObject()
         .put("model", "gpt-live-transcribe")
-    if (prompt.isNotBlank()) transcription.put("prompt", prompt)
+    val context = transcriptionPrompt(languages, prompt)
+    if (context.isNotBlank()) transcription.put("prompt", context)
     if (languages.isNotEmpty()) {
         transcription.put("languages", JSONArray(languages.map { it.code }))
     }
@@ -639,5 +641,17 @@ internal fun realtimeTranscriptionSessionUpdate(
                 .put("audio", JSONObject().put("input", input)),
         )
 }
+
+private const val RUSSIAN_ORTHOGRAPHY_CONTEXT = "Cyrillic text uses Russian orthography."
+
+internal fun transcriptionPrompt(
+    languages: Set<DictationLanguage>,
+    userPrompt: String,
+): String = buildList {
+    if (DictationLanguage.RUSSIAN in languages && DictationLanguage.UKRAINIAN !in languages) {
+        add(RUSSIAN_ORTHOGRAPHY_CONTEXT)
+    }
+    userPrompt.trim().takeIf(String::isNotEmpty)?.let(::add)
+}.joinToString("\n")
 
 class OpenAiException(message: String, cause: Throwable? = null) : IOException(message, cause)
