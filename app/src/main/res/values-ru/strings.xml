@@ -61,7 +61,7 @@
     <string name="action_allow">РАЗРЕШИТЬ</string>
     <string name="keyboard_button_title">Кнопка над клавиатурой</string>
     <string name="accessibility_enabled">Сервис специальных возможностей включён</string>
-    <string name="accessibility_enable_hint">Включите OpenWispr в настройках</string>
+    <string name="accessibility_enable_hint">Включите OpenDictate в настройках</string>
     <string name="action_enable">ВКЛЮЧИТЬ</string>
 
     <string name="dictation_languages_title">Языки диктовки</string>
@@ -72,11 +72,11 @@
     <string name="trailing_period_title">Точка в конце</string>
     <string name="trailing_period_subtitle">Добавлять точку после последней фразы</string>
     <string name="dictionary_label">Словарь (необязательно)</string>
-    <string name="dictionary_placeholder">Kotlin\nOpenWispr\nCompose</string>
+    <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
     <string name="test_field_label">Попробуйте здесь</string>
     <string name="test_field_placeholder">Откройте клавиатуру — кнопка появится над ней</string>
-    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenWispr. Транскрипты хранятся только на устройстве. Аудио, преобразуемый текст и история, в которой вы явно запускаете AI-поиск, отправляются напрямую в OpenAI.</string>
+    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenDictate. Транскрипты хранятся только на устройстве. Аудио, преобразуемый текст и история, в которой вы явно запускаете AI-поиск, отправляются напрямую в OpenAI.</string>
 
     <string name="api_key_dialog_replace">Заменить API key</string>
     <string name="api_key_dialog_connect">Подключить OpenAI</string>
@@ -110,16 +110,16 @@
     <string name="overlay_transform">ИЗМЕНИТЬ</string>
     <string name="overlay_transforming">МЕНЯЮ…</string>
     <string name="overlay_transforming_description">Преобразование текста. Потяните влево, чтобы отменить.</string>
-    <string name="clipboard_transcript_label">Транскрипция OpenWispr</string>
+    <string name="clipboard_transcript_label">Транскрипция OpenDictate</string>
     <string name="transcript_copied_to_clipboard">Поле ввода недоступно. Текст скопирован в буфер обмена.</string>
 
     <string name="notification_channel">Диктовка</string>
-    <string name="notification_recording">OpenWispr слушает</string>
-    <string name="notification_processing">OpenWispr распознаёт запись</string>
+    <string name="notification_recording">OpenDictate слушает</string>
+    <string name="notification_processing">OpenDictate распознаёт запись</string>
     <string name="notification_text_recording">Нажмите ещё раз, чтобы закончить</string>
     <string name="notification_text_processing">Текст скоро появится в поле</string>
     <string name="notification_instruction_recording">Опишите, как изменить текст</string>
-    <string name="notification_transforming">OpenWispr преобразует текст</string>
+    <string name="notification_transforming">OpenDictate преобразует текст</string>
     <string name="notification_text_instruction_recording">Нажмите ещё раз, когда закончите инструкцию</string>
     <string name="notification_text_transforming">Преобразованный текст скоро появится в поле</string>
     <string name="notification_model_messages_channel">Сообщения преобразования</string>

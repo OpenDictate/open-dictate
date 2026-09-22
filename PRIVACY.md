@@ -1,6 +1,6 @@
 # Privacy
 
-OpenWispr does not operate a backend and does not include analytics or ads.
+OpenDictate does not operate a backend and does not include analytics or ads.
 
 - Your OpenAI API key is encrypted locally with Android Keystore.
 - Microphone audio is sent directly to OpenAI only while dictation is active.
@@ -10,10 +10,10 @@ OpenWispr does not operate a backend and does not include analytics or ads.
   Android backups.
 - Fuzzy history search runs entirely on the device. AI history search runs only
   when you explicitly tap its button and sends the search query and transcript
-  text directly to OpenAI. OpenWispr sets API response storage to off for these
+  text directly to OpenAI. OpenDictate sets API response storage to off for these
   requests and does not persist the response.
 - If the original text field is no longer available when processing finishes,
-  OpenWispr copies the completed result to the Android system clipboard so it
+  OpenDictate copies the completed result to the Android system clipboard so it
   is not lost. Clipboard access and retention are controlled by Android and
   other software on the device.
 - Accessibility is used to find the focused editable control, detect the input
@@ -22,7 +22,7 @@ OpenWispr does not operate a backend and does not include analytics or ads.
   no selection—and your spoken instruction are sent directly to OpenAI. Other
   screen contents are not collected, persisted, or transmitted.
 - A transformation may return a short answer or error as a private Android
-  notification. OpenWispr does not persist that message; Android notification
+  notification. OpenDictate does not persist that message; Android notification
   history is controlled by the device's system settings.
 - Android backup is disabled for the application.
 

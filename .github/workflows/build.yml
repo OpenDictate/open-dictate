@@ -27,6 +27,6 @@ jobs:
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug --stacktrace
       - uses: actions/upload-artifact@v7
         with:
-          name: openwispr-debug-${{ github.sha }}
+          name: opendictate-debug-${{ github.sha }}
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

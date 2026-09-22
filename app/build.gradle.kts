@@ -9,9 +9,9 @@ val signingKey = providers.environmentVariable("SIGNING_KEY")
 val keyAliasValue = providers.environmentVariable("KEY_ALIAS")
 val keyPasswordValue = providers.environmentVariable("KEY_PASSWORD")
 val storePasswordValue = providers.environmentVariable("STORE_PASSWORD")
-val releaseStore = layout.buildDirectory.file("keystore/openwispr-release.jks")
-val appVersionName = providers.gradleProperty("appVersionName").orElse("0.6.0-rc.3")
-val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(15)
+val releaseStore = layout.buildDirectory.file("keystore/opendictate-release.jks")
+val appVersionName = providers.gradleProperty("appVersionName").orElse("0.6.0")
+val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(16)
 val previewVersionSuffix = providers.gradleProperty("previewVersionSuffix").orElse("-preview")
 
 if (signingKey.isPresent) {
@@ -21,11 +21,11 @@ if (signingKey.isPresent) {
 }
 
 android {
-    namespace = "com.openwispr.app"
+    namespace = "com.opendictate.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.openwispr.app"
+        applicationId = "com.opendictate.app"
         minSdk = 26
         targetSdk = 36
         versionCode = appVersionCode.get()
