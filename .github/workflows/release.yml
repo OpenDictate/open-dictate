@@ -52,3 +52,4 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
           files: OpenWispr-${{ github.ref_name }}.apk
+          prerelease: ${{ contains(github.ref_name, '-') }}

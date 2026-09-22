@@ -5,6 +5,13 @@ OpenWispr does not operate a backend and does not include analytics or ads.
 - Your OpenAI API key is encrypted locally with Android Keystore.
 - Microphone audio is sent directly to OpenAI only while dictation is active.
 - Temporary recordings used by GPT Transcribe are deleted after each request.
+- Successful dictation transcripts are stored in the application's private
+  local database so you can review and delete them. They are not included in
+  Android backups.
+- Fuzzy history search runs entirely on the device. AI history search runs only
+  when you explicitly tap its button and sends the search query and transcript
+  text directly to OpenAI. OpenWispr sets API response storage to off for these
+  requests and does not persist the response.
 - Accessibility is used to find the focused editable control, detect the input
   method window, and update its text. When you explicitly start a text
   transformation, the selected text—or the focused field's text when there is
