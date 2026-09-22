@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OpenWispr"
+rootProject.name = "OpenDictate"
 include(":app")
 

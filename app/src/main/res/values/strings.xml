@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">OpenWispr</string>
+    <string name="app_name" translatable="false">OpenDictate</string>
 
     <string name="language_switcher_description">Change app language</string>
     <string name="language_system">System language</string>
@@ -64,7 +64,7 @@
     <string name="action_allow">ALLOW</string>
     <string name="keyboard_button_title">Button above the keyboard</string>
     <string name="accessibility_enabled">Accessibility service enabled</string>
-    <string name="accessibility_enable_hint">Enable OpenWispr in Settings</string>
+    <string name="accessibility_enable_hint">Enable OpenDictate in Settings</string>
     <string name="action_enable">ENABLE</string>
 
     <string name="dictation_languages_title">Dictation languages</string>
@@ -75,11 +75,11 @@
     <string name="trailing_period_title">Final period</string>
     <string name="trailing_period_subtitle">Add a period after the last phrase</string>
     <string name="dictionary_label">Vocabulary (optional)</string>
-    <string name="dictionary_placeholder">Kotlin\nOpenWispr\nCompose</string>
+    <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
     <string name="test_field_label">Try it here</string>
     <string name="test_field_placeholder">Open the keyboard — the button will appear above it</string>
-    <string name="privacy_note">Your key, recordings, and text never pass through an OpenWispr server. Transcripts are saved only on this device. Audio, text you transform, and history you explicitly search with AI are sent directly to OpenAI.</string>
+    <string name="privacy_note">Your key, recordings, and text never pass through an OpenDictate server. Transcripts are saved only on this device. Audio, text you transform, and history you explicitly search with AI are sent directly to OpenAI.</string>
 
     <string name="api_key_dialog_replace">Replace API key</string>
     <string name="api_key_dialog_connect">Connect OpenAI</string>
@@ -113,16 +113,16 @@
     <string name="overlay_transform">TRANSFORM</string>
     <string name="overlay_transforming">EDITING…</string>
     <string name="overlay_transforming_description">Transforming text. Swipe left to cancel.</string>
-    <string name="clipboard_transcript_label">OpenWispr transcript</string>
+    <string name="clipboard_transcript_label">OpenDictate transcript</string>
     <string name="transcript_copied_to_clipboard">No text field available. Transcript copied to clipboard.</string>
 
     <string name="notification_channel">Dictation</string>
-    <string name="notification_recording">OpenWispr is listening</string>
-    <string name="notification_processing">OpenWispr is transcribing</string>
+    <string name="notification_recording">OpenDictate is listening</string>
+    <string name="notification_processing">OpenDictate is transcribing</string>
     <string name="notification_text_recording">Tap again to finish</string>
     <string name="notification_text_processing">The text will appear in the field shortly</string>
     <string name="notification_instruction_recording">Describe how to transform the text</string>
-    <string name="notification_transforming">OpenWispr is transforming text</string>
+    <string name="notification_transforming">OpenDictate is transforming text</string>
     <string name="notification_text_instruction_recording">Tap again when the instruction is complete</string>
     <string name="notification_text_transforming">The transformed text will appear in the field shortly</string>
     <string name="notification_model_messages_channel">Transformation messages</string>

@@ -1,0 +1,175 @@
+package com.opendictate.app.overlay
+
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.min
+import kotlin.math.roundToInt
+
+internal object OverlayMotion {
+    private const val WIDTH_DP = 52f
+    private const val MENU_WIDTH_DP = 204f
+    private const val ACTION_HEIGHT_DP = 52f
+    private const val GAP_DP = 8f
+    private const val FIELD_CLEARANCE_DP = 8f
+    private const val KEYBOARD_CLEARANCE_DP = 72f
+    private const val TOP_MARGIN_DP = 16f
+
+    fun windowOffsetY(
+        displayHeightPx: Int,
+        keyboardTopPx: Int,
+        focusedFieldTopPx: Int?,
+        density: Float,
+        showMenu: Boolean = true,
+    ): Int {
+        val fieldTop = focusedFieldTopPx?.takeIf { it in 0..keyboardTopPx }
+        val anchorTop = fieldTop ?: keyboardTopPx
+        val clearance = if (fieldTop != null) FIELD_CLEARANCE_DP else KEYBOARD_CLEARANCE_DP
+        val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
+            dpToPx(clearance, density)
+        val maximumOffset = (
+            displayHeightPx - heightPx(density, showMenu) -
+                dpToPx(TOP_MARGIN_DP, density)
+        ).coerceAtLeast(0)
+        return min(preferredOffset, maximumOffset)
+    }
+
+    fun heightPx(density: Float, showMenu: Boolean = true): Int {
+        val heightDp = if (showMenu) {
+            ACTION_HEIGHT_DP * 2 + GAP_DP
+        } else {
+            ACTION_HEIGHT_DP
+        }
+        return dpToPx(heightDp, density)
+    }
+
+    fun widthPx(density: Float, showMenu: Boolean = false): Int = dpToPx(
+        if (showMenu) MENU_WIDTH_DP else WIDTH_DP,
+        density,
+    )
+
+    fun actionHeightPx(density: Float): Int = dpToPx(ACTION_HEIGHT_DP, density)
+
+    fun gapPx(density: Float): Int = dpToPx(GAP_DP, density)
+
+    private fun dpToPx(dp: Float, density: Float): Int = (dp * density).toInt()
+}
+
+internal object OverlaySwipeToDismiss {
+    // The overlay sits close to the right screen edge, so the threshold must be reachable from
+    // the center of the 52 dp button without requiring the pointer to move beyond the display.
+    private const val DISMISS_THRESHOLD_DP = 32f
+    private const val MAX_DRAG_DP = 48f
+
+    fun dragOffsetPx(downRawX: Float, currentRawX: Float, density: Float): Float =
+        (currentRawX - downRawX).coerceIn(0f, MAX_DRAG_DP * density)
+
+    fun isArmed(
+        downRawX: Float,
+        downRawY: Float,
+        currentRawX: Float,
+        currentRawY: Float,
+        density: Float,
+    ): Boolean {
+        val horizontal = currentRawX - downRawX
+        val vertical = abs(currentRawY - downRawY)
+        return horizontal >= DISMISS_THRESHOLD_DP * density && horizontal >= vertical
+    }
+
+}
+
+internal class OverlayVisibilitySession {
+    private var dismissed = false
+
+    fun dismiss() {
+        dismissed = true
+    }
+
+    fun shouldShow(hasEligibleTarget: Boolean): Boolean {
+        if (!hasEligibleTarget) dismissed = false
+        return hasEligibleTarget && !dismissed
+    }
+}
+
+internal object OverlaySwipeToCancel {
+    private const val CANCEL_THRESHOLD_DP = 72f
+    private const val MAX_DRAG_DP = 104f
+
+    fun dragOffsetPx(downRawX: Float, currentRawX: Float, density: Float): Float =
+        (downRawX - currentRawX).coerceIn(0f, MAX_DRAG_DP * density)
+
+    fun isArmed(
+        downRawX: Float,
+        downRawY: Float,
+        currentRawX: Float,
+        currentRawY: Float,
+        density: Float,
+    ): Boolean {
+        val horizontal = downRawX - currentRawX
+        val vertical = abs(currentRawY - downRawY)
+        return horizontal >= CANCEL_THRESHOLD_DP * density && horizontal >= vertical
+    }
+
+    fun progress(offsetPx: Float, density: Float): Float =
+        (offsetPx / (CANCEL_THRESHOLD_DP * density)).coerceIn(0f, 1f)
+}
+
+/**
+ * A critically damped position follower whose velocity survives target changes.
+ *
+ * Accessibility reports several intermediate keyboard bounds while the IME animates. Restarting
+ * a conventional easing animation for every bound resets its velocity and makes the overlay look
+ * like it is moving in a series of small starts and stops. This motion keeps both its rendered
+ * position and velocity when a new bound arrives.
+ */
+internal class OverlayPositionMotion(initialPositionPx: Int) {
+    var positionPx: Float = initialPositionPx.toFloat()
+        private set
+
+    var velocityPxPerSecond: Float = 0f
+        private set
+
+    var targetPositionPx: Int = initialPositionPx
+        private set
+
+    val isAtRest: Boolean
+        get() = abs(positionPx - targetPositionPx) < REST_POSITION_EPSILON_PX &&
+            abs(velocityPxPerSecond) < REST_VELOCITY_EPSILON_PX_PER_SECOND
+
+    fun retarget(positionPx: Int) {
+        targetPositionPx = positionPx
+    }
+
+    fun advanceByMillis(elapsedMillis: Long): Int {
+        if (isAtRest) {
+            positionPx = targetPositionPx.toFloat()
+            velocityPxPerSecond = 0f
+            return targetPositionPx
+        }
+
+        val elapsedSeconds = elapsedMillis
+            .coerceIn(1L, MAX_FRAME_MILLIS)
+            .toFloat() / 1_000f
+        val target = targetPositionPx.toFloat()
+        val displacement = positionPx - target
+        val velocityTerm = velocityPxPerSecond + ANGULAR_FREQUENCY * displacement
+        val decay = exp(-ANGULAR_FREQUENCY * elapsedSeconds)
+
+        positionPx = target + (displacement + velocityTerm * elapsedSeconds) * decay
+        velocityPxPerSecond = (
+            velocityPxPerSecond - ANGULAR_FREQUENCY * velocityTerm * elapsedSeconds
+        ) * decay
+
+        if (isAtRest) {
+            positionPx = target
+            velocityPxPerSecond = 0f
+        }
+        return positionPx.roundToInt()
+    }
+
+    private companion object {
+        const val ANGULAR_FREQUENCY = 30f
+        const val MAX_FRAME_MILLIS = 64L
+        const val REST_POSITION_EPSILON_PX = 0.5f
+        const val REST_VELOCITY_EPSILON_PX_PER_SECOND = 5f
+    }
+}

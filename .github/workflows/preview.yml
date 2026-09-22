@@ -93,13 +93,13 @@ jobs:
           PREVIEW_TAG: ${{ steps.plan.outputs.preview_tag }}
           PREVIOUS_TAG: ${{ steps.plan.outputs.previous_tag }}
         run: |
-          cp app/build/outputs/apk/preview/app-preview.apk "OpenWispr-${PREVIEW_TAG}.apk"
+          cp app/build/outputs/apk/preview/app-preview.apk "OpenDictate-${PREVIEW_TAG}.apk"
           {
             echo '## Preview build'
             echo
             echo '> For testing only. This build may be unstable.'
             echo
-            echo "The preview app installs alongside the stable app as \`com.openwispr.app.preview\`."
+            echo "The preview app installs alongside the stable app as \`com.opendictate.app.preview\`."
             echo 'Disable the stable accessibility service before enabling the preview service to avoid two overlays.'
             echo 'The preview app has separate settings, so its API key must be configured separately.'
             echo
@@ -112,7 +112,7 @@ jobs:
         env:
           PREVIEW_TAG: ${{ steps.plan.outputs.preview_tag }}
         run: |
-          gh release create "$PREVIEW_TAG" "OpenWispr-${PREVIEW_TAG}.apk" \
+          gh release create "$PREVIEW_TAG" "OpenDictate-${PREVIEW_TAG}.apk" \
             --target "$GITHUB_SHA" \
             --title "$PREVIEW_TAG" \
             --notes-file RELEASE_NOTES.md \

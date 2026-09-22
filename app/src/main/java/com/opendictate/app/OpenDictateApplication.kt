@@ -1,0 +1,8 @@
+package com.opendictate.app
+
+import android.app.Application
+import com.opendictate.app.data.TranscriptHistoryStore
+
+class OpenDictateApplication : Application() {
+    val transcriptHistoryStore by lazy { TranscriptHistoryStore(this) }
+}

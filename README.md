@@ -1,8 +1,11 @@
-# OpenWispr for Android
+# OpenDictate for Android
 
-OpenWispr turns speech into text in any Android app. When the keyboard opens,
+OpenDictate turns speech into text in any Android app. When the keyboard opens,
 a small dictation button appears above it. Text is inserted directly into the
 active input field through the Android Accessibility API.
+
+Visit the [OpenDictate website](https://opendictate.github.io/open-dictate/) or
+download the latest APK from [GitHub Releases](https://github.com/OpenDictate/open-dictate/releases/latest).
 
 ## Features
 
@@ -26,13 +29,17 @@ active input field through the Android Accessibility API.
 ## Installation
 
 1. Download the APK from the **Releases** page and install it.
-2. Open OpenWispr and save your OpenAI API key.
+2. Open OpenDictate and save your OpenAI API key.
 3. Grant microphone access.
-4. Enable the OpenWispr service in the system accessibility settings.
+4. Enable the OpenDictate service in the system accessibility settings.
 5. Open an input field in any app. Tap the floating button for dictation, or
    long-press it and choose **Edit text** to speak an instruction that transforms
    selected text (or the whole field when nothing is selected). Swipe the button
    right to hide it until the keyboard closes.
+
+> Version 0.6.0 introduces the new `com.opendictate.app` package identity. It
+> installs separately from earlier builds, so enable the new accessibility
+> service and enter the API key again after installation.
 
 > Accessibility access is used to detect the open keyboard and update the
 > focused field. Text is sent to OpenAI only when you explicitly start a
@@ -64,7 +71,7 @@ The `.github/workflows/preview.yml` workflow publishes a signed prerelease from
 `main` every Sunday when commits have landed since the previous release. It can
 also be run manually. Preview tags follow the next-patch SemVer form
 `vX.Y.Z-preview.N` (for example, `v0.5.1-preview.123`). The preview APK uses the
-`com.openwispr.app.preview` application ID and installs alongside the stable app.
+`com.opendictate.app.preview` application ID and installs alongside the stable app.
 It has separate settings; disable the stable accessibility service before
 enabling the preview service to avoid showing two overlays.
 
