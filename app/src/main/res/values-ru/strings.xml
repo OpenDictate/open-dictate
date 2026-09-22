@@ -18,7 +18,6 @@
     <string name="history_search_label">Поиск по истории</string>
     <string name="history_search_placeholder">Слова, опечатки или описание</string>
     <string name="history_clear_search">Очистить поиск</string>
-    <string name="history_fuzzy_search">Нечёткий</string>
     <string name="history_ai_search">AI-поиск</string>
     <string name="history_ai_privacy">Нечёткий поиск работает на устройстве. AI-поиск отправляет запрос и тексты транскриптов напрямую в OpenAI с отключённым хранением ответа.</string>
     <string name="history_empty_title">Здесь пока пусто</string>

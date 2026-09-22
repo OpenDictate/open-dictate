@@ -20,7 +20,6 @@
     <string name="history_search_label">Search history</string>
     <string name="history_search_placeholder">Words, typos, or a description</string>
     <string name="history_clear_search">Clear search</string>
-    <string name="history_fuzzy_search">Fuzzy</string>
     <string name="history_ai_search">AI search</string>
     <string name="history_ai_privacy">Fuzzy search stays on this device. AI search sends your query and transcript text directly to OpenAI with response storage disabled.</string>
     <string name="history_empty_title">Nothing saved yet</string>

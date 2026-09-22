@@ -161,38 +161,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateHistoryQuery(query: String) {
         historySearchJob?.cancel()
-        val updatedQuery = query.take(MAX_HISTORY_QUERY_CHARS)
-        mutableHistoryState.update { state ->
-            state.copy(
-                query = updatedQuery,
-                searchMode = if (
-                    updatedQuery.isNotBlank() && state.searchMode == HistorySearchMode.FUZZY
-                ) {
-                    HistorySearchMode.FUZZY
-                } else {
-                    HistorySearchMode.NONE
-                },
-                aiMatchIds = emptyList(),
-                isLoading = false,
-                errorMessage = null,
-            )
-        }
-    }
-
-    fun runFuzzyHistorySearch() {
-        historySearchJob?.cancel()
-        mutableHistoryState.update {
-            it.copy(
-                searchMode = if (it.query.isBlank()) {
-                    HistorySearchMode.NONE
-                } else {
-                    HistorySearchMode.FUZZY
-                },
-                aiMatchIds = emptyList(),
-                isLoading = false,
-                errorMessage = null,
-            )
-        }
+        mutableHistoryState.update { it.withHistoryQuery(query) }
     }
 
     fun runAiHistorySearch() {
@@ -291,7 +260,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
 
-    private companion object {
-        const val MAX_HISTORY_QUERY_CHARS = 300
-    }
+}
+
+private const val MAX_HISTORY_QUERY_CHARS = 300
+
+internal fun HistoryUiState.withHistoryQuery(query: String): HistoryUiState {
+    val updatedQuery = query.take(MAX_HISTORY_QUERY_CHARS)
+    return copy(
+        query = updatedQuery,
+        searchMode = if (updatedQuery.isBlank()) {
+            HistorySearchMode.NONE
+        } else {
+            HistorySearchMode.FUZZY
+        },
+        aiMatchIds = emptyList(),
+        isLoading = false,
+        errorMessage = null,
+    )
 }
