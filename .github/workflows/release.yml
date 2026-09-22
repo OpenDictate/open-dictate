@@ -2,7 +2,9 @@ name: Android release
 
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v*"
+      - "!v*-preview.*"
   workflow_dispatch:
 
 permissions:

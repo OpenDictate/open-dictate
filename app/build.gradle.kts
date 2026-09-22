@@ -10,6 +10,9 @@ val keyAliasValue = providers.environmentVariable("KEY_ALIAS")
 val keyPasswordValue = providers.environmentVariable("KEY_PASSWORD")
 val storePasswordValue = providers.environmentVariable("STORE_PASSWORD")
 val releaseStore = layout.buildDirectory.file("keystore/openwispr-release.jks")
+val appVersionName = providers.gradleProperty("appVersionName").orElse("0.5.0")
+val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(12)
+val previewVersionSuffix = providers.gradleProperty("previewVersionSuffix").orElse("-preview")
 
 if (signingKey.isPresent) {
     val output = releaseStore.get().asFile
@@ -25,8 +28,8 @@ android {
         applicationId = "com.openwispr.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "0.5.0"
+        versionCode = appVersionCode.get()
+        versionName = appVersionName.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -58,6 +61,11 @@ android {
             if (signingKey.isPresent) {
                 signingConfig = signingConfigs.getByName("release")
             }
+        }
+        create("preview") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = previewVersionSuffix.get()
         }
     }
 
