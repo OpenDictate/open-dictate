@@ -555,6 +555,9 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             selectionStart = textSelectionStart.coerceAtLeast(0),
             selectionEnd = textSelectionEnd.coerceAtLeast(0),
             isShowingHintText = isShowingHintText,
+            supportsTextSelection = actionList.any {
+                it.id == AccessibilityNodeInfo.ACTION_SET_SELECTION
+            },
         )
 
     companion object {

@@ -40,10 +40,19 @@ data class EditableTextSnapshot(
             selectionStart: Int,
             selectionEnd: Int,
             isShowingHintText: Boolean,
+            supportsTextSelection: Boolean = true,
         ): EditableTextSnapshot {
             val displayed = displayedText?.toString().orEmpty()
             val hint = hintText?.toString()
-            val displaysHint = isShowingHintText || hint != null && displayed == hint
+            // Some custom editors expose a drawn hint as text despite having an empty buffer.
+            val customHint = displayed.isNotEmpty() &&
+                hint == null &&
+                selectionStart == 0 &&
+                selectionEnd == 0 &&
+                !supportsTextSelection
+            val displaysHint = isShowingHintText ||
+                hint != null && displayed == hint ||
+                customHint
             val original = if (displaysHint) "" else displayed
             return EditableTextSnapshot(original, selectionStart, selectionEnd)
         }
