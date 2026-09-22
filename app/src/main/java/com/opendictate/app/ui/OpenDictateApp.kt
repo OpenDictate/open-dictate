@@ -132,6 +132,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
     val historyState by viewModel.historyState.collectAsState()
     val dictation by DictationStateBus.state.collectAsState()
     val context = LocalContext.current
+    val clipboardTranscriptLabel = stringResource(R.string.clipboard_transcript_label)
     val lifecycleOwner = LocalLifecycleOwner.current
     var showKeyDialog by remember { mutableStateOf(false) }
     var showHistory by rememberSaveable { mutableStateOf(false) }
@@ -168,6 +169,18 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     onBack = { showHistory = false },
                     onQueryChange = viewModel::updateHistoryQuery,
                     onAiSearch = viewModel::runAiHistorySearch,
+                    onCopy = { transcript ->
+                        val clip = ClipData.newPlainText(
+                            clipboardTranscriptLabel,
+                            transcript,
+                        ).apply {
+                            description.extras = PersistableBundle().apply {
+                                putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+                            }
+                        }
+                        context.getSystemService(ClipboardManager::class.java)
+                            .setPrimaryClip(clip)
+                    },
                     onDelete = viewModel::deleteHistoryItem,
                     modifier = Modifier.padding(padding),
                 )

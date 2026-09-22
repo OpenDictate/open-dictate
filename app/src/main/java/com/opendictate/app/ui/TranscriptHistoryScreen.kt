@@ -1,6 +1,8 @@
 package com.opendictate.app.ui
 
+import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,12 +41,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,6 +66,7 @@ import com.opendictate.app.R
 import com.opendictate.app.data.TranscriptHistoryItem
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun TranscriptHistoryScreen(
@@ -68,113 +74,134 @@ internal fun TranscriptHistoryScreen(
     onBack: () -> Unit,
     onQueryChange: (String) -> Unit,
     onAiSearch: () -> Unit,
+    onCopy: (String) -> Unit,
     onDelete: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pendingDelete by remember { mutableStateOf<TranscriptHistoryItem?>(null) }
     val focusManager = LocalFocusManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val copiedMessage = stringResource(R.string.history_copied)
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Ink)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+    Box(
+        modifier = modifier.fillMaxSize().background(Ink),
     ) {
-        HistoryTopBar(entryCount = state.entries.size, onBack = onBack)
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.history_search_label)) },
-                placeholder = { Text(stringResource(R.string.history_search_placeholder)) },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Search, contentDescription = null)
-                },
-                trailingIcon = if (state.query.isNotEmpty()) {
-                    {
-                        IconButton(onClick = { onQueryChange("") }) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+        ) {
+            HistoryTopBar(entryCount = state.entries.size, onBack = onBack)
+            Column(Modifier.padding(horizontal = 20.dp)) {
+                OutlinedTextField(
+                    value = state.query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.history_search_label)) },
+                    placeholder = { Text(stringResource(R.string.history_search_placeholder)) },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Search, contentDescription = null)
+                    },
+                    trailingIcon = if (state.query.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { onQueryChange("") }) {
+                                Icon(
+                                    Icons.Outlined.Close,
+                                    contentDescription = stringResource(R.string.history_clear_search),
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = { focusManager.clearFocus() },
+                    ),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                SearchModeButton(
+                    text = stringResource(R.string.history_ai_search),
+                    selected = state.searchMode == HistorySearchMode.AI,
+                    enabled = state.query.isNotBlank() &&
+                        state.entries.isNotEmpty() &&
+                        !state.isLoading,
+                    icon = {
+                        if (state.isLoading && state.searchMode == HistorySearchMode.AI) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Ink,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
                             Icon(
-                                Icons.Outlined.Close,
-                                contentDescription = stringResource(R.string.history_clear_search),
+                                Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
                             )
                         }
-                    }
-                } else {
-                    null
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = { focusManager.clearFocus() },
-                ),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-            )
-            Spacer(Modifier.height(12.dp))
-            SearchModeButton(
-                text = stringResource(R.string.history_ai_search),
-                selected = state.searchMode == HistorySearchMode.AI,
-                enabled = state.query.isNotBlank() &&
-                    state.entries.isNotEmpty() &&
-                    !state.isLoading,
-                icon = {
-                    if (state.isLoading && state.searchMode == HistorySearchMode.AI) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = Ink,
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Icon(
-                            Icons.Outlined.AutoAwesome,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                },
-                onClick = {
-                    focusManager.clearFocus()
-                    onAiSearch()
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.Top) {
-                Icon(
-                    Icons.Outlined.Lock,
-                    contentDescription = null,
-                    tint = Fog,
-                    modifier = Modifier.size(15.dp),
+                    },
+                    onClick = {
+                        focusManager.clearFocus()
+                        onAiSearch()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.width(7.dp))
-                Text(
-                    text = stringResource(R.string.history_ai_privacy),
-                    color = Fog,
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp,
-                )
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        Icons.Outlined.Lock,
+                        contentDescription = null,
+                        tint = Fog,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        text = stringResource(R.string.history_ai_privacy),
+                        color = Fog,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                    )
+                }
+                state.errorMessage?.let { message ->
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = message,
+                        color = Coral,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Coral.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
-            state.errorMessage?.let { message ->
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = message,
-                    color = Coral,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Coral.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                        .padding(12.dp),
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                )
-            }
-            Spacer(Modifier.height(16.dp))
+
+            HistoryList(
+                state = state,
+                onCopy = { text ->
+                    onCopy(text)
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                        scope.launch { snackbarHostState.showSnackbar(copiedMessage) }
+                    }
+                },
+                onDeleteRequest = { pendingDelete = it },
+                modifier = Modifier.weight(1f),
+            )
         }
 
-        HistoryList(
-            state = state,
-            onDeleteRequest = { pendingDelete = it },
-            modifier = Modifier.weight(1f),
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(20.dp),
         )
     }
 
@@ -283,6 +310,7 @@ private fun SearchModeButton(
 @Composable
 private fun HistoryList(
     state: HistoryUiState,
+    onCopy: (String) -> Unit,
     onDeleteRequest: (TranscriptHistoryItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -313,7 +341,11 @@ private fun HistoryList(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(state.visibleEntries, key = TranscriptHistoryItem::id) { item ->
-                    HistoryItem(item = item, onDeleteRequest = { onDeleteRequest(item) })
+                    HistoryItem(
+                        item = item,
+                        onCopy = { onCopy(item.text) },
+                        onDeleteRequest = { onDeleteRequest(item) },
+                    )
                 }
             }
         }
@@ -346,8 +378,13 @@ private fun HistoryEmptyState(title: String, message: String, modifier: Modifier
 }
 
 @Composable
-private fun HistoryItem(item: TranscriptHistoryItem, onDeleteRequest: () -> Unit) {
+private fun HistoryItem(
+    item: TranscriptHistoryItem,
+    onCopy: () -> Unit,
+    onDeleteRequest: () -> Unit,
+) {
     var expanded by rememberSaveable(item.id) { mutableStateOf(false) }
+    val copyAction = stringResource(R.string.history_copy_item)
     val formattedDate = remember(item.createdAtEpochMillis) {
         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
             .format(Date(item.createdAtEpochMillis))
@@ -373,6 +410,9 @@ private fun HistoryItem(item: TranscriptHistoryItem, onDeleteRequest: () -> Unit
                 Spacer(Modifier.height(7.dp))
                 Text(
                     text = item.text,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClickLabel = copyAction, onClick = onCopy),
                     color = White,
                     fontSize = 15.sp,
                     lineHeight = 21.sp,

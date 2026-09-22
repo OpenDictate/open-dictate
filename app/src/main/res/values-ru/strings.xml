@@ -24,6 +24,8 @@
     <string name="history_empty_message">Успешные диктовки будут автоматически появляться здесь.</string>
     <string name="history_no_results_title">Ничего не найдено</string>
     <string name="history_no_results_message">Попробуйте более короткую фразу, другое написание или AI-поиск.</string>
+    <string name="history_copy_item">Скопировать транскрипт</string>
+    <string name="history_copied">Транскрипт скопирован</string>
     <string name="history_delete_item">Удалить транскрипт</string>
     <string name="history_delete_title">Удалить этот транскрипт?</string>
     <string name="history_delete_message">Транскрипт будет удалён с устройства без возможности восстановления.</string>

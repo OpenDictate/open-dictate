@@ -26,6 +26,8 @@
     <string name="history_empty_message">Successful dictations will appear here automatically.</string>
     <string name="history_no_results_title">No matches</string>
     <string name="history_no_results_message">Try a shorter phrase, another spelling, or AI search.</string>
+    <string name="history_copy_item">Copy transcript</string>
+    <string name="history_copied">Transcript copied</string>
     <string name="history_delete_item">Delete transcript</string>
     <string name="history_delete_title">Delete this transcript?</string>
     <string name="history_delete_message">This removes the transcript from this device and cannot be undone.</string>
