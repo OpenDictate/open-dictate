@@ -10,8 +10,8 @@ class OverlayMotionTest {
     fun `window height matches visible actions`() {
         val density = 2f
 
-        assertEquals(224, OverlayMotion.heightPx(density, showTransformation = true))
-        assertEquals(104, OverlayMotion.heightPx(density, showTransformation = false))
+        assertEquals(224, OverlayMotion.heightPx(density, showMenu = true))
+        assertEquals(104, OverlayMotion.heightPx(density, showMenu = false))
     }
 
     @Test
@@ -22,18 +22,27 @@ class OverlayMotionTest {
     }
 
     @Test
+    fun `open menu widens the overlay without changing action height`() {
+        val density = 2f
+
+        assertEquals(408, OverlayMotion.widthPx(density, showMenu = true))
+        assertEquals(224, OverlayMotion.heightPx(density, showMenu = true))
+        assertEquals(104, OverlayMotion.actionHeightPx(density))
+    }
+
+    @Test
     fun `single action overlay can sit closer to the top edge`() {
         val offset = OverlayMotion.windowOffsetY(
             displayHeightPx = 600,
             keyboardTopPx = 80,
             focusedFieldTopPx = null,
             density = 2f,
-            showTransformation = false,
+            showMenu = false,
         )
 
         val buttonTop = 600 - offset - OverlayMotion.heightPx(
             density = 2f,
-            showTransformation = false,
+            showMenu = false,
         )
         assertEquals(32f, buttonTop.toFloat(), 0.001f)
     }
@@ -54,6 +63,36 @@ class OverlayMotionTest {
         assertFalse(OverlaySwipeToCancel.isArmed(500f, 300f, 357f, 300f, density))
         assertTrue(OverlaySwipeToCancel.isArmed(500f, 300f, 356f, 340f, density))
         assertFalse(OverlaySwipeToCancel.isArmed(500f, 300f, 356f, 460f, density))
+    }
+
+    @Test
+    fun `swipe to dismiss follows rightward motion and clamps its travel`() {
+        val density = 2f
+
+        assertEquals(0f, OverlaySwipeToDismiss.dragOffsetPx(500f, 460f, density), 0.001f)
+        assertEquals(80f, OverlaySwipeToDismiss.dragOffsetPx(500f, 580f, density), 0.001f)
+        assertEquals(96f, OverlaySwipeToDismiss.dragOffsetPx(500f, 700f, density), 0.001f)
+    }
+
+    @Test
+    fun `dismiss arms only after a deliberate mostly horizontal pull`() {
+        val density = 2f
+
+        assertFalse(OverlaySwipeToDismiss.isArmed(500f, 300f, 563f, 300f, density))
+        assertTrue(OverlaySwipeToDismiss.isArmed(500f, 300f, 564f, 330f, density))
+        assertFalse(OverlaySwipeToDismiss.isArmed(500f, 300f, 564f, 380f, density))
+    }
+
+    @Test
+    fun `dismissal lasts only until the current keyboard target disappears`() {
+        val session = OverlayVisibilitySession()
+
+        assertTrue(session.shouldShow(hasEligibleTarget = true))
+        session.dismiss()
+        assertFalse(session.shouldShow(hasEligibleTarget = true))
+
+        assertFalse(session.shouldShow(hasEligibleTarget = false))
+        assertTrue(session.shouldShow(hasEligibleTarget = true))
     }
 
     @Test

@@ -15,7 +15,8 @@ active input field through the Android Accessibility API.
   a direct question or explain a failed edit in a private Android notification.
 - Your own OpenAI API key, encrypted with Android Keystore.
 - No backend, analytics, or stored recordings.
-- A floating button that appears only while the keyboard is open.
+- A floating dictation button that appears only while the keyboard is open,
+  can be dismissed with a right swipe, and reveals text editing on long-press.
 - Russian and English speech recognition, or automatic language detection.
 
 ## Installation
@@ -24,9 +25,10 @@ active input field through the Android Accessibility API.
 2. Open OpenWispr and save your OpenAI API key.
 3. Grant microphone access.
 4. Enable the OpenWispr service in the system accessibility settings.
-5. Open an input field in any app. Use the lower button for dictation, or the
-   upper button to speak an instruction that transforms selected text (or the
-   whole field when nothing is selected).
+5. Open an input field in any app. Tap the floating button for dictation, or
+   long-press it and choose **Edit text** to speak an instruction that transforms
+   selected text (or the whole field when nothing is selected). Swipe the button
+   right to hide it until the keyboard closes.
 
 > Accessibility access is used to detect the open keyboard and update the
 > focused field. Text is sent to OpenAI only when you explicitly start a

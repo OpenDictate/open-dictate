@@ -24,6 +24,7 @@ import com.openwispr.app.data.SettingsStore
 import com.openwispr.app.overlay.DictationOverlayView
 import com.openwispr.app.overlay.OverlayMotion
 import com.openwispr.app.overlay.OverlayPositionMotion
+import com.openwispr.app.overlay.OverlayVisibilitySession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,6 +47,9 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     private var overlayPositionAnimationScheduled = false
     private var lastOverlayPositionFrameNanos = 0L
     private var overlayUpdateScheduled = false
+    private val overlayVisibilitySession = OverlayVisibilitySession()
+    private var overlayMenuExpanded = false
+    private var transformationAvailable = false
     private var editableSnapshot: EditableTextSnapshot? = null
     private var targetPackage: CharSequence? = null
     private var activeSessionId = 0L
@@ -61,6 +65,8 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             onDictationClick = ::onOverlayTapped,
             onOperationCancel = ::onOverlayCancelled,
             onTransformationClick = ::onTransformationTapped,
+            onDismiss = ::onOverlayDismissed,
+            onMenuToggle = ::onOverlayMenuToggled,
         )
         scope.launch {
             DictationStateBus.state.collectLatest { state ->
@@ -97,12 +103,17 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         overlayUpdateScheduled = false
         val ime = windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
         val focused = findFocusedEditable()
-        val shouldShow = ime != null && focused?.isTextInput() == true
-        if (shouldShow) {
-            showOrMoveOverlay(ime, focused)
+        val hasEligibleTarget = ime != null && focused?.isTextInput() == true
+        if (overlayVisibilitySession.shouldShow(hasEligibleTarget)) {
+            showOrMoveOverlay(ime, requireNotNull(focused))
         } else {
+            if (!hasEligibleTarget) {
+                overlayMenuExpanded = false
+                transformationAvailable = false
+                overlay?.setMenuState(available = false, expanded = false)
+            }
             removeOverlay()
-            if (DictationStateBus.state.value.isActive) stopDictation()
+            if (!hasEligibleTarget && DictationStateBus.state.value.isActive) stopDictation()
         }
     }
 
@@ -111,22 +122,27 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         focused: AccessibilityNodeInfo,
     ) {
         val view = overlay ?: return
-        val showTransformation = settings.transformationButtonEnabled &&
+        transformationAvailable = settings.transformationButtonEnabled &&
             EditableTextSnapshot.capture(
                 displayedText = focused.text,
                 selectionStart = focused.textSelectionStart.coerceAtLeast(0),
                 selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
                 isShowingHintText = focused.isShowingHintText,
             ).hasText
-        view.setTransformationVisible(showTransformation)
-        val params = overlayParams(ime, focused, showTransformation)
+        if (!transformationAvailable) overlayMenuExpanded = false
+        val showMenu = transformationAvailable && overlayMenuExpanded
+        view.setMenuState(available = transformationAvailable, expanded = showMenu)
+        val params = overlayParams(ime, focused, showMenu)
         if (overlayAttached) {
             val currentParams = overlayLayoutParams ?: return
-            if (currentParams.height != params.height) {
+            if (currentParams.width != params.width || currentParams.height != params.height) {
+                val previousWidth = currentParams.width
                 val previousHeight = currentParams.height
+                currentParams.width = params.width
                 currentParams.height = params.height
                 runCatching { windowManager.updateViewLayout(view, currentParams) }
                     .onFailure {
+                        currentParams.width = previousWidth
                         currentParams.height = previousHeight
                         Log.w(TAG, "Could not resize accessibility overlay", it)
                     }
@@ -201,7 +217,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     private fun overlayParams(
         ime: AccessibilityWindowInfo?,
         focused: AccessibilityNodeInfo,
-        showTransformation: Boolean,
+        showMenu: Boolean,
     ): WindowManager.LayoutParams {
         val density = resources.displayMetrics.density
         val displayHeight = resources.displayMetrics.heightPixels
@@ -215,8 +231,8 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             displayHeight - (DEFAULT_KEYBOARD_HEIGHT_DP * density).toInt()
         }
         return WindowManager.LayoutParams(
-            OverlayMotion.widthPx(density),
-            OverlayMotion.heightPx(density, showTransformation),
+            OverlayMotion.widthPx(density, showMenu),
+            OverlayMotion.heightPx(density, showMenu),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -230,7 +246,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
                 keyboardTopPx = keyboardTop,
                 focusedFieldTopPx = focusedBounds.takeUnless(Rect::isEmpty)?.top,
                 density = density,
-                showTransformation = showTransformation,
+                showMenu = showMenu,
             )
         }
     }
@@ -254,6 +270,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             stopDictation()
             return
         }
+        setOverlayMenuExpanded(false)
         if (!isReadyToStart()) return
         val focused = findFocusedEditable()
         if (focused?.isTextInput() != true) return
@@ -278,6 +295,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             stopDictation()
             return
         }
+        setOverlayMenuExpanded(false)
         if (!isReadyToStart()) return
         val focused = findFocusedEditable()
         if (focused?.isTextInput() != true) return
@@ -310,6 +328,29 @@ class OpenWisprAccessibilityService : AccessibilityService() {
             .setAction(DictationForegroundService.ACTION_START_TRANSFORMATION)
             .putExtra(DictationForegroundService.EXTRA_SOURCE_TEXT, target.sourceText)
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun onOverlayDismissed() {
+        if (DictationStateBus.state.value.isActive) return
+        overlayVisibilitySession.dismiss()
+        overlayMenuExpanded = false
+        overlay?.setMenuState(available = transformationAvailable, expanded = false)
+        removeOverlay()
+    }
+
+    private fun onOverlayMenuToggled() {
+        if (DictationStateBus.state.value.isActive || !transformationAvailable) return
+        setOverlayMenuExpanded(!overlayMenuExpanded)
+    }
+
+    private fun setOverlayMenuExpanded(expanded: Boolean) {
+        if (overlayMenuExpanded == expanded) return
+        overlayMenuExpanded = expanded && transformationAvailable
+        overlay?.setMenuState(
+            available = transformationAvailable,
+            expanded = overlayMenuExpanded,
+        )
+        scheduleOverlayUpdate()
     }
 
     private fun isReadyToStart(): Boolean {

@@ -15,7 +15,7 @@
 
     <string name="hero_active">Speak.\nI’m already typing.</string>
     <string name="hero_idle">Speak.\nThe text is already there.</string>
-    <string name="hero_subtitle">Two buttons above the keyboard — in any app.</string>
+    <string name="hero_subtitle">One button above the keyboard — dictation and text editing in any app.</string>
 
     <string name="model_live_title">Instant</string>
     <string name="model_live_description">Shows words as you speak.</string>
@@ -25,8 +25,8 @@
     <string name="model_accurate_badge">DEFAULT</string>
 
     <string name="transformation_model_title">Text transformation</string>
-    <string name="transformation_model_subtitle">Select text or leave the cursor in the field, tap Transform, and speak the instruction</string>
-    <string name="transformation_button_toggle">Show the Transform button above the keyboard</string>
+    <string name="transformation_model_subtitle">Select text or leave the cursor in the field, long-press the floating button, choose Edit text, and speak the instruction</string>
+    <string name="transformation_button_toggle">Show Edit text in the floating button menu</string>
     <string name="transformation_model_luna_description">Fastest and most economical · default</string>
     <string name="transformation_model_terra_description">Balanced quality and cost</string>
     <string name="transformation_model_sol_description">Highest quality for complex edits</string>
@@ -68,9 +68,15 @@
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
 
-    <string name="accessibility_description">Shows dictation and text transformation buttons above the keyboard and updates the active text field.</string>
+    <string name="accessibility_description">Shows a dictation button above the keyboard and updates the active text field.</string>
     <string name="overlay_start_dictation">Start dictation</string>
+    <string name="overlay_start_dictation_with_actions">Start dictation. Long-press for more actions. Swipe right to hide until the keyboard closes.</string>
+    <string name="overlay_start_dictation_with_dismiss">Start dictation. Swipe right to hide until the keyboard closes.</string>
     <string name="overlay_start_transformation">Dictate a text transformation instruction</string>
+    <string name="overlay_edit_text">Edit text</string>
+    <string name="overlay_open_menu">Open more actions</string>
+    <string name="overlay_close_menu">Close more actions</string>
+    <string name="overlay_hide_for_now">Hide until the keyboard closes</string>
     <string name="overlay_stop_dictation">Stop dictation</string>
     <string name="overlay_active_dictation_description">Stop dictation. Swipe left to cancel and undo changes.</string>
     <string name="overlay_active_transformation_description">Stop recording the instruction. Swipe left to cancel the transformation.</string>

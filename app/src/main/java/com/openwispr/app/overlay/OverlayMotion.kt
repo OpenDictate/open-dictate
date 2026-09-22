@@ -7,6 +7,7 @@ import kotlin.math.roundToInt
 
 internal object OverlayMotion {
     private const val WIDTH_DP = 52f
+    private const val MENU_WIDTH_DP = 204f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
     private const val FIELD_CLEARANCE_DP = 8f
@@ -18,7 +19,7 @@ internal object OverlayMotion {
         keyboardTopPx: Int,
         focusedFieldTopPx: Int?,
         density: Float,
-        showTransformation: Boolean = true,
+        showMenu: Boolean = true,
     ): Int {
         val fieldTop = focusedFieldTopPx?.takeIf { it in 0..keyboardTopPx }
         val anchorTop = fieldTop ?: keyboardTopPx
@@ -26,14 +27,14 @@ internal object OverlayMotion {
         val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
             dpToPx(clearance, density)
         val maximumOffset = (
-            displayHeightPx - heightPx(density, showTransformation) -
+            displayHeightPx - heightPx(density, showMenu) -
                 dpToPx(TOP_MARGIN_DP, density)
         ).coerceAtLeast(0)
         return min(preferredOffset, maximumOffset)
     }
 
-    fun heightPx(density: Float, showTransformation: Boolean = true): Int {
-        val heightDp = if (showTransformation) {
+    fun heightPx(density: Float, showMenu: Boolean = true): Int {
+        val heightDp = if (showMenu) {
             ACTION_HEIGHT_DP * 2 + GAP_DP
         } else {
             ACTION_HEIGHT_DP
@@ -41,13 +42,52 @@ internal object OverlayMotion {
         return dpToPx(heightDp, density)
     }
 
-    fun widthPx(density: Float): Int = dpToPx(WIDTH_DP, density)
+    fun widthPx(density: Float, showMenu: Boolean = false): Int = dpToPx(
+        if (showMenu) MENU_WIDTH_DP else WIDTH_DP,
+        density,
+    )
 
     fun actionHeightPx(density: Float): Int = dpToPx(ACTION_HEIGHT_DP, density)
 
     fun gapPx(density: Float): Int = dpToPx(GAP_DP, density)
 
     private fun dpToPx(dp: Float, density: Float): Int = (dp * density).toInt()
+}
+
+internal object OverlaySwipeToDismiss {
+    // The overlay sits close to the right screen edge, so the threshold must be reachable from
+    // the center of the 52 dp button without requiring the pointer to move beyond the display.
+    private const val DISMISS_THRESHOLD_DP = 32f
+    private const val MAX_DRAG_DP = 48f
+
+    fun dragOffsetPx(downRawX: Float, currentRawX: Float, density: Float): Float =
+        (currentRawX - downRawX).coerceIn(0f, MAX_DRAG_DP * density)
+
+    fun isArmed(
+        downRawX: Float,
+        downRawY: Float,
+        currentRawX: Float,
+        currentRawY: Float,
+        density: Float,
+    ): Boolean {
+        val horizontal = currentRawX - downRawX
+        val vertical = abs(currentRawY - downRawY)
+        return horizontal >= DISMISS_THRESHOLD_DP * density && horizontal >= vertical
+    }
+
+}
+
+internal class OverlayVisibilitySession {
+    private var dismissed = false
+
+    fun dismiss() {
+        dismissed = true
+    }
+
+    fun shouldShow(hasEligibleTarget: Boolean): Boolean {
+        if (!hasEligibleTarget) dismissed = false
+        return hasEligibleTarget && !dismissed
+    }
 }
 
 internal object OverlaySwipeToCancel {
