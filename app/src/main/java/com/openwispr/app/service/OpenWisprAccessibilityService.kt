@@ -2,6 +2,9 @@ package com.openwispr.app.service
 
 import android.Manifest
 import android.accessibilityservice.AccessibilityService
+import android.content.ClipData
+import android.content.ClipDescription
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
@@ -9,6 +12,7 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PersistableBundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
@@ -16,6 +20,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.openwispr.app.MainActivity
 import com.openwispr.app.R
@@ -54,7 +59,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
     private var targetPackage: CharSequence? = null
     private var activeSessionId = 0L
     private var ignoredSessionId = 0L
-    private var lastAppliedTranscript = ""
+    private val transcriptDelivery = TranscriptDeliveryTracker()
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -284,7 +289,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         targetPackage = focused.packageName
         activeSessionId = 0L
         ignoredSessionId = 0L
-        lastAppliedTranscript = ""
+        transcriptDelivery.reset()
         val intent = Intent(this, DictationForegroundService::class.java)
             .setAction(DictationForegroundService.ACTION_START)
         ContextCompat.startForegroundService(this, intent)
@@ -323,7 +328,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         targetPackage = focused.packageName
         activeSessionId = 0L
         ignoredSessionId = 0L
-        lastAppliedTranscript = ""
+        transcriptDelivery.reset()
         val intent = Intent(this, DictationForegroundService::class.java)
             .setAction(DictationForegroundService.ACTION_START_TRANSFORMATION)
             .putExtra(DictationForegroundService.EXTRA_SOURCE_TEXT, target.sourceText)
@@ -421,7 +426,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
         if (state.sessionId != 0L && state.sessionId == ignoredSessionId) return
         if (state.sessionId != 0L && activeSessionId == 0L) activeSessionId = state.sessionId
         if (state.sessionId != activeSessionId || state.transcript.isBlank()) return
-        if (state.transcript == lastAppliedTranscript) return
+        if (transcriptDelivery.wasDelivered(state.transcript)) return
         val shouldInsert = if (state.operation == DictationOperation.TRANSFORMATION) {
             state.phase == DictationPhase.COMPLETED
         } else {
@@ -429,20 +434,35 @@ class OpenWisprAccessibilityService : AccessibilityService() {
                 state.phase == DictationPhase.PROCESSING ||
                 state.phase == DictationPhase.COMPLETED
         }
-        if (shouldInsert) insertTranscript(state.transcript)
+        if (shouldInsert) insertTranscript(state.transcript, state.phase)
     }
 
-    private fun insertTranscript(transcript: String) {
+    private fun insertTranscript(transcript: String, phase: DictationPhase) {
         val snapshot = editableSnapshot ?: return
-        if (
-            replaceFocusedText(
-                text = snapshot.compose(transcript),
-                selectionStart = snapshot.cursorAfter(transcript),
-                selectionEnd = snapshot.cursorAfter(transcript),
-            )
-        ) {
-            lastAppliedTranscript = transcript
+        val inserted = replaceFocusedText(
+            text = snapshot.compose(transcript),
+            selectionStart = snapshot.cursorAfter(transcript),
+            selectionEnd = snapshot.cursorAfter(transcript),
+        )
+        when (transcriptDelivery.record(transcript, phase, inserted)) {
+            TranscriptDeliveryOutcome.COPY_TO_CLIPBOARD -> copyTranscript(transcript)
+            TranscriptDeliveryOutcome.INSERTED,
+            TranscriptDeliveryOutcome.PENDING,
+            -> Unit
         }
+    }
+
+    private fun copyTranscript(transcript: String) {
+        val clip = ClipData.newPlainText(
+            getString(R.string.clipboard_transcript_label),
+            transcript,
+        ).apply {
+            description.extras = PersistableBundle().apply {
+                putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+            }
+        }
+        getSystemService(ClipboardManager::class.java).setPrimaryClip(clip)
+        Toast.makeText(this, R.string.transcript_copied_to_clipboard, Toast.LENGTH_SHORT).show()
     }
 
     private fun restoreEditableSnapshot() {
@@ -457,7 +477,7 @@ class OpenWisprAccessibilityService : AccessibilityService() {
                 selectionEnd = focused.textSelectionEnd,
             )
         ) {
-            lastAppliedTranscript = ""
+            transcriptDelivery.reset()
             return
         }
         val update = pendingTextRestoration.nextAttempt() ?: return

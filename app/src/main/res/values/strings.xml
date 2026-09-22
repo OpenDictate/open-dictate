@@ -114,6 +114,8 @@
     <string name="overlay_transform">TRANSFORM</string>
     <string name="overlay_transforming">EDITING…</string>
     <string name="overlay_transforming_description">Transforming text. Swipe left to cancel.</string>
+    <string name="clipboard_transcript_label">OpenWispr transcript</string>
+    <string name="transcript_copied_to_clipboard">No text field available. Transcript copied to clipboard.</string>
 
     <string name="notification_channel">Dictation</string>
     <string name="notification_recording">OpenWispr is listening</string>

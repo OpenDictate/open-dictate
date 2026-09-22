@@ -111,6 +111,8 @@
     <string name="overlay_transform">ИЗМЕНИТЬ</string>
     <string name="overlay_transforming">МЕНЯЮ…</string>
     <string name="overlay_transforming_description">Преобразование текста. Потяните влево, чтобы отменить.</string>
+    <string name="clipboard_transcript_label">Транскрипция OpenWispr</string>
+    <string name="transcript_copied_to_clipboard">Поле ввода недоступно. Текст скопирован в буфер обмена.</string>
 
     <string name="notification_channel">Диктовка</string>
     <string name="notification_recording">OpenWispr слушает</string>

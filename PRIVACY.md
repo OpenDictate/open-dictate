@@ -12,6 +12,10 @@ OpenWispr does not operate a backend and does not include analytics or ads.
   when you explicitly tap its button and sends the search query and transcript
   text directly to OpenAI. OpenWispr sets API response storage to off for these
   requests and does not persist the response.
+- If the original text field is no longer available when processing finishes,
+  OpenWispr copies the completed result to the Android system clipboard so it
+  is not lost. Clipboard access and retention are controlled by Android and
+  other software on the device.
 - Accessibility is used to find the focused editable control, detect the input
   method window, and update its text. When you explicitly start a text
   transformation, the selected text—or the focused field's text when there is

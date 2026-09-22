@@ -19,6 +19,8 @@ active input field through the Android Accessibility API.
 - No backend, analytics, or stored recordings.
 - A floating dictation button that appears only while the keyboard is open,
   can be dismissed with a right swipe, and reveals text editing on long-press.
+- Completed text falls back to the system clipboard if the original input field
+  is no longer available.
 - Russian and English speech recognition, or automatic language detection.
 
 ## Installation
