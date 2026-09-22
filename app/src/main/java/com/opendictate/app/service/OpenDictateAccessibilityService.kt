@@ -128,12 +128,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
     ) {
         val view = overlay ?: return
         transformationAvailable = settings.transformationButtonEnabled &&
-            EditableTextSnapshot.capture(
-                displayedText = focused.text,
-                selectionStart = focused.textSelectionStart.coerceAtLeast(0),
-                selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
-                isShowingHintText = focused.isShowingHintText,
-            ).hasText
+            focused.captureEditableText().hasText
         if (!transformationAvailable) overlayMenuExpanded = false
         val showMenu = transformationAvailable && overlayMenuExpanded
         view.setMenuState(available = transformationAvailable, expanded = showMenu)
@@ -279,12 +274,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         if (!isReadyToStart()) return
         val focused = findFocusedEditable()
         if (focused?.isTextInput() != true) return
-        editableSnapshot = EditableTextSnapshot.capture(
-            displayedText = focused.text,
-            selectionStart = focused.textSelectionStart.coerceAtLeast(0),
-            selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
-            isShowingHintText = focused.isShowingHintText,
-        )
+        editableSnapshot = focused.captureEditableText()
         clearPendingTextRestoration()
         targetPackage = focused.packageName
         activeSessionId = 0L
@@ -308,12 +298,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             showOverlayError(R.string.error_password_field_transformation)
             return
         }
-        val captured = EditableTextSnapshot.capture(
-            displayedText = focused.text,
-            selectionStart = focused.textSelectionStart.coerceAtLeast(0),
-            selectionEnd = focused.textSelectionEnd.coerceAtLeast(0),
-            isShowingHintText = focused.isShowingHintText,
-        )
+        val captured = focused.captureEditableText()
         val target = captured.transformationTarget()
         if (target == null) {
             showOverlayError(R.string.error_nothing_to_transform)
@@ -472,7 +457,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             focused.isTextInput() &&
             focused.packageName == targetPackage &&
             pendingTextRestoration.confirmApplied(
-                displayedText = if (focused.isShowingHintText) null else focused.text,
+                displayedText = focused.captureEditableText().original,
                 selectionStart = focused.textSelectionStart,
                 selectionEnd = focused.textSelectionEnd,
             )
@@ -562,6 +547,15 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         isEditable ||
             className == "android.widget.EditText" ||
             actionList.any { it.id == AccessibilityNodeInfo.ACTION_SET_TEXT }
+
+    private fun AccessibilityNodeInfo.captureEditableText(): EditableTextSnapshot =
+        EditableTextSnapshot.capture(
+            displayedText = text,
+            hintText = hintText,
+            selectionStart = textSelectionStart.coerceAtLeast(0),
+            selectionEnd = textSelectionEnd.coerceAtLeast(0),
+            isShowingHintText = isShowingHintText,
+        )
 
     companion object {
         private const val TAG = "OpenDictateA11y"
