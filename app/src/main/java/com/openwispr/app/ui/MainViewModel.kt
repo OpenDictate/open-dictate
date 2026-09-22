@@ -8,14 +8,26 @@ import android.content.pm.PackageManager
 import android.view.accessibility.AccessibilityManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.openwispr.app.OpenWisprApplication
+import com.openwispr.app.R
 import com.openwispr.app.data.SecureApiKeyStore
 import com.openwispr.app.data.SettingsStore
+import com.openwispr.app.data.TranscriptHistoryItem
+import com.openwispr.app.data.fuzzySearch
 import com.openwispr.app.model.DictationLanguage
 import com.openwispr.app.model.TextTransformationModel
 import com.openwispr.app.model.TranscriptionModel
+import com.openwispr.app.network.OpenAiTranscriptionClient
+import com.openwispr.app.network.TranscriptSearchDocument
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class MainUiState(
     val hasApiKey: Boolean = false,
@@ -28,11 +40,42 @@ data class MainUiState(
     val keepTrailingPeriod: Boolean = true,
 )
 
+enum class HistorySearchMode {
+    NONE,
+    FUZZY,
+    AI,
+}
+
+data class HistoryUiState(
+    val entries: List<TranscriptHistoryItem> = emptyList(),
+    val query: String = "",
+    val searchMode: HistorySearchMode = HistorySearchMode.NONE,
+    val aiMatchIds: List<Long> = emptyList(),
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+) {
+    val visibleEntries: List<TranscriptHistoryItem>
+        get() = when (searchMode) {
+            HistorySearchMode.NONE -> entries
+            HistorySearchMode.FUZZY -> fuzzySearch(entries, query)
+            HistorySearchMode.AI -> {
+                val entriesById = entries.associateBy(TranscriptHistoryItem::id)
+                aiMatchIds.mapNotNull(entriesById::get)
+            }
+        }
+}
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val settings = SettingsStore(application)
     private val apiKeyStore = SecureApiKeyStore(application)
+    private val historyStore = (application as OpenWisprApplication).transcriptHistoryStore
+    private val apiClient = OpenAiTranscriptionClient(application.resources)
     private val mutableState = MutableStateFlow(loadState())
     val state = mutableState.asStateFlow()
+    private val mutableHistoryState = MutableStateFlow(HistoryUiState())
+    val historyState = mutableHistoryState.asStateFlow()
+    private var historyLoadJob: Job? = null
+    private var historySearchJob: Job? = null
     val prompt: String
         get() = settings.prompt
 
@@ -95,6 +138,138 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(keepTrailingPeriod = enabled) }
     }
 
+    fun refreshHistory() {
+        historyLoadJob?.cancel()
+        historyLoadJob = viewModelScope.launch {
+            mutableHistoryState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                val entries = withContext(Dispatchers.IO) { historyStore.getAll() }
+                mutableHistoryState.update { it.copy(entries = entries, isLoading = false) }
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                mutableHistoryState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = getApplication<Application>().getString(
+                            R.string.history_load_error,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    fun updateHistoryQuery(query: String) {
+        historySearchJob?.cancel()
+        val updatedQuery = query.take(MAX_HISTORY_QUERY_CHARS)
+        mutableHistoryState.update { state ->
+            state.copy(
+                query = updatedQuery,
+                searchMode = if (
+                    updatedQuery.isNotBlank() && state.searchMode == HistorySearchMode.FUZZY
+                ) {
+                    HistorySearchMode.FUZZY
+                } else {
+                    HistorySearchMode.NONE
+                },
+                aiMatchIds = emptyList(),
+                isLoading = false,
+                errorMessage = null,
+            )
+        }
+    }
+
+    fun runFuzzyHistorySearch() {
+        historySearchJob?.cancel()
+        mutableHistoryState.update {
+            it.copy(
+                searchMode = if (it.query.isBlank()) {
+                    HistorySearchMode.NONE
+                } else {
+                    HistorySearchMode.FUZZY
+                },
+                aiMatchIds = emptyList(),
+                isLoading = false,
+                errorMessage = null,
+            )
+        }
+    }
+
+    fun runAiHistorySearch() {
+        val state = mutableHistoryState.value
+        val query = state.query.trim()
+        if (query.isEmpty() || state.entries.isEmpty()) return
+        val apiKey = apiKeyStore.get()
+        if (apiKey.isNullOrBlank()) {
+            mutableHistoryState.update {
+                it.copy(errorMessage = getApplication<Application>().getString(R.string.error_add_api_key))
+            }
+            return
+        }
+
+        historySearchJob?.cancel()
+        historySearchJob = viewModelScope.launch {
+            mutableHistoryState.update {
+                it.copy(
+                    searchMode = HistorySearchMode.AI,
+                    aiMatchIds = emptyList(),
+                    isLoading = true,
+                    errorMessage = null,
+                )
+            }
+            try {
+                val matches = apiClient.searchTranscriptHistory(
+                    apiKey = apiKey,
+                    model = settings.transformationModel,
+                    query = query,
+                    documents = state.entries.map {
+                        TranscriptSearchDocument(id = it.id, text = it.text)
+                    },
+                )
+                mutableHistoryState.update { current ->
+                    if (current.query.trim() == query) {
+                        current.copy(aiMatchIds = matches, isLoading = false)
+                    } else {
+                        current.copy(isLoading = false)
+                    }
+                }
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                mutableHistoryState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message
+                            ?: getApplication<Application>().getString(R.string.history_ai_search_error),
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteHistoryItem(id: Long) {
+        val beforeDelete = mutableHistoryState.value
+        mutableHistoryState.update { state ->
+            state.copy(
+                entries = state.entries.filterNot { it.id == id },
+                aiMatchIds = state.aiMatchIds.filterNot { it == id },
+                errorMessage = null,
+            )
+        }
+        viewModelScope.launch {
+            try {
+                val deleted = withContext(Dispatchers.IO) { historyStore.delete(id) }
+                if (!deleted) throw IllegalStateException("History item was not found")
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                mutableHistoryState.value = beforeDelete.copy(
+                    errorMessage = getApplication<Application>().getString(
+                        R.string.history_delete_error,
+                    ),
+                )
+            }
+        }
+    }
+
     private fun loadState() = MainUiState(
         hasApiKey = apiKeyStore.hasKey(),
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
@@ -115,4 +290,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun hasMicrophonePermission(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
+
+    private companion object {
+        const val MAX_HISTORY_QUERY_CHARS = 300
+    }
 }

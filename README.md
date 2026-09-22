@@ -14,6 +14,8 @@ active input field through the Android Accessibility API.
 - Text transformations stop after 30 seconds. The model can occasionally answer
   a direct question or explain a failed edit in a private Android notification.
 - Your own OpenAI API key, encrypted with Android Keystore.
+- Local transcript history with deletion, on-device fuzzy search, and explicit
+  AI semantic search through the Responses API.
 - No backend, analytics, or stored recordings.
 - A floating dictation button that appears only while the keyboard is open,
   can be dismissed with a right swipe, and reveals text editing on long-press.
@@ -58,8 +60,9 @@ for `v*` tags. The repository requires four Actions secrets:
 ## Privacy and security
 
 The API key is encrypted using hardware-backed Android Keystore when supported
-by the device. Audio and text chosen for transformation are sent directly from
-your phone to OpenAI. See
+by the device. Transcript history stays in the app-private local database.
+Audio, text chosen for transformation, and history explicitly submitted to AI
+search are sent directly from your phone to OpenAI. See
 [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md) for details.
 
 ## License

@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.PersistableBundle
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -42,6 +43,7 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
@@ -114,26 +116,32 @@ import com.openwispr.app.service.DictationStateBus
 import kotlin.math.PI
 import kotlin.math.sin
 
-private val Ink = Color(0xFF101426)
-private val Panel = Color(0xFF191F36)
-private val PanelLight = Color(0xFF222A46)
-private val Mint = Color(0xFF7DE4C4)
-private val Coral = Color(0xFFFF6A6E)
-private val Fog = Color(0xFFAAB2CB)
-private val White = Color(0xFFF6F7FC)
+internal val Ink = Color(0xFF101426)
+internal val Panel = Color(0xFF191F36)
+internal val PanelLight = Color(0xFF222A46)
+internal val Mint = Color(0xFF7DE4C4)
+internal val Coral = Color(0xFFFF6A6E)
+internal val Fog = Color(0xFFAAB2CB)
+internal val White = Color(0xFFF6F7FC)
 
 @Composable
 fun OpenWisprApp(viewModel: MainViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
+    val historyState by viewModel.historyState.collectAsState()
     val dictation by DictationStateBus.state.collectAsState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var showKeyDialog by remember { mutableStateOf(false) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { viewModel.refreshPermissions() }
 
     LaunchedEffect(Unit) { viewModel.refreshPermissions() }
+    LaunchedEffect(showHistory) {
+        if (showHistory) viewModel.refreshHistory()
+    }
+    BackHandler(enabled = showHistory) { showHistory = false }
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshPermissions()
@@ -147,99 +155,123 @@ fun OpenWisprApp(viewModel: MainViewModel = viewModel()) {
             containerColor = Ink,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 20.dp),
-            ) {
-                Header()
-                Hero(dictation.phase)
-                Spacer(Modifier.height(26.dp))
-                SectionLabel(stringResource(R.string.section_mode))
-                Spacer(Modifier.height(10.dp))
-                ModelDeck(state.model, viewModel::selectModel)
-                Spacer(Modifier.height(26.dp))
-                SectionLabel(stringResource(R.string.section_transformation))
-                Spacer(Modifier.height(10.dp))
-                TransformationModelCard(
-                    selected = state.transformationModel,
-                    buttonEnabled = state.transformationButtonEnabled,
-                    settingEnabled = !dictation.isActive,
-                    onSelect = viewModel::selectTransformationModel,
-                    onButtonEnabledChange = viewModel::setTransformationButtonEnabled,
+            if (showHistory) {
+                TranscriptHistoryScreen(
+                    state = historyState,
+                    onBack = { showHistory = false },
+                    onQueryChange = viewModel::updateHistoryQuery,
+                    onFuzzySearch = viewModel::runFuzzyHistorySearch,
+                    onAiSearch = viewModel::runAiHistorySearch,
+                    onDelete = viewModel::deleteHistoryItem,
+                    modifier = Modifier.padding(padding),
                 )
-                Spacer(Modifier.height(26.dp))
-                SectionLabel(stringResource(R.string.section_readiness))
-                Spacer(Modifier.height(10.dp))
-                SetupCard(
-                    icon = Icons.Outlined.Key,
-                    title = stringResource(R.string.api_key_title),
-                    subtitle = stringResource(
-                        if (state.hasApiKey) R.string.api_key_saved else R.string.api_key_needed,
-                    ),
-                    complete = state.hasApiKey,
-                    action = stringResource(
-                        if (state.hasApiKey) R.string.action_change else R.string.action_add,
-                    ),
-                    onClick = { showKeyDialog = true },
-                )
-                Spacer(Modifier.height(10.dp))
-                SetupCard(
-                    icon = Icons.Outlined.Mic,
-                    title = stringResource(R.string.microphone_title),
-                    subtitle = stringResource(
-                        if (state.microphoneGranted) R.string.microphone_granted else R.string.microphone_usage,
-                    ),
-                    complete = state.microphoneGranted,
-                    action = stringResource(
-                        if (state.microphoneGranted) R.string.action_ready else R.string.action_allow,
-                    ),
-                    onClick = {
-                        val permissions = buildList {
-                            add(Manifest.permission.RECORD_AUDIO)
-                            if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                        permissionLauncher.launch(permissions.toTypedArray())
-                    },
-                )
-                Spacer(Modifier.height(10.dp))
-                SetupCard(
-                    icon = Icons.Outlined.SettingsAccessibility,
-                    title = stringResource(R.string.keyboard_button_title),
-                    subtitle = stringResource(
-                        if (state.accessibilityEnabled) {
-                            R.string.accessibility_enabled
-                        } else {
-                            R.string.accessibility_enable_hint
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp),
+                ) {
+                    Header(onHistoryClick = { showHistory = true })
+                    Hero(dictation.phase)
+                    Spacer(Modifier.height(26.dp))
+                    SectionLabel(stringResource(R.string.section_mode))
+                    Spacer(Modifier.height(10.dp))
+                    ModelDeck(state.model, viewModel::selectModel)
+                    Spacer(Modifier.height(26.dp))
+                    SectionLabel(stringResource(R.string.section_transformation))
+                    Spacer(Modifier.height(10.dp))
+                    TransformationModelCard(
+                        selected = state.transformationModel,
+                        buttonEnabled = state.transformationButtonEnabled,
+                        settingEnabled = !dictation.isActive,
+                        onSelect = viewModel::selectTransformationModel,
+                        onButtonEnabledChange = viewModel::setTransformationButtonEnabled,
+                    )
+                    Spacer(Modifier.height(26.dp))
+                    SectionLabel(stringResource(R.string.section_readiness))
+                    Spacer(Modifier.height(10.dp))
+                    SetupCard(
+                        icon = Icons.Outlined.Key,
+                        title = stringResource(R.string.api_key_title),
+                        subtitle = stringResource(
+                            if (state.hasApiKey) R.string.api_key_saved else R.string.api_key_needed,
+                        ),
+                        complete = state.hasApiKey,
+                        action = stringResource(
+                            if (state.hasApiKey) R.string.action_change else R.string.action_add,
+                        ),
+                        onClick = { showKeyDialog = true },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    SetupCard(
+                        icon = Icons.Outlined.Mic,
+                        title = stringResource(R.string.microphone_title),
+                        subtitle = stringResource(
+                            if (state.microphoneGranted) {
+                                R.string.microphone_granted
+                            } else {
+                                R.string.microphone_usage
+                            },
+                        ),
+                        complete = state.microphoneGranted,
+                        action = stringResource(
+                            if (state.microphoneGranted) R.string.action_ready else R.string.action_allow,
+                        ),
+                        onClick = {
+                            val permissions = buildList {
+                                add(Manifest.permission.RECORD_AUDIO)
+                                if (Build.VERSION.SDK_INT >= 33) {
+                                    add(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }
+                            permissionLauncher.launch(permissions.toTypedArray())
                         },
-                    ),
-                    complete = state.accessibilityEnabled,
-                    action = stringResource(
-                        if (state.accessibilityEnabled) R.string.action_ready else R.string.action_enable,
-                    ),
-                    onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
-                )
-                Spacer(Modifier.height(26.dp))
-                SectionLabel(stringResource(R.string.section_accuracy))
-                Spacer(Modifier.height(10.dp))
-                PreferencesCard(
-                    languages = state.languages,
-                    initialPrompt = viewModel.prompt,
-                    keepTrailingPeriod = state.keepTrailingPeriod,
-                    onToggleLanguage = viewModel::toggleLanguage,
-                    onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
-                    onPrompt = viewModel::savePrompt,
-                    onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
-                )
-                Spacer(Modifier.height(20.dp))
-                TestField()
-                Spacer(Modifier.height(20.dp))
-                PrivacyNote()
-                Spacer(Modifier.height(28.dp))
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    SetupCard(
+                        icon = Icons.Outlined.SettingsAccessibility,
+                        title = stringResource(R.string.keyboard_button_title),
+                        subtitle = stringResource(
+                            if (state.accessibilityEnabled) {
+                                R.string.accessibility_enabled
+                            } else {
+                                R.string.accessibility_enable_hint
+                            },
+                        ),
+                        complete = state.accessibilityEnabled,
+                        action = stringResource(
+                            if (state.accessibilityEnabled) {
+                                R.string.action_ready
+                            } else {
+                                R.string.action_enable
+                            },
+                        ),
+                        onClick = {
+                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        },
+                    )
+                    Spacer(Modifier.height(26.dp))
+                    SectionLabel(stringResource(R.string.section_accuracy))
+                    Spacer(Modifier.height(10.dp))
+                    PreferencesCard(
+                        languages = state.languages,
+                        initialPrompt = viewModel.prompt,
+                        keepTrailingPeriod = state.keepTrailingPeriod,
+                        onToggleLanguage = viewModel::toggleLanguage,
+                        onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
+                        onPrompt = viewModel::savePrompt,
+                        onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    TestField()
+                    Spacer(Modifier.height(20.dp))
+                    PrivacyNote()
+                    Spacer(Modifier.height(28.dp))
+                }
             }
         }
         if (showKeyDialog) {
@@ -261,7 +293,7 @@ fun OpenWisprApp(viewModel: MainViewModel = viewModel()) {
 }
 
 @Composable
-private fun Header() {
+private fun Header(onHistoryClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -277,6 +309,13 @@ private fun Header() {
             fontSize = 14.sp,
         )
         Spacer(Modifier.weight(1f))
+        IconButton(onClick = onHistoryClick) {
+            Icon(
+                Icons.Outlined.History,
+                contentDescription = stringResource(R.string.history_open),
+                tint = Fog,
+            )
+        }
         AppLanguageSwitcher()
     }
 }

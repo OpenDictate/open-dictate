@@ -10,6 +10,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.openwispr.app.MainActivity
+import com.openwispr.app.OpenWisprApplication
 import com.openwispr.app.R
 import com.openwispr.app.audio.PcmAudioRecorder
 import com.openwispr.app.audio.WavFile
@@ -206,7 +207,7 @@ class DictationForegroundService : Service() {
                 if (result.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_transformation_empty))
                 }
-                publishWhileActive(
+                val completed = publishWhileActive(
                     sessionId,
                     DictationState(
                         sessionId = sessionId,
@@ -215,6 +216,13 @@ class DictationForegroundService : Service() {
                         transcript = if (modelMessage == null) result else "",
                     ),
                 )
+                if (completed && operation == DictationOperation.DICTATION) {
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            (application as OpenWisprApplication).transcriptHistoryStore.add(result)
+                        }
+                    }
+                }
                 modelMessage?.let(::showModelMessage)
                 delay(1_200)
                 clearSessionIfCurrent(sessionId)
@@ -267,10 +275,12 @@ class DictationForegroundService : Service() {
         )
     }
 
-    private fun publishWhileActive(sessionId: Long, state: DictationState) {
+    private fun publishWhileActive(sessionId: Long, state: DictationState): Boolean {
         if (DictationStateBus.state.value.acceptsActiveUpdate(sessionId)) {
             DictationStateBus.set(state)
+            return true
         }
+        return false
     }
 
     private fun clearSessionIfCurrent(sessionId: Long) {
