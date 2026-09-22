@@ -1,0 +1,119 @@
+name: Android preview release
+
+on:
+  schedule:
+    # Weekly snapshots are frequent enough for testing without publishing on every merge.
+    - cron: "23 17 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-preview-release
+  cancel-in-progress: false
+
+jobs:
+  release-preview:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Plan preview release
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "schedule" ]] &&
+             git tag --points-at HEAD | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-preview\.[0-9]+)?$'; then
+            echo "No commits have landed since the last release; skipping this week's preview."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          stable_tag="$({
+            git tag --merged HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname |
+              grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true
+          } | head -n 1)"
+          if [[ -z "$stable_tag" ]]; then
+            echo "No stable SemVer tag found." >&2
+            exit 1
+          fi
+
+          version="${stable_tag#v}"
+          IFS=. read -r major minor patch <<< "$version"
+          next_version="${major}.${minor}.$((patch + 1))"
+          preview_tag="v${next_version}-preview.${GITHUB_RUN_NUMBER}"
+          previous_tag="$({
+            git tag --merged HEAD --sort=-creatordate |
+              grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-preview\.[0-9]+)?$' || true
+          } | head -n 1)"
+
+          {
+            echo "publish=true"
+            echo "base_version=${next_version}"
+            echo "preview_tag=${preview_tag}"
+            echo "previous_tag=${previous_tag}"
+            echo "version_code=$((1000000 + GITHUB_RUN_NUMBER))"
+          } >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v6
+        if: steps.plan.outputs.publish == 'true'
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v6
+        if: steps.plan.outputs.publish == 'true'
+      - name: Check signing configuration
+        if: steps.plan.outputs.publish == 'true'
+        run: |
+          test -n "$SIGNING_KEY"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          test -n "$STORE_PASSWORD"
+      - name: Verify and assemble preview
+        if: steps.plan.outputs.publish == 'true'
+        run: |
+          ./gradlew testDebugUnitTest lintPreview assemblePreview --stacktrace \
+            -PappVersionName="${{ steps.plan.outputs.base_version }}" \
+            -PappVersionCode="${{ steps.plan.outputs.version_code }}" \
+            -PpreviewVersionSuffix="-preview.${GITHUB_RUN_NUMBER}"
+      - name: Prepare release
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          PREVIEW_TAG: ${{ steps.plan.outputs.preview_tag }}
+          PREVIOUS_TAG: ${{ steps.plan.outputs.previous_tag }}
+        run: |
+          cp app/build/outputs/apk/preview/app-preview.apk "OpenWispr-${PREVIEW_TAG}.apk"
+          {
+            echo '## Preview build'
+            echo
+            echo '> For testing only. This build may be unstable.'
+            echo
+            echo "The preview app installs alongside the stable app as \`com.openwispr.app.preview\`."
+            echo 'Disable the stable accessibility service before enabling the preview service to avoid two overlays.'
+            echo 'The preview app has separate settings, so its API key must be configured separately.'
+            echo
+            echo '## Changes'
+            echo
+            git log --reverse --no-merges --pretty='- %s (%h)' "${PREVIOUS_TAG}..HEAD"
+          } > RELEASE_NOTES.md
+      - name: Publish prerelease
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          PREVIEW_TAG: ${{ steps.plan.outputs.preview_tag }}
+        run: |
+          gh release create "$PREVIEW_TAG" "OpenWispr-${PREVIEW_TAG}.apk" \
+            --target "$GITHUB_SHA" \
+            --title "$PREVIEW_TAG" \
+            --notes-file RELEASE_NOTES.md \
+            --prerelease

@@ -50,12 +50,21 @@ The debug APK will be in `app/build/outputs/apk/debug/`.
 ## Releases
 
 The `.github/workflows/release.yml` workflow builds and publishes a signed APK
-for `v*` tags. The repository requires four Actions secrets:
+for stable `v*` tags (preview tags are excluded). The repository requires four
+Actions secrets:
 
 - `SIGNING_KEY` — a base64-encoded JKS file;
 - `KEY_ALIAS`;
 - `KEY_PASSWORD`;
 - `STORE_PASSWORD`.
+
+The `.github/workflows/preview.yml` workflow publishes a signed prerelease from
+`main` every Sunday when commits have landed since the previous release. It can
+also be run manually. Preview tags follow the next-patch SemVer form
+`vX.Y.Z-preview.N` (for example, `v0.5.1-preview.123`). The preview APK uses the
+`com.openwispr.app.preview` application ID and installs alongside the stable app.
+It has separate settings; disable the stable accessibility service before
+enabling the preview service to avoid showing two overlays.
 
 ## Privacy and security
 
