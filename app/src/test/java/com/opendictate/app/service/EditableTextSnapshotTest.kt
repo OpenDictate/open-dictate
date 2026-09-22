@@ -34,6 +34,48 @@ class EditableTextSnapshotTest {
     }
 
     @Test
+    fun `does not put custom placeholder without editable backing text into final message`() {
+        val snapshot = EditableTextSnapshot.capture(
+            displayedText = "Message",
+            hintText = null,
+            selectionStart = 0,
+            selectionEnd = 0,
+            isShowingHintText = false,
+            supportsTextSelection = false,
+        )
+
+        assertEquals("Final transcript", snapshot.compose("Final transcript"))
+    }
+
+    @Test
+    fun `preserves user text at cursor start when editor supports text selection`() {
+        val snapshot = EditableTextSnapshot.capture(
+            displayedText = "Draft",
+            hintText = null,
+            selectionStart = 0,
+            selectionEnd = 0,
+            isShowingHintText = false,
+            supportsTextSelection = true,
+        )
+
+        assertEquals("New Draft", snapshot.compose("New "))
+    }
+
+    @Test
+    fun `preserves user text when selection position proves backing content`() {
+        val snapshot = EditableTextSnapshot.capture(
+            displayedText = "Draft",
+            hintText = null,
+            selectionStart = 5,
+            selectionEnd = 5,
+            isShowingHintText = false,
+            supportsTextSelection = false,
+        )
+
+        assertEquals("Draft text", snapshot.compose(" text"))
+    }
+
+    @Test
     fun `preserves actual user text when hint is not showing`() {
         val snapshot = EditableTextSnapshot.capture(
             displayedText = "Draft",
