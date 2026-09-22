@@ -10,8 +10,8 @@ val keyAliasValue = providers.environmentVariable("KEY_ALIAS")
 val keyPasswordValue = providers.environmentVariable("KEY_PASSWORD")
 val storePasswordValue = providers.environmentVariable("STORE_PASSWORD")
 val releaseStore = layout.buildDirectory.file("keystore/openwispr-release.jks")
-val appVersionName = providers.gradleProperty("appVersionName").orElse("0.6.0-rc.2")
-val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(14)
+val appVersionName = providers.gradleProperty("appVersionName").orElse("0.6.0-rc.3")
+val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(15)
 val previewVersionSuffix = providers.gradleProperty("previewVersionSuffix").orElse("-preview")
 
 if (signingKey.isPresent) {
