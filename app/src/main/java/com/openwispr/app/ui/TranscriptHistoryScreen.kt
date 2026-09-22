@@ -67,7 +67,6 @@ internal fun TranscriptHistoryScreen(
     state: HistoryUiState,
     onBack: () -> Unit,
     onQueryChange: (String) -> Unit,
-    onFuzzySearch: () -> Unit,
     onAiSearch: () -> Unit,
     onDelete: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -107,58 +106,39 @@ internal fun TranscriptHistoryScreen(
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
-                    onSearch = {
-                        focusManager.clearFocus()
-                        onFuzzySearch()
-                    },
+                    onSearch = { focusManager.clearFocus() },
                 ),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
             )
             Spacer(Modifier.height(12.dp))
-            Row(
+            SearchModeButton(
+                text = stringResource(R.string.history_ai_search),
+                selected = state.searchMode == HistorySearchMode.AI,
+                enabled = state.query.isNotBlank() &&
+                    state.entries.isNotEmpty() &&
+                    !state.isLoading,
+                icon = {
+                    if (state.isLoading && state.searchMode == HistorySearchMode.AI) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Ink,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            Icons.Outlined.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                },
+                onClick = {
+                    focusManager.clearFocus()
+                    onAiSearch()
+                },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                SearchModeButton(
-                    text = stringResource(R.string.history_fuzzy_search),
-                    selected = state.searchMode == HistorySearchMode.FUZZY,
-                    enabled = state.query.isNotBlank() && state.entries.isNotEmpty() && !state.isLoading,
-                    icon = {
-                        Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp))
-                    },
-                    onClick = {
-                        focusManager.clearFocus()
-                        onFuzzySearch()
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                SearchModeButton(
-                    text = stringResource(R.string.history_ai_search),
-                    selected = state.searchMode == HistorySearchMode.AI,
-                    enabled = state.query.isNotBlank() && state.entries.isNotEmpty() && !state.isLoading,
-                    icon = {
-                        if (state.isLoading && state.searchMode == HistorySearchMode.AI) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = Ink,
-                                strokeWidth = 2.dp,
-                            )
-                        } else {
-                            Icon(
-                                Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    },
-                    onClick = {
-                        focusManager.clearFocus()
-                        onAiSearch()
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            )
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.Top) {
                 Icon(

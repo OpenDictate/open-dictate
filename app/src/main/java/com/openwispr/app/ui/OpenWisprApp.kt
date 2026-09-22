@@ -160,7 +160,6 @@ fun OpenWisprApp(viewModel: MainViewModel = viewModel()) {
                     state = historyState,
                     onBack = { showHistory = false },
                     onQueryChange = viewModel::updateHistoryQuery,
-                    onFuzzySearch = viewModel::runFuzzyHistorySearch,
                     onAiSearch = viewModel::runAiHistorySearch,
                     onDelete = viewModel::deleteHistoryItem,
                     modifier = Modifier.padding(padding),
