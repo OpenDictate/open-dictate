@@ -173,11 +173,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         val clip = ClipData.newPlainText(
                             clipboardTranscriptLabel,
                             transcript,
-                        ).apply {
-                            description.extras = PersistableBundle().apply {
-                                putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
-                            }
-                        }
+                        )
                         context.getSystemService(ClipboardManager::class.java)
                             .setPrimaryClip(clip)
                     },
