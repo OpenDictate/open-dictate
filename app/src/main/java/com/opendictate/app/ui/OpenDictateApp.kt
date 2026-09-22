@@ -88,6 +88,8 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.relocation.bringIntoView
@@ -133,6 +135,11 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var showKeyDialog by remember { mutableStateOf(false) }
     var showHistory by rememberSaveable { mutableStateOf(false) }
+    val settingsScrollState = rememberScrollState()
+    val maximumDisplayRefreshRate = LocalView.current.display
+        ?.supportedModes
+        ?.maxOfOrNull { it.refreshRate }
+        ?: 0f
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { viewModel.refreshPermissions() }
@@ -169,7 +176,14 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(settingsScrollState)
+                        .preferredFrameRate(
+                            if (settingsScrollState.isScrollInProgress) {
+                                maximumDisplayRefreshRate
+                            } else {
+                                0f
+                            },
+                        )
                         .statusBarsPadding()
                         .navigationBarsPadding()
                         .padding(horizontal = 20.dp),
