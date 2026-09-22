@@ -292,7 +292,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         onPrompt = viewModel::savePrompt,
                         onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
                     )
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(10.dp))
                     TestField()
                     Spacer(Modifier.height(20.dp))
                     PrivacyNote()
@@ -769,7 +769,7 @@ private fun PreferencesCard(
                     onCheckedChange = onKeepTrailingPeriod,
                 )
             }
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = promptText,
                 onValueChange = {
@@ -782,7 +782,7 @@ private fun PreferencesCard(
                 label = { Text(stringResource(R.string.dictionary_label)) },
                 placeholder = { Text(stringResource(R.string.dictionary_placeholder)) },
                 supportingText = { Text(stringResource(R.string.dictionary_supporting)) },
-                minLines = 4,
+                minLines = 1,
                 maxLines = 4,
                 shape = RoundedCornerShape(14.dp),
             )
