@@ -765,7 +765,6 @@ private fun PreferencesCard(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
                     .keepFullBoundsInView(),
                 label = { Text(stringResource(R.string.dictionary_label)) },
                 placeholder = { Text(stringResource(R.string.dictionary_placeholder)) },
