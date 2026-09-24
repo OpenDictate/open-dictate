@@ -86,6 +86,7 @@ class DictationForegroundService : Service() {
             return
         }
         val settings = SettingsStore(this)
+        val model = settings.model
         val keepTrailingPeriod = settings.keepTrailingPeriod
         val sessionId = nextSession.incrementAndGet()
         activeOperation = operation
@@ -96,6 +97,7 @@ class DictationForegroundService : Service() {
                 sessionId = sessionId,
                 phase = DictationPhase.CONNECTING,
                 operation = operation,
+                model = model,
             ),
         )
 
@@ -105,7 +107,7 @@ class DictationForegroundService : Service() {
             var wavFile: WavFile? = null
             var modelMessage: String? = null
             try {
-                val transcript = when (settings.model) {
+                val transcript = when (model) {
                     TranscriptionModel.LIVE -> apiClient.transcribeLive(
                         apiKey = apiKey,
                         scope = scope,
@@ -121,6 +123,7 @@ class DictationForegroundService : Service() {
                                     sessionId = sessionId,
                                     phase = DictationPhase.LISTENING,
                                     operation = operation,
+                                    model = model,
                                 ),
                             )
                         },
@@ -138,6 +141,7 @@ class DictationForegroundService : Service() {
                                     sessionId = sessionId,
                                     phase = phase,
                                     operation = operation,
+                                    model = model,
                                     transcript = if (operation == DictationOperation.DICTATION) {
                                         TranscriptFormatter.format(text, keepTrailingPeriod)
                                     } else {
@@ -159,6 +163,7 @@ class DictationForegroundService : Service() {
                                 sessionId = sessionId,
                                 phase = DictationPhase.LISTENING,
                                 operation = operation,
+                                model = model,
                             ),
                         )
                         stopSignal.await()
@@ -170,6 +175,7 @@ class DictationForegroundService : Service() {
                                 sessionId = sessionId,
                                 phase = DictationPhase.PROCESSING,
                                 operation = operation,
+                                model = model,
                             ),
                         )
                         updateNotification(true, operation)
@@ -192,6 +198,7 @@ class DictationForegroundService : Service() {
                             sessionId = sessionId,
                             phase = DictationPhase.PROCESSING,
                             operation = operation,
+                            model = model,
                         ),
                     )
                     updateNotification(true, operation)
@@ -215,6 +222,7 @@ class DictationForegroundService : Service() {
                         sessionId = sessionId,
                         phase = DictationPhase.COMPLETED,
                         operation = operation,
+                        model = model,
                         transcript = if (modelMessage == null) result else "",
                     ),
                 )
@@ -237,6 +245,7 @@ class DictationForegroundService : Service() {
                             sessionId = sessionId,
                             phase = DictationPhase.ERROR,
                             operation = operation,
+                            model = model,
                             message = error.message ?: getString(R.string.error_transcription_failed),
                         ),
                     )
@@ -268,13 +277,7 @@ class DictationForegroundService : Service() {
         val state = DictationStateBus.state.value
         if (!state.acceptsCancellation(sessionId)) return
         activeJob?.cancel()
-        DictationStateBus.set(
-            DictationState(
-                sessionId = sessionId,
-                phase = DictationPhase.IDLE,
-                operation = state.operation,
-            ),
-        )
+        DictationStateBus.set(state.copy(phase = DictationPhase.IDLE, transcript = ""))
     }
 
     private fun publishWhileActive(sessionId: Long, state: DictationState): Boolean {
@@ -288,13 +291,7 @@ class DictationForegroundService : Service() {
     private fun clearSessionIfCurrent(sessionId: Long) {
         val state = DictationStateBus.state.value
         if (state.sessionId == sessionId) {
-            DictationStateBus.set(
-                DictationState(
-                    sessionId = sessionId,
-                    phase = DictationPhase.IDLE,
-                    operation = state.operation,
-                ),
-            )
+            DictationStateBus.set(state.copy(phase = DictationPhase.IDLE, transcript = ""))
         }
     }
 
