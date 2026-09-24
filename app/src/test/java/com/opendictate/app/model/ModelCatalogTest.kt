@@ -34,9 +34,15 @@ class ModelCatalogTest {
     @Test
     fun `compares numeric versions rather than sorting model names`() {
         val catalog = ModelCatalog.fromIds(listOf(
-            "gpt-6.9-luna", "gpt-6.10-luna", "gpt-7-sol", "gpt-8-sol",
+            "gpt-7.9-luna", "gpt-7.10-luna", "gpt-7-sol", "gpt-8-sol",
         ))
-        assertEquals(listOf("gpt-6.10-luna", "gpt-8-sol"), catalog.text)
+        assertEquals(listOf("gpt-7.10-luna", "gpt-8-sol"), catalog.text)
+    }
+
+    @Test
+    fun `drops a role when its newest model is several generations behind`() {
+        val catalog = ModelCatalog.fromIds(listOf("gpt-6-sol", "gpt-9-luna"))
+        assertEquals(listOf("gpt-9-luna"), catalog.text)
     }
 
     @Test

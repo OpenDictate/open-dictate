@@ -31,12 +31,14 @@ data class ModelCatalog(
                     ?: return@mapNotNull null
                 TextCandidate(id, major, minor, match.groupValues[3])
             }
+            val newestMajor = text.maxOfOrNull(TextCandidate::major) ?: MIN_TEXT_MAJOR
+            val recentText = text.filter { it.major >= newestMajor - 1 }
             return ModelCatalog(
                 live = listOfNotNull(DEFAULT.live.first().takeIf(available::contains)),
                 accurate = listOfNotNull(DEFAULT.accurate.first().takeIf(available::contains)),
                 text = listOfNotNull(
-                    text.latest("luna"),
-                    text.latest("sol"),
+                    recentText.latest("luna"),
+                    recentText.latest("sol"),
                 ),
             )
         }
