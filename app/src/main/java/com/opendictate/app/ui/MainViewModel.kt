@@ -107,7 +107,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         modelLoadJob = null
         apiKeyStore.save(key)
         settings.clearModelCatalog()
-        mutableState.update { it.copy(modelCatalog = ModelCatalog.DEFAULT, newModelCount = 0) }
+        mutableState.update {
+            it.copy(
+                modelCatalog = ModelCatalog.DEFAULT,
+                liveModelId = settings.liveModelId,
+                accurateModelId = settings.accurateModelId,
+                transformationModelId = settings.transformationModelId,
+                newModelCount = 0,
+            )
+        }
         refreshPermissions()
         refreshModelCatalog(force = true)
     }
@@ -119,7 +127,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         modelLoadJob?.cancel()
         modelLoadJob = null
         settings.clearModelCatalog()
-        mutableState.update { it.copy(modelCatalog = ModelCatalog.DEFAULT, modelsLoading = false) }
+        mutableState.update {
+            it.copy(
+                modelCatalog = ModelCatalog.DEFAULT,
+                liveModelId = settings.liveModelId,
+                accurateModelId = settings.accurateModelId,
+                transformationModelId = settings.transformationModelId,
+                modelsLoading = false,
+                newModelCount = 0,
+            )
+        }
         refreshPermissions()
     }
 
@@ -129,19 +146,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectLiveModel(id: String) {
-        if (id !in modelOptions(mutableState.value.modelCatalog.live, settings.liveModelId, ModelCatalog.DEFAULT.live)) return
+        if (id !in modelOptions(mutableState.value.modelCatalog.live, ModelCatalog.DEFAULT.live)) return
         settings.liveModelId = id
         mutableState.update { it.copy(liveModelId = id) }
     }
 
     fun selectAccurateModel(id: String) {
-        if (id !in modelOptions(mutableState.value.modelCatalog.accurate, settings.accurateModelId, ModelCatalog.DEFAULT.accurate)) return
+        if (id !in modelOptions(mutableState.value.modelCatalog.accurate, ModelCatalog.DEFAULT.accurate)) return
         settings.accurateModelId = id
         mutableState.update { it.copy(accurateModelId = id) }
     }
 
     fun selectTransformationModel(id: String) {
-        if (id !in modelOptions(mutableState.value.modelCatalog.text, settings.transformationModelId, ModelCatalog.DEFAULT.text)) return
+        if (id !in modelOptions(mutableState.value.modelCatalog.text, ModelCatalog.DEFAULT.text)) return
         settings.transformationModelId = id
         mutableState.update { it.copy(transformationModelId = id) }
     }
@@ -159,8 +176,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val added = (catalog.live + catalog.accurate + catalog.text).toSet() -
                     (previous.live + previous.accurate + previous.text).toSet()
                 mutableState.update {
-                    it.copy(modelCatalog = catalog, modelsLoading = false,
-                        newModelCount = added.size)
+                    it.copy(
+                        modelCatalog = catalog,
+                        liveModelId = settings.liveModelId,
+                        accurateModelId = settings.accurateModelId,
+                        transformationModelId = settings.transformationModelId,
+                        modelsLoading = false,
+                        newModelCount = added.size,
+                    )
                 }
             } catch (error: Throwable) {
                 if (error is CancellationException) throw error
@@ -332,8 +355,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 private const val MAX_HISTORY_QUERY_CHARS = 300
 private const val MODEL_REFRESH_MS = 24 * 60 * 60 * 1000L
 
-internal fun modelOptions(discovered: List<String>, selected: String, defaults: List<String>): List<String> =
-    ((discovered.ifEmpty { defaults }) + selected).distinct()
+internal fun modelOptions(discovered: List<String>, defaults: List<String>): List<String> =
+    discovered.ifEmpty { defaults }
 
 internal fun HistoryUiState.withHistoryQuery(query: String): HistoryUiState {
     val updatedQuery = query.take(MAX_HISTORY_QUERY_CHARS)

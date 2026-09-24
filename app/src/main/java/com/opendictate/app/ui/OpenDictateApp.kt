@@ -221,7 +221,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     Spacer(Modifier.height(10.dp))
                     TransformationModelCard(
                         selected = state.transformationModelId,
-                        options = modelOptions(state.modelCatalog.text, state.transformationModelId,
+                        options = modelOptions(state.modelCatalog.text,
                             com.opendictate.app.model.ModelCatalog.DEFAULT.text),
                         buttonEnabled = state.transformationButtonEnabled,
                         settingEnabled = !dictation.isActive,
@@ -492,7 +492,7 @@ private fun ModelDeck(
         )
         ModelIdPicker(
             selected = state.accurateModelId,
-            options = modelOptions(state.modelCatalog.accurate, state.accurateModelId,
+            options = modelOptions(state.modelCatalog.accurate,
                 com.opendictate.app.model.ModelCatalog.DEFAULT.accurate),
             onSelect = onAccurateModel,
         )
@@ -506,7 +506,7 @@ private fun ModelDeck(
         )
         ModelIdPicker(
             selected = state.liveModelId,
-            options = modelOptions(state.modelCatalog.live, state.liveModelId,
+            options = modelOptions(state.modelCatalog.live,
                 com.opendictate.app.model.ModelCatalog.DEFAULT.live),
             onSelect = onLiveModel,
         )

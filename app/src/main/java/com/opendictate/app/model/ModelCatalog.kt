@@ -2,7 +2,7 @@ package com.opendictate.app.model
 
 import org.json.JSONObject
 
-/** The Models API exposes IDs, but no endpoint capability metadata. Keep these filters conservative. */
+/** The Models API has no endpoint, price, or quality metadata. Only expose reviewed model roles. */
 data class ModelCatalog(
     val live: List<String>,
     val accurate: List<String>,
@@ -22,20 +22,38 @@ data class ModelCatalog(
         }
 
         fun fromIds(ids: Collection<String>): ModelCatalog {
-            val unique = ids.distinct()
+            val available = ids.toSet()
+            val text = available.mapNotNull { id ->
+                val match = TEXT_MODEL.matchEntire(id) ?: return@mapNotNull null
+                val major = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
+                if (major < MIN_TEXT_MAJOR) return@mapNotNull null
+                val minor = match.groupValues[2].ifEmpty { "0" }.toIntOrNull()
+                    ?: return@mapNotNull null
+                TextCandidate(id, major, minor, match.groupValues[3])
+            }
             return ModelCatalog(
-                live = unique.filter { it.matches(LIVE_MODEL) }.sortedDescending(),
-                accurate = unique.filter { it.matches(FILE_MODEL) }.sortedDescending(),
-                text = unique.filter { it.matches(TEXT_MODEL) && TEXT_EXCLUDED.none(it::contains) }
-                    .sortedDescending(),
+                live = listOfNotNull(DEFAULT.live.first().takeIf(available::contains)),
+                accurate = listOfNotNull(DEFAULT.accurate.first().takeIf(available::contains)),
+                text = listOfNotNull(
+                    text.latest("luna"),
+                    text.latest("sol"),
+                ),
             )
         }
     }
 }
 
-private val LIVE_MODEL = Regex("gpt-live-transcribe(?:-[0-9][a-z0-9.-]*)?")
-private val FILE_MODEL = Regex("gpt-transcribe(?:-[0-9][a-z0-9.-]*)?")
-private val TEXT_MODEL = Regex("gpt-[0-9]+(?:\\.[0-9]+)?(?:-[a-z0-9]+)*(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?")
-private val TEXT_EXCLUDED = listOf(
-    "transcribe", "realtime", "audio", "image", "tts", "codex", "chat", "search", "pro",
-)
+private const val MIN_TEXT_MAJOR = 6
+private val TEXT_MODEL = Regex("gpt-([0-9]+)(?:\\.([0-9]+))?-(luna|sol)")
+
+private data class TextCandidate(val id: String, val major: Int, val minor: Int, val role: String)
+
+private fun List<TextCandidate>.latest(role: String): String? =
+    filter { it.role == role }.maxWithOrNull(compareBy<TextCandidate> { it.major }.thenBy { it.minor })?.id
+
+fun preferredModelId(selected: String, available: List<String>, defaults: List<String>): String {
+    val options = available.ifEmpty { defaults }
+    if (selected in options) return selected
+    val role = selected.substringAfterLast('-', missingDelimiterValue = "")
+    return options.firstOrNull { it.endsWith("-$role") } ?: options.first()
+}
