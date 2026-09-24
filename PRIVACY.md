@@ -20,6 +20,9 @@ OpenDictate does not operate a backend and does not include analytics or ads.
   OpenDictate copies the completed result to the Android system clipboard so it
   is not lost. Clipboard access and retention are controlled by Android and
   other software on the device.
+- You can explicitly copy a saved transcript from the history screen. The
+  floating menu's Paste last action inserts into the focused field without
+  changing the clipboard.
 - Accessibility is used to find the focused editable control, detect the input
   method window, and update its text. When you explicitly start a text
   transformation, the selected text—or the focused field's text when there is

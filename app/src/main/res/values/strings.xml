@@ -109,6 +109,13 @@
     <string name="overlay_start_dictation_with_dismiss">Start dictation. Swipe right to hide until the keyboard closes.</string>
     <string name="overlay_start_transformation">Dictate a text transformation instruction</string>
     <string name="overlay_edit_text">Edit text</string>
+    <string name="overlay_paste_last">Paste last</string>
+    <string name="overlay_paste_last_description">Paste the latest transcript from history into this field</string>
+    <string name="overlay_no_transcripts">No transcripts saved yet</string>
+    <string name="overlay_paste_load_error">Could not load the latest transcript</string>
+    <string name="overlay_paste_unavailable">Could not insert into this field. Try again.</string>
+    <string name="overlay_paste_password">Cannot paste a transcript into a password field</string>
+    <string name="overlay_pasted">Transcript inserted</string>
     <string name="overlay_open_menu">Open more actions</string>
     <string name="overlay_close_menu">Close more actions</string>
     <string name="overlay_hide_for_now">Hide until the keyboard closes</string>

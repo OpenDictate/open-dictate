@@ -23,6 +23,7 @@ import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.opendictate.app.MainActivity
+import com.opendictate.app.OpenDictateApplication
 import com.opendictate.app.R
 import com.opendictate.app.data.SecureApiKeyStore
 import com.opendictate.app.data.SettingsStore
@@ -30,12 +31,14 @@ import com.opendictate.app.overlay.DictationOverlayView
 import com.opendictate.app.overlay.OverlayMotion
 import com.opendictate.app.overlay.OverlayPositionMotion
 import com.opendictate.app.overlay.OverlayVisibilitySession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class OpenDictateAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -70,6 +73,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             onDictationClick = ::onOverlayTapped,
             onOperationCancel = ::onOverlayCancelled,
             onTransformationClick = ::onTransformationTapped,
+            onPasteLastClick = ::onPasteLastTapped,
             onDismiss = ::onOverlayDismissed,
             onMenuToggle = ::onOverlayMenuToggled,
         )
@@ -115,7 +119,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             if (!hasEligibleTarget) {
                 overlayMenuExpanded = false
                 transformationAvailable = false
-                overlay?.setMenuState(available = false, expanded = false)
+                overlay?.setMenuState(showTransformation = false, expanded = false)
             }
             removeOverlay()
             if (!hasEligibleTarget && DictationStateBus.state.value.isActive) stopDictation()
@@ -129,10 +133,9 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         val view = overlay ?: return
         transformationAvailable = settings.transformationButtonEnabled &&
             focused.captureEditableText().hasText
-        if (!transformationAvailable) overlayMenuExpanded = false
-        val showMenu = transformationAvailable && overlayMenuExpanded
-        view.setMenuState(available = transformationAvailable, expanded = showMenu)
-        val params = overlayParams(ime, focused, showMenu)
+        val showMenu = overlayMenuExpanded
+        view.setMenuState(showTransformation = transformationAvailable, expanded = showMenu)
+        val params = overlayParams(ime, focused, showMenu, transformationAvailable)
         if (overlayAttached) {
             val currentParams = overlayLayoutParams ?: return
             if (currentParams.width != params.width || currentParams.height != params.height) {
@@ -218,6 +221,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         ime: AccessibilityWindowInfo?,
         focused: AccessibilityNodeInfo,
         showMenu: Boolean,
+        showTransformation: Boolean,
     ): WindowManager.LayoutParams {
         val density = resources.displayMetrics.density
         val displayHeight = resources.displayMetrics.heightPixels
@@ -232,7 +236,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         }
         return WindowManager.LayoutParams(
             OverlayMotion.widthPx(density, showMenu),
-            OverlayMotion.heightPx(density, showMenu),
+            OverlayMotion.heightPx(density, showMenu, showTransformation),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -247,6 +251,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
                 focusedFieldTopPx = focusedBounds.takeUnless(Rect::isEmpty)?.top,
                 density = density,
                 showMenu = showMenu,
+                showTransformation = showTransformation,
             )
         }
     }
@@ -320,24 +325,89 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         ContextCompat.startForegroundService(this, intent)
     }
 
+    private fun onPasteLastTapped() {
+        if (DictationStateBus.state.value.isActive) return
+        setOverlayMenuExpanded(false)
+        val target = findFocusedEditable()
+        if (target == null || !target.isTextInput() || !target.isFocused) {
+            Toast.makeText(this, R.string.overlay_paste_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (target.isPassword) {
+            Toast.makeText(this, R.string.overlay_paste_password, Toast.LENGTH_SHORT).show()
+            return
+        }
+        scope.launch {
+            val latest = try {
+                withContext(Dispatchers.IO) {
+                    (application as OpenDictateApplication).transcriptHistoryStore.getLatestText()
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(
+                    this@OpenDictateAccessibilityService,
+                    R.string.overlay_paste_load_error,
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return@launch
+            }
+            if (latest == null) {
+                Toast.makeText(
+                    this@OpenDictateAccessibilityService,
+                    R.string.overlay_no_transcripts,
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return@launch
+            }
+            val focused = findFocusedEditable()
+            if (DictationStateBus.state.value.isActive ||
+                windows.none { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } ||
+                focused == null || !focused.isFocused || focused != target ||
+                focused.packageName != target.packageName || focused.isPassword
+            ) {
+                Toast.makeText(
+                    this@OpenDictateAccessibilityService,
+                    R.string.overlay_paste_unavailable,
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return@launch
+            }
+            val snapshot = focused.captureEditableText()
+            val cursor = snapshot.cursorAfter(latest)
+            val inserted = replaceFocusedText(
+                text = snapshot.compose(latest),
+                selectionStart = cursor,
+                selectionEnd = cursor,
+                expectedPackage = target.packageName,
+                expectedNode = target,
+            )
+            Toast.makeText(
+                this@OpenDictateAccessibilityService,
+                if (inserted) R.string.overlay_pasted else R.string.overlay_paste_unavailable,
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+
     private fun onOverlayDismissed() {
         if (DictationStateBus.state.value.isActive) return
         overlayVisibilitySession.dismiss()
         overlayMenuExpanded = false
-        overlay?.setMenuState(available = transformationAvailable, expanded = false)
+        overlay?.setMenuState(showTransformation = transformationAvailable, expanded = false)
         removeOverlay()
     }
 
     private fun onOverlayMenuToggled() {
-        if (DictationStateBus.state.value.isActive || !transformationAvailable) return
+        if (DictationStateBus.state.value.isActive) return
         setOverlayMenuExpanded(!overlayMenuExpanded)
     }
 
     private fun setOverlayMenuExpanded(expanded: Boolean) {
         if (overlayMenuExpanded == expanded) return
-        overlayMenuExpanded = expanded && transformationAvailable
+        overlayMenuExpanded = expanded
         overlay?.setMenuState(
-            available = transformationAvailable,
+            showTransformation = transformationAvailable,
             expanded = overlayMenuExpanded,
         )
         scheduleOverlayUpdate()
@@ -491,9 +561,15 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         text: String,
         selectionStart: Int,
         selectionEnd: Int,
+        expectedPackage: CharSequence? = targetPackage,
+        expectedNode: AccessibilityNodeInfo? = null,
     ): Boolean {
         val focused = findFocusedEditable() ?: return false
-        if (!focused.isTextInput() || focused.packageName != targetPackage) return false
+        if (
+            !focused.isTextInput() ||
+            focused.packageName != expectedPackage ||
+            expectedNode != null && focused != expectedNode
+        ) return false
         val setText = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }

@@ -11,6 +11,7 @@ class OverlayMotionTest {
         val density = 2f
 
         assertEquals(224, OverlayMotion.heightPx(density, showMenu = true))
+        assertEquals(344, OverlayMotion.heightPx(density, showMenu = true, showTransformation = true))
         assertEquals(104, OverlayMotion.heightPx(density, showMenu = false))
     }
 
@@ -25,7 +26,7 @@ class OverlayMotionTest {
     fun `open menu widens the overlay without changing action height`() {
         val density = 2f
 
-        assertEquals(408, OverlayMotion.widthPx(density, showMenu = true))
+        assertEquals(464, OverlayMotion.widthPx(density, showMenu = true))
         assertEquals(224, OverlayMotion.heightPx(density, showMenu = true))
         assertEquals(104, OverlayMotion.actionHeightPx(density))
     }

@@ -114,6 +114,7 @@ class EditableTextSnapshotTest {
     fun `replaces selected text`() {
         val snapshot = EditableTextSnapshot("wrong answer", 0, 5)
         assertEquals("right answer", snapshot.compose("right"))
+        assertEquals(5, snapshot.cursorAfter("right"))
     }
 
     @Test

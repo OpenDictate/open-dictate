@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-24T00:00:00+04:00",
+  "generatedAt": "2026-09-24T14:32:42+04:00",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
@@ -17,6 +17,7 @@
       "secondary": { "role": "secondary", "displayName": "Mode Silver", "tonalRamp": ["#202020", "#505050", "#7f7f7f", "#aaaaaa", "#d0d0d0", "#e3e3e3", "#f0f0f0", "#ffffff"] }
     },
     "typographyMeta": {
+      "webDisplay": { "displayName": "Web Display", "purpose": "Literata headings and wordmark on GitHub Pages." },
       "display": { "displayName": "Display", "purpose": "Hero statements only." },
       "headline": { "displayName": "Headline", "purpose": "Major section propositions and closing calls to action." },
       "title": { "displayName": "Title", "purpose": "Compact component and rail headings." },
@@ -94,14 +95,14 @@
       "Black work surfaces with no light-theme inversion.",
       "White microphone mark, white primary actions, and a white live caret.",
       "Restrained silver reserved for alternate modes and state contrast.",
-      "Unbounded display statements, Golos body copy, and monospaced utility labels.",
+      "Unbounded display statements in the Android app; the GitHub Pages site pairs Literata headings with Golos body copy.",
       "Hairline ledgers and routes instead of floating marketing cards.",
       "Direct, literal diagrams and interactions instead of decorative product mockups."
     ],
     "rules": [
       { "name": "The Contrast Rule", "body": "White marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.", "section": "colors" },
       { "name": "The Dark-Only Rule", "body": "Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.", "section": "colors" },
-      { "name": "The Three-Voice Rule", "body": "Unbounded states the proposition, Golos explains it, and mono labels the instrument. Do not swap their jobs.", "section": "typography" },
+      { "name": "The Three-Voice Rule", "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic; the Android app retains Unbounded.", "section": "typography" },
       { "name": "The Working-Surface Rule", "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.", "section": "layout" },
       { "name": "The Flat-by-Default Rule", "body": "A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.", "section": "elevation" },
       { "name": "The Shape-Hierarchy Rule", "body": "Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.", "section": "shapes" }
@@ -110,13 +111,13 @@
       "Do make the waveform, caret, route lines, and state labels explain how speech reaches text.",
       "Do use hairline structure and tonal layers to organize dense information.",
       "Do preserve the bilingual Latin/Cyrillic font setup and responsive English/Russian copy behavior.",
-      "Do keep every web control keyboard-visible and honor prefers-reduced-motion.",
+      "Do keep every web control keyboard-visible and honor `prefers-reduced-motion`.",
       "Do theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets."
     ],
     "donts": [
       "Don't introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.",
       "Don't use secondary as routine decoration or let it compete with signal for the primary action.",
-      "Don't replace Unbounded headlines with default sans type or use Unbounded for paragraphs.",
+      "Don't use display faces for paragraphs or replace the chosen display face with a default system sans.",
       "Don't flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.",
       "Don't copy web pixel values, web fonts, or hover-only affordances directly into native Android UI."
     ]
