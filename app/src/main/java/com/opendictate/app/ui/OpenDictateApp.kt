@@ -1092,14 +1092,12 @@ private fun DictationLanguage.title(): String = when (this) {
 }
 
 private fun TextTransformationModel.title(): String = when (this) {
-    TextTransformationModel.LUNA -> "GPT-5.6 Luna"
-    TextTransformationModel.TERRA -> "GPT-5.6 Terra"
-    TextTransformationModel.SOL -> "GPT-5.6 Sol"
+    TextTransformationModel.LUNA -> "GPT-6 Luna"
+    TextTransformationModel.SOL -> "GPT-6 Sol"
 }
 
 private fun TextTransformationModel.descriptionRes(): Int = when (this) {
     TextTransformationModel.LUNA -> R.string.transformation_model_luna_description
-    TextTransformationModel.TERRA -> R.string.transformation_model_terra_description
     TextTransformationModel.SOL -> R.string.transformation_model_sol_description
 }
 
