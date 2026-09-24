@@ -47,7 +47,6 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.SettingsAccessibility
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.AlertDialog
@@ -79,13 +78,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.preferredFrameRate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.relocation.bringIntoView
@@ -232,7 +234,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     SectionLabel(stringResource(R.string.section_readiness))
                     Spacer(Modifier.height(10.dp))
                     SetupCard(
-                        icon = Icons.Outlined.Key,
+                        icon = rememberVectorPainter(Icons.Outlined.Key),
                         title = stringResource(R.string.api_key_title),
                         subtitle = stringResource(
                             if (state.hasApiKey) R.string.api_key_saved else R.string.api_key_needed,
@@ -245,7 +247,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     )
                     Spacer(Modifier.height(10.dp))
                     SetupCard(
-                        icon = Icons.Outlined.Mic,
+                        icon = painterResource(R.drawable.ic_mic_chatgpt_24),
                         title = stringResource(R.string.microphone_title),
                         subtitle = stringResource(
                             if (state.microphoneGranted) {
@@ -270,7 +272,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     )
                     Spacer(Modifier.height(10.dp))
                     SetupCard(
-                        icon = Icons.Outlined.SettingsAccessibility,
+                        icon = rememberVectorPainter(Icons.Outlined.SettingsAccessibility),
                         title = stringResource(R.string.keyboard_button_title),
                         subtitle = stringResource(
                             if (state.accessibilityEnabled) {
@@ -454,7 +456,7 @@ private fun WaveLogo() {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            Icons.Outlined.Mic,
+            painterResource(R.drawable.ic_mic_chatgpt_24),
             contentDescription = null,
             tint = White,
             modifier = Modifier.size(23.dp),
@@ -628,7 +630,7 @@ private fun ModelOption(
 
 @Composable
 private fun SetupCard(
-    icon: ImageVector,
+    icon: Painter,
     title: String,
     subtitle: String,
     complete: Boolean,

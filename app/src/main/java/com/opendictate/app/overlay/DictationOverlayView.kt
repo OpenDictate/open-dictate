@@ -93,7 +93,7 @@ private class OverlayPrimaryActionView(
     private val onMenuToggle: () -> Unit,
 ) : View(context) {
     private val density = resources.displayMetrics.density
-    private val idleIcon = icon(R.drawable.ic_mic_rounded_24)
+    private val idleIcon = icon(R.drawable.ic_mic_chatgpt_24)
     private val stopIcon = icon(R.drawable.ic_stop_rounded_24)
     private val closeIcon = icon(R.drawable.ic_close_rounded_24)
     private val dictationColor = Color.rgb(8, 8, 8)
