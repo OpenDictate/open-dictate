@@ -37,6 +37,7 @@ class DictationOverlayView(
     onOperationCancel: () -> Unit,
     onTransformationClick: () -> Unit,
     onPasteLastClick: () -> Unit,
+    onLastDictationClick: () -> Unit,
     onDismiss: () -> Unit,
     onMenuToggle: () -> Unit,
 ) : LinearLayout(context) {
@@ -55,6 +56,13 @@ class DictationOverlayView(
         labelResource = R.string.overlay_paste_last,
         descriptionResource = R.string.overlay_paste_last_description,
     )
+    private val lastDictationButton = OverlayMenuActionView(
+        context = context,
+        onClick = onLastDictationClick,
+        iconResource = R.drawable.ic_mic_chatgpt_24,
+        labelResource = R.string.overlay_last_dictation,
+        descriptionResource = R.string.overlay_last_dictation_description,
+    )
     private val dictationButton = OverlayPrimaryActionView(
         context = context,
         onClick = onDictationClick,
@@ -67,6 +75,13 @@ class DictationOverlayView(
         orientation = VERTICAL
         gravity = Gravity.END
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+        addView(
+            lastDictationButton,
+            LayoutParams(
+                OverlayMotion.widthPx(density, showMenu = true),
+                OverlayMotion.actionHeightPx(density),
+            ).apply { bottomMargin = OverlayMotion.gapPx(density) },
+        )
         addView(
             pasteLastButton,
             LayoutParams(
@@ -92,6 +107,7 @@ class DictationOverlayView(
     }
 
     fun render(state: DictationState) {
+        lastDictationButton.render(state)
         transformationButton.render(state)
         pasteLastButton.render(state)
         dictationButton.render(state)
@@ -99,6 +115,7 @@ class DictationOverlayView(
 
     fun setMenuState(showTransformation: Boolean, expanded: Boolean) {
         dictationButton.setMenuState(available = true, expanded = expanded)
+        lastDictationButton.visibility = if (expanded) VISIBLE else GONE
         pasteLastButton.visibility = if (expanded) VISIBLE else GONE
         transformationButton.visibility = if (showTransformation && expanded) VISIBLE else GONE
     }

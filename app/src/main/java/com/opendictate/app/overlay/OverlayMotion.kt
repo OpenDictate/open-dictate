@@ -12,7 +12,7 @@ internal object OverlayMotion {
     private const val GAP_DP = 8f
     private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
-    private const val TOP_MARGIN_DP = 16f
+    private const val TOP_MARGIN_DP = 32f
 
     fun windowOffsetY(
         displayHeightPx: Int,
@@ -40,8 +40,8 @@ internal object OverlayMotion {
         showTransformation: Boolean = false,
     ): Int {
         val heightDp = if (showMenu) {
-            ACTION_HEIGHT_DP * (if (showTransformation) 3 else 2) +
-                GAP_DP * (if (showTransformation) 2 else 1)
+            ACTION_HEIGHT_DP * (if (showTransformation) 4 else 3) +
+                GAP_DP * (if (showTransformation) 3 else 2)
         } else {
             ACTION_HEIGHT_DP
         }

@@ -90,7 +90,7 @@
     <string name="transcription_timeout_range">От 1 до 600 секунд</string>
     <string name="test_field_label">Попробуйте здесь</string>
     <string name="test_field_placeholder">Откройте клавиатуру — кнопка появится над ней</string>
-    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenDictate. Транскрипты хранятся только на устройстве. Аудио, преобразуемый текст и история, в которой вы явно запускаете AI-поиск, отправляются напрямую в OpenAI.</string>
+    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenDictate. Аудио последней диктовки и история транскрипций хранятся на устройстве. Аудио, преобразуемый текст и история, в которой вы явно запускаете AI-поиск, отправляются напрямую в OpenAI.</string>
 
     <string name="api_key_dialog_replace">Заменить API key</string>
     <string name="api_key_dialog_connect">Подключить OpenAI</string>
@@ -107,6 +107,8 @@
     <string name="overlay_start_transformation">Надиктовать инструкцию для преобразования текста</string>
     <string name="overlay_edit_text">Изменить текст</string>
     <string name="overlay_paste_last">Вставить последнюю</string>
+    <string name="overlay_last_dictation">Последняя диктовка</string>
+    <string name="overlay_last_dictation_description">Повторно распознать последнюю записанную диктовку</string>
     <string name="overlay_paste_last_description">Вставить последнюю транскрипцию из истории в это поле</string>
     <string name="overlay_no_transcripts">В истории пока нет транскрипций</string>
     <string name="overlay_paste_load_error">Не удалось загрузить последнюю транскрипцию</string>
@@ -148,6 +150,7 @@
 
     <string name="error_add_api_key">Добавьте OpenAI API key в приложении</string>
     <string name="error_speech_not_recognized">Речь не распознана</string>
+    <string name="error_no_last_dictation">Сохранённой диктовки пока нет</string>
     <string name="error_transcription_failed">Не удалось распознать речь</string>
     <string name="error_nothing_to_transform">Введите или выделите текст для преобразования</string>
     <string name="error_password_field_transformation">Поля паролей нельзя преобразовывать</string>

@@ -10,8 +10,8 @@ class OverlayMotionTest {
     fun `window height matches visible actions`() {
         val density = 2f
 
-        assertEquals(224, OverlayMotion.heightPx(density, showMenu = true))
-        assertEquals(344, OverlayMotion.heightPx(density, showMenu = true, showTransformation = true))
+        assertEquals(344, OverlayMotion.heightPx(density, showMenu = true))
+        assertEquals(464, OverlayMotion.heightPx(density, showMenu = true, showTransformation = true))
         assertEquals(104, OverlayMotion.heightPx(density, showMenu = false))
     }
 
@@ -27,7 +27,7 @@ class OverlayMotionTest {
         val density = 2f
 
         assertEquals(464, OverlayMotion.widthPx(density, showMenu = true))
-        assertEquals(224, OverlayMotion.heightPx(density, showMenu = true))
+        assertEquals(344, OverlayMotion.heightPx(density, showMenu = true))
         assertEquals(104, OverlayMotion.actionHeightPx(density))
     }
 
@@ -45,7 +45,7 @@ class OverlayMotionTest {
             density = 2f,
             showMenu = false,
         )
-        assertEquals(32f, buttonTop.toFloat(), 0.001f)
+        assertEquals(64f, buttonTop.toFloat(), 0.001f)
     }
 
     @Test
@@ -229,6 +229,6 @@ class OverlayMotionTest {
         )
         val buttonTop = displayHeight - offset - OverlayMotion.heightPx(density)
 
-        assertEquals(16f * density, buttonTop.toFloat(), 0.001f)
+        assertEquals(32f * density, buttonTop.toFloat(), 0.001f)
     }
 }

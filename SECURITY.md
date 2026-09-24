@@ -14,6 +14,8 @@ Release signing material is expected to live only in GitHub Actions secrets.
 Transcript history is stored only in the app-private SQLite database. Android
 backup remains disabled. History search results are kept in memory, and AI
 history search requests use the OpenAI Responses API with storage disabled.
+The latest dictation audio is kept in one app-private WAV file and replaced by
+the next dictation. It is excluded from Android backup with the rest of the app.
 
 Completed text is copied to the Android system clipboard when it cannot be
 inserted into the original field. Users can also explicitly copy an item from

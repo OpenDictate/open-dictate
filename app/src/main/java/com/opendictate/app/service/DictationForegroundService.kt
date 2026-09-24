@@ -13,6 +13,7 @@ import com.opendictate.app.MainActivity
 import com.opendictate.app.OpenDictateApplication
 import com.opendictate.app.R
 import com.opendictate.app.audio.PcmAudioRecorder
+import com.opendictate.app.audio.LastDictationAudioStore
 import com.opendictate.app.audio.WavFile
 import com.opendictate.app.data.SecureApiKeyStore
 import com.opendictate.app.data.SettingsStore
@@ -36,6 +37,7 @@ class DictationForegroundService : Service() {
     private var activeJob: Job? = null
     private var stopSignal = CompletableDeferred<Unit>()
     private var activeOperation = DictationOperation.DICTATION
+    private var retryPending = false
 
     override fun onCreate() {
         super.onCreate()
@@ -54,6 +56,19 @@ class DictationForegroundService : Service() {
                     operation = DictationOperation.TRANSFORMATION,
                     sourceText = intent.getStringExtra(EXTRA_SOURCE_TEXT),
                 )
+            }
+            ACTION_RETRY_LAST -> if (!retryPending && !DictationStateBus.state.value.isActive) {
+                retryPending = true
+                val previousJob = activeJob
+                previousJob?.cancel()
+                scope.launch {
+                    try {
+                        previousJob?.join()
+                        retryLastDictation()
+                    } finally {
+                        retryPending = false
+                    }
+                }
             }
         }
         return START_NOT_STICKY
@@ -108,59 +123,77 @@ class DictationForegroundService : Service() {
             val recorder = PcmAudioRecorder(this@DictationForegroundService)
             var tempFile: File? = null
             var wavFile: WavFile? = null
+            var savedRecording: LastDictationAudioStore.Recording? = null
             var modelMessage: String? = null
             try {
                 val transcript = when (model) {
-                    TranscriptionModel.LIVE -> apiClient.transcribeLive(
-                        apiKey = apiKey,
-                        modelId = liveModelId,
-                        scope = scope,
-                        recorder = recorder,
-                        languages = settings.languages,
-                        prompt = settings.prompt,
-                        responseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
-                        waitForStop = { stopSignal.await() },
-                        onReady = {
-                            publishWhileActive(
-                                sessionId,
-                                DictationState(
-                                    sessionId = sessionId,
-                                    phase = DictationPhase.LISTENING,
-                                    operation = operation,
-                                    model = model,
-                                ),
-                            )
-                        },
-                        onPartial = { text ->
-                            val phase = if (
-                                DictationStateBus.state.value.phase == DictationPhase.PROCESSING
-                            ) {
-                                DictationPhase.PROCESSING
-                            } else {
-                                DictationPhase.LISTENING
-                            }
-                            publishWhileActive(
-                                sessionId,
-                                DictationState(
-                                    sessionId = sessionId,
-                                    phase = phase,
-                                    operation = operation,
-                                    model = model,
-                                    transcript = if (operation == DictationOperation.DICTATION) {
-                                        TranscriptFormatter.format(text, keepTrailingPeriod)
-                                    } else {
-                                        ""
-                                    },
-                                ),
-                            )
-                        },
-                    )
+                    TranscriptionModel.LIVE -> {
+                        if (operation == DictationOperation.DICTATION) {
+                            savedRecording = (application as OpenDictateApplication)
+                                .lastDictationAudioStore.begin(scope)
+                        }
+                        apiClient.transcribeLive(
+                            apiKey = apiKey,
+                            modelId = liveModelId,
+                            scope = scope,
+                            recorder = recorder,
+                            languages = settings.languages,
+                            prompt = settings.prompt,
+                            responseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
+                            waitForStop = { stopSignal.await() },
+                            onReady = {
+                                publishWhileActive(
+                                    sessionId,
+                                    DictationState(
+                                        sessionId = sessionId,
+                                        phase = DictationPhase.LISTENING,
+                                        operation = operation,
+                                        model = model,
+                                    ),
+                                )
+                            },
+                            onPartial = { text ->
+                                val phase = if (
+                                    DictationStateBus.state.value.phase == DictationPhase.PROCESSING
+                                ) {
+                                    DictationPhase.PROCESSING
+                                } else {
+                                    DictationPhase.LISTENING
+                                }
+                                publishWhileActive(
+                                    sessionId,
+                                    DictationState(
+                                        sessionId = sessionId,
+                                        phase = phase,
+                                        operation = operation,
+                                        model = model,
+                                        transcript = if (operation == DictationOperation.DICTATION) {
+                                            TranscriptFormatter.format(text, keepTrailingPeriod)
+                                        } else {
+                                            ""
+                                        },
+                                    ),
+                                )
+                            },
+                            onAudio = { chunk -> savedRecording?.append(chunk) },
+                        ).also {
+                            withContext(NonCancellable) { savedRecording?.finish() }
+                        }
+                    }
                     TranscriptionModel.ACCURATE -> {
-                        val file = File.createTempFile("dictation-", ".wav", cacheDir)
-                        tempFile = file
-                        val wav = WavFile(file)
-                        wavFile = wav
-                        recorder.start(scope, wav::write)
+                        val file = if (operation == DictationOperation.DICTATION) {
+                            (application as OpenDictateApplication).lastDictationAudioStore
+                                .begin(scope).also { savedRecording = it }.file
+                        } else {
+                            File.createTempFile("dictation-", ".wav", cacheDir).also {
+                                tempFile = it
+                                wavFile = WavFile(it)
+                            }
+                        }
+                        recorder.start(scope) { chunk ->
+                            if (savedRecording != null) savedRecording.append(chunk)
+                            else wavFile?.write(chunk)
+                        }
                         publishWhileActive(
                             sessionId,
                             DictationState(
@@ -172,7 +205,10 @@ class DictationForegroundService : Service() {
                         )
                         stopSignal.await()
                         recorder.stop()
-                        wav.close()
+                        withContext(NonCancellable) {
+                            savedRecording?.finish()
+                            wavFile?.close()
+                        }
                         publishWhileActive(
                             sessionId,
                             DictationState(
@@ -242,7 +278,11 @@ class DictationForegroundService : Service() {
                 delay(1_200)
                 clearSessionIfCurrent(sessionId)
             } catch (error: Throwable) {
-                withContext(NonCancellable) { recorder.stop() }
+                withContext(NonCancellable) {
+                    recorder.stop()
+                    runCatching { savedRecording?.finish() }
+                    runCatching { wavFile?.close() }
+                }
                 if (error !is kotlinx.coroutines.CancellationException) {
                     publishWhileActive(
                         sessionId,
@@ -258,8 +298,82 @@ class DictationForegroundService : Service() {
                     clearSessionIfCurrent(sessionId)
                 }
             } finally {
-                runCatching { wavFile?.close() }
                 tempFile?.delete()
+                ServiceCompat.stopForeground(
+                    this@DictationForegroundService,
+                    ServiceCompat.STOP_FOREGROUND_REMOVE,
+                )
+                if (!retryPending) stopSelf()
+            }
+        }
+    }
+
+    private fun retryLastDictation() {
+        val apiKey = SecureApiKeyStore(this).get()
+        if (apiKey.isNullOrBlank()) {
+            publishError(getString(R.string.error_add_api_key))
+            stopSelf()
+            return
+        }
+        val settings = SettingsStore(this)
+        val sessionId = nextSession.incrementAndGet()
+        val model = TranscriptionModel.ACCURATE
+        activeOperation = DictationOperation.DICTATION
+        startForeground(NOTIFICATION_ID, notification(true, DictationOperation.DICTATION))
+        DictationStateBus.set(
+            DictationState(sessionId = sessionId, phase = DictationPhase.PROCESSING, model = model),
+        )
+        activeJob = scope.launch {
+            try {
+                val file = withContext(Dispatchers.IO) {
+                    (application as OpenDictateApplication).lastDictationAudioStore.latestFile()
+                } ?: throw IllegalStateException(getString(R.string.error_no_last_dictation))
+                val transcript = apiClient.transcribeFile(
+                    apiKey,
+                    settings.accurateModelId,
+                    file,
+                    settings.languages,
+                    settings.prompt,
+                    settings.transcriptionResponseTimeoutSeconds,
+                )
+                if (transcript.isBlank()) {
+                    throw IllegalStateException(getString(R.string.error_speech_not_recognized))
+                }
+                val result = TranscriptFormatter.formatFinal(
+                    transcript,
+                    settings.keepTrailingPeriod,
+                )
+                val completed = publishWhileActive(
+                    sessionId,
+                    DictationState(
+                        sessionId = sessionId,
+                        phase = DictationPhase.COMPLETED,
+                        model = model,
+                        transcript = result,
+                    ),
+                )
+                if (completed) withContext(Dispatchers.IO) {
+                    runCatching {
+                        (application as OpenDictateApplication).transcriptHistoryStore.add(result)
+                    }
+                }
+                delay(1_200)
+                clearSessionIfCurrent(sessionId)
+            } catch (error: Throwable) {
+                if (error !is kotlinx.coroutines.CancellationException) {
+                    publishWhileActive(
+                        sessionId,
+                        DictationState(
+                            sessionId = sessionId,
+                            phase = DictationPhase.ERROR,
+                            model = model,
+                            message = error.message ?: getString(R.string.error_transcription_failed),
+                        ),
+                    )
+                    delay(3_000)
+                    clearSessionIfCurrent(sessionId)
+                }
+            } finally {
                 ServiceCompat.stopForeground(
                     this@DictationForegroundService,
                     ServiceCompat.STOP_FOREGROUND_REMOVE,
@@ -421,6 +535,7 @@ class DictationForegroundService : Service() {
         const val ACTION_START = "com.opendictate.app.action.START_DICTATION"
         const val ACTION_START_TRANSFORMATION =
             "com.opendictate.app.action.START_TEXT_TRANSFORMATION"
+        const val ACTION_RETRY_LAST = "com.opendictate.app.action.RETRY_LAST_DICTATION"
         const val ACTION_STOP = "com.opendictate.app.action.STOP_DICTATION"
         const val ACTION_CANCEL = "com.opendictate.app.action.CANCEL_DICTATION"
         const val EXTRA_SOURCE_TEXT = "source_text"

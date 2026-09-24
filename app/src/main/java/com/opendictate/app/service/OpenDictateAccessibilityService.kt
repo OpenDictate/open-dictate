@@ -74,6 +74,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             onOperationCancel = ::onOverlayCancelled,
             onTransformationClick = ::onTransformationTapped,
             onPasteLastClick = ::onPasteLastTapped,
+            onLastDictationClick = ::onLastDictationTapped,
             onDismiss = ::onOverlayDismissed,
             onMenuToggle = ::onOverlayMenuToggled,
         )
@@ -387,6 +388,54 @@ class OpenDictateAccessibilityService : AccessibilityService() {
                 if (inserted) R.string.overlay_pasted else R.string.overlay_paste_unavailable,
                 Toast.LENGTH_SHORT,
             ).show()
+        }
+    }
+
+    private fun onLastDictationTapped() {
+        if (DictationStateBus.state.value.isActive) return
+        setOverlayMenuExpanded(false)
+        val focused = findFocusedEditable()
+        if (focused?.isTextInput() != true || !focused.isFocused) {
+            Toast.makeText(this, R.string.overlay_paste_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!SecureApiKeyStore(this).hasKey()) {
+            startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        }
+        scope.launch {
+            val exists = try {
+                withContext(Dispatchers.IO) {
+                    (application as OpenDictateApplication).lastDictationAudioStore.latestFile() != null
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(this@OpenDictateAccessibilityService,
+                    R.string.error_transcription_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            if (!exists) {
+                Toast.makeText(this@OpenDictateAccessibilityService,
+                    R.string.error_no_last_dictation, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val current = findFocusedEditable()
+            if (DictationStateBus.state.value.isActive ||
+                windows.none { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } ||
+                current == null || !current.isFocused || current != focused
+            ) return@launch
+            editableSnapshot = current.captureEditableText()
+            clearPendingTextRestoration()
+            targetPackage = current.packageName
+            activeSessionId = 0L
+            ignoredSessionId = 0L
+            transcriptDelivery.reset()
+            ContextCompat.startForegroundService(
+                this@OpenDictateAccessibilityService,
+                Intent(this@OpenDictateAccessibilityService, DictationForegroundService::class.java)
+                    .setAction(DictationForegroundService.ACTION_RETRY_LAST),
+            )
         }
     }
 

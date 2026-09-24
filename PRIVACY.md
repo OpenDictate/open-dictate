@@ -7,8 +7,12 @@ OpenDictate does not operate a backend and does not include analytics or ads.
   available model IDs directly from OpenAI. It caches only model IDs locally
   and checks again after 24 hours when the settings screen opens. You can also
   refresh the list manually.
-- Microphone audio is sent directly to OpenAI only while dictation is active.
-- Temporary recordings used by GPT Transcribe are deleted after each request.
+- Microphone audio is sent directly to OpenAI during dictation or when you
+  explicitly retry the latest recording.
+- The latest dictation is kept as one WAV file in app-private storage, even if
+  transcription fails. Starting another dictation replaces it. The floating
+  menu's Last dictation action sends that audio to OpenAI again. Text
+  transformation recordings remain temporary and are deleted after use.
 - Successful dictation transcripts are stored in the application's private
   local database so you can review and delete them. They are not included in
   Android backups.

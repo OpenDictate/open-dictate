@@ -100,11 +100,15 @@ class OpenAiTranscriptionClient(
         waitForStop: suspend () -> Unit,
         onReady: () -> Unit,
         onPartial: (String) -> Unit,
+        onAudio: (ByteArray) -> Unit = {},
     ): String {
         val session = LiveSession(apiKey, modelId, languages, prompt, onPartial)
         try {
             session.connect()
-            recorder.start(scope, session::sendAudio)
+            recorder.start(scope) { chunk ->
+                onAudio(chunk)
+                session.sendAudio(chunk)
+            }
             withTimeout(CONNECT_TIMEOUT_MS) { session.ready.await() }
             onReady()
             waitForStop()

@@ -93,7 +93,7 @@
     <string name="transcription_timeout_range">1–600 seconds</string>
     <string name="test_field_label">Try it here</string>
     <string name="test_field_placeholder">Open the keyboard — the button will appear above it</string>
-    <string name="privacy_note">Your key, recordings, and text never pass through an OpenDictate server. Transcripts are saved only on this device. Audio, text you transform, and history you explicitly search with AI are sent directly to OpenAI.</string>
+    <string name="privacy_note">Your key, recordings, and text never pass through an OpenDictate server. The latest dictation audio and transcript history stay on this device. Audio, text you transform, and history you explicitly search with AI are sent directly to OpenAI.</string>
 
     <string name="api_key_dialog_replace">Replace API key</string>
     <string name="api_key_dialog_connect">Connect OpenAI</string>
@@ -110,6 +110,8 @@
     <string name="overlay_start_transformation">Dictate a text transformation instruction</string>
     <string name="overlay_edit_text">Edit text</string>
     <string name="overlay_paste_last">Paste last</string>
+    <string name="overlay_last_dictation">Last dictation</string>
+    <string name="overlay_last_dictation_description">Transcribe the latest recorded dictation again</string>
     <string name="overlay_paste_last_description">Paste the latest transcript from history into this field</string>
     <string name="overlay_no_transcripts">No transcripts saved yet</string>
     <string name="overlay_paste_load_error">Could not load the latest transcript</string>
@@ -151,6 +153,7 @@
 
     <string name="error_add_api_key">Add an OpenAI API key in the app</string>
     <string name="error_speech_not_recognized">No speech was recognized</string>
+    <string name="error_no_last_dictation">No saved dictation yet</string>
     <string name="error_transcription_failed">Could not transcribe speech</string>
     <string name="error_nothing_to_transform">Enter or select text to transform</string>
     <string name="error_password_field_transformation">Password fields cannot be transformed</string>
