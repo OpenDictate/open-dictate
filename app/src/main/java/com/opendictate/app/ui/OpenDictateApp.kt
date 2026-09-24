@@ -132,6 +132,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var showKeyDialog by remember { mutableStateOf(false) }
     var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showAppExclusions by rememberSaveable { mutableStateOf(false) }
     val settingsScrollState = rememberScrollState()
     val maximumDisplayRefreshRate = LocalView.current.display
         ?.supportedModes
@@ -145,7 +146,12 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
     LaunchedEffect(showHistory) {
         if (showHistory) viewModel.refreshHistory()
     }
-    BackHandler(enabled = showHistory) { showHistory = false }
+    LaunchedEffect(showAppExclusions) {
+        if (showAppExclusions) viewModel.loadInstalledApps()
+    }
+    BackHandler(enabled = showHistory || showAppExclusions) {
+        if (showAppExclusions) showAppExclusions = false else showHistory = false
+    }
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -162,7 +168,16 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
             containerColor = Ink,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
         ) { padding ->
-            if (showHistory) {
+            if (showAppExclusions) {
+                AppExclusionsScreen(
+                    apps = state.installedApps,
+                    excludedPackages = state.excludedPackages,
+                    loading = state.appsLoading,
+                    onBack = { showAppExclusions = false },
+                    onExcludedChange = viewModel::setAppExcluded,
+                    modifier = Modifier.padding(padding),
+                )
+            } else if (showHistory) {
                 TranscriptHistoryScreen(
                     state = historyState,
                     onBack = { showHistory = false },
@@ -292,6 +307,15 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         onClick = {
                             context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                         },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    SetupCard(
+                        icon = rememberVectorPainter(Icons.Outlined.Lock),
+                        title = stringResource(R.string.app_exclusions_title),
+                        subtitle = stringResource(R.string.app_exclusions_summary, state.excludedPackages.size),
+                        complete = true,
+                        action = stringResource(R.string.app_exclusions_open),
+                        onClick = { showAppExclusions = true },
                     )
                     Spacer(Modifier.height(26.dp))
                     SectionLabel(stringResource(R.string.section_accuracy))

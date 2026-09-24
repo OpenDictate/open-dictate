@@ -68,6 +68,15 @@
     <string name="accessibility_enabled">Сервис специальных возможностей включён</string>
     <string name="accessibility_enable_hint">Включите OpenDictate в настройках</string>
     <string name="action_enable">ВКЛЮЧИТЬ</string>
+    <string name="app_exclusions_title">Скрыть в приложениях</string>
+    <string name="app_exclusions_summary">Скрыто в приложениях: %1$d</string>
+    <string name="app_exclusions_open">ВЫБРАТЬ</string>
+    <string name="app_exclusions_back">Вернуться к настройкам</string>
+    <string name="app_exclusions_description">Включите приложение в списке, чтобы кнопка диктовки не появлялась при вводе текста в нём.</string>
+    <string name="app_exclusions_search">Фильтр по названию приложения</string>
+    <string name="app_exclusions_clear_search">Очистить фильтр</string>
+    <string name="app_exclusions_empty">Приложения на устройстве не найдены</string>
+    <string name="app_exclusions_no_matches">Приложения не найдены</string>
 
     <string name="dictation_languages_title">Языки диктовки</string>
     <string name="dictation_languages_subtitle">Выберите один или несколько</string>

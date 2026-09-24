@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-24T14:32:42+04:00",
+  "generatedAt": "2026-09-24T19:21:01+04:00",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
@@ -86,6 +86,13 @@
       "description": "Compact uppercase navigation that recedes until hover or focus.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a href=\"#\">Modes</a><a href=\"#\">Privacy</a><a href=\"#\">Setup</a><a href=\"#\">Source</a></nav>",
       "css": ".ds-nav{display:flex;align-items:center;gap:30px}.ds-nav a{color:var(--fog,#c6c6c6);font:400 12px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-decoration:none;text-transform:uppercase;transition:color 180ms ease}.ds-nav a:hover{color:var(--signal,#ffffff)}.ds-nav a:focus-visible{outline:3px solid var(--secondary,#e3e3e3);outline-offset:4px}@media(max-width:1040px){.ds-nav{display:none}}"
+    },
+    {
+      "name": "App Exclusion Row",
+      "kind": "custom",
+      "description": "The Android settings list pairs an installed app icon and name with a Material switch; selected apps rise to the top.",
+      "html": "<label class=\"ds-app-row\"><span class=\"ds-app-icon\" aria-hidden=\"true\">A</span><span class=\"ds-app-name\">App name</span><input type=\"checkbox\"><span class=\"ds-app-switch\" aria-hidden=\"true\"></span></label>",
+      "css": ".ds-app-row{min-height:64px;padding:8px 20px;display:flex;align-items:center;gap:14px;background:var(--ink,#080808);color:var(--white,#ffffff);font:400 16px/1.4 Roboto,sans-serif;cursor:pointer}.ds-app-icon{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:10px;background:var(--panel-raised,#242424);font-weight:600}.ds-app-name{flex:1}.ds-app-row input{position:absolute;opacity:0;width:1px;height:1px}.ds-app-switch{width:52px;height:32px;flex:none;border:2px solid var(--fog,#c6c6c6);border-radius:999px;background:var(--panel-raised,#242424);position:relative}.ds-app-switch:before{content:'';position:absolute;top:5px;left:5px;width:18px;height:18px;border-radius:50%;background:var(--fog,#c6c6c6);transition:transform 180ms ease}.ds-app-row input:checked+.ds-app-switch{background:var(--signal,#ffffff);border-color:var(--signal,#ffffff)}.ds-app-row input:checked+.ds-app-switch:before{background:var(--ink,#080808);transform:translateX(20px)}.ds-app-row input:focus-visible+.ds-app-switch{outline:3px solid var(--secondary,#e3e3e3);outline-offset:3px}"
     }
   ],
   "narrative": {

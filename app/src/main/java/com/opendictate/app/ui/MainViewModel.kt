@@ -4,6 +4,7 @@ import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.view.accessibility.AccessibilityManager
 import androidx.core.content.ContextCompat
@@ -46,7 +47,12 @@ data class MainUiState(
     val languages: Set<DictationLanguage> = emptySet(),
     val keepTrailingPeriod: Boolean = true,
     val transcriptionResponseTimeoutSeconds: Int? = TranscriptionResponseTimeout.DEFAULT_SECONDS,
+    val excludedPackages: Set<String> = emptySet(),
+    val installedApps: List<InstalledApp> = emptyList(),
+    val appsLoading: Boolean = false,
 )
+
+data class InstalledApp(val packageName: String, val label: String)
 
 enum class HistorySearchMode {
     NONE,
@@ -85,6 +91,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var historyLoadJob: Job? = null
     private var historySearchJob: Job? = null
     private var modelLoadJob: Job? = null
+    private var appsLoadJob: Job? = null
 
     init {
         refreshModelCatalog()
@@ -196,6 +203,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setTransformationButtonEnabled(enabled: Boolean) {
         settings.transformationButtonEnabled = enabled
         mutableState.update { it.copy(transformationButtonEnabled = enabled) }
+    }
+
+    fun loadInstalledApps() {
+        if (appsLoadJob?.isActive == true) return
+        appsLoadJob = viewModelScope.launch {
+            mutableState.update { it.copy(appsLoading = true, excludedPackages = settings.excludedPackages) }
+            val apps = withContext(Dispatchers.IO) {
+                val packageManager = getApplication<Application>().packageManager
+                val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+                packageManager.queryIntentActivities(launcherIntent, 0)
+                    .map { info ->
+                        InstalledApp(info.activityInfo.packageName, info.loadLabel(packageManager).toString())
+                    }
+                    .filterNot { it.packageName == getApplication<Application>().packageName }
+                    .distinctBy(InstalledApp::packageName)
+                    .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, InstalledApp::label)
+                        .thenBy(InstalledApp::packageName))
+            }
+            mutableState.update { it.copy(installedApps = apps, appsLoading = false) }
+        }
+    }
+
+    fun setAppExcluded(packageName: String, excluded: Boolean) {
+        val packages = mutableState.value.excludedPackages.toMutableSet()
+        if (excluded) packages.add(packageName) else packages.remove(packageName)
+        settings.excludedPackages = packages
+        mutableState.update { it.copy(excludedPackages = packages) }
     }
 
     fun toggleLanguage(language: DictationLanguage) {
@@ -339,6 +373,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         languages = settings.languages,
         keepTrailingPeriod = settings.keepTrailingPeriod,
         transcriptionResponseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
+        excludedPackages = settings.excludedPackages,
     )
 
     private fun isAccessibilityEnabled(context: Context): Boolean {
