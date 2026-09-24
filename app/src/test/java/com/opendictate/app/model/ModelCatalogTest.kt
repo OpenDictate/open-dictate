@@ -1,57 +1,81 @@
 package com.opendictate.app.model
 
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ModelCatalogTest {
     @Test
-    fun `shows only current supported roles and skips old versions and snapshots`() {
-        val catalog = ModelCatalog.fromIds(listOf(
-            "gpt-live-transcribe", "gpt-live-transcribe-2026-09-01",
-            "gpt-transcribe", "gpt-transcribe-2026-09-01",
-            "gpt-5.6-luna", "gpt-6-luna", "gpt-7-luna", "gpt-7-luna-2026-09-01",
-            "gpt-6-sol", "gpt-7-sol", "gpt-7-mini", "gpt-7-astra",
-            "gpt-realtime-whisper", "gpt-4o-transcribe", "gpt-6-codex", "gpt-7-pro",
-            "gpt-image-2", "omni-moderation-latest",
+    fun `offers five newest general text models but no Astra or specialized models`() {
+        val catalog = ModelCatalog.fromModelsResponse(apiResponse(
+            "gpt-5.6-luna" to 10,
+            "gpt-5.6-terra" to 20,
+            "gpt-5.6-sol" to 30,
+            "gpt-6-luna" to 40,
+            "gpt-6-sol" to 50,
+            "gpt-7-mini" to 60,
+            "gpt-7-astra" to 100,
+            "gpt-7-mini-2026-09-24" to 101,
+            "gpt-7-codex" to 102,
+            "gpt-7-pro" to 103,
+            "gpt-live-transcribe" to 1,
+            "gpt-transcribe" to 1,
         ))
 
         assertEquals(listOf("gpt-live-transcribe"), catalog.live)
         assertEquals(listOf("gpt-transcribe"), catalog.accurate)
-        assertEquals(listOf("gpt-7-luna", "gpt-7-sol"), catalog.text)
+        assertEquals(listOf(
+            "gpt-7-mini", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra",
+        ), catalog.text)
     }
 
     @Test
-    fun `parses model ids from API response`() {
-        val catalog = ModelCatalog.fromModelsResponse(
-            """{"object":"list","data":[{"id":"gpt-transcribe"},{"id":"gpt-7-luna"}]}""",
+    fun `created timestamp determines recency rather than the version number`() {
+        val catalog = ModelCatalog.fromModelsResponse(apiResponse(
+            "gpt-7-luna" to 10,
+            "gpt-6-luna" to 20,
+        ))
+        assertEquals(listOf("gpt-6-luna", "gpt-7-luna"), catalog.text)
+    }
+
+    @Test
+    fun `models with announced shutdown are omitted`() {
+        val body = JSONObject().put("data", JSONArray().put(
+            JSONObject().put("id", "gpt-7-sol").put("created", 20)
+                .put("shutdown_date", "2026-10-23"),
+        )).toString()
+        assertTrue(ModelCatalog.fromModelsResponse(body).text.isEmpty())
+    }
+
+    @Test
+    fun `cache preserves ranking and rejects unsuitable ids`() {
+        val original = ModelCatalog(
+            live = listOf("gpt-live-transcribe"),
+            accurate = listOf("gpt-transcribe"),
+            text = listOf("gpt-7-mini", "gpt-6-luna", "gpt-5.6-terra"),
         )
-        assertEquals(listOf("gpt-transcribe"), catalog.accurate)
-        assertEquals(listOf("gpt-7-luna"), catalog.text)
-        assertFalse(catalog.live.isNotEmpty())
+        assertEquals(original, ModelCatalog.fromCachedJson(original.toCachedJson()))
+        val polluted = ModelCatalog(
+            live = emptyList(), accurate = emptyList(),
+            text = listOf("gpt-7-astra", "gpt-7-mini", "gpt-7-mini"),
+        )
+        assertEquals(listOf("gpt-7-mini"), ModelCatalog.fromCachedJson(polluted.toCachedJson()).text)
     }
 
     @Test
-    fun `compares numeric versions rather than sorting model names`() {
-        val catalog = ModelCatalog.fromIds(listOf(
-            "gpt-7.9-luna", "gpt-7.10-luna", "gpt-7-sol", "gpt-8-sol",
-        ))
-        assertEquals(listOf("gpt-7.10-luna", "gpt-8-sol"), catalog.text)
+    fun `replaces an unsuitable selection with an available model`() {
+        val available = listOf("gpt-7-mini", "gpt-6-luna", "gpt-6-sol")
+        assertEquals("gpt-6-sol", preferredModelId("gpt-5.6-sol", available, ModelCatalog.DEFAULT.text))
+        assertEquals("gpt-7-mini", preferredModelId("gpt-7-astra", available, ModelCatalog.DEFAULT.text))
     }
+}
 
-    @Test
-    fun `drops a role when its newest model is several generations behind`() {
-        val catalog = ModelCatalog.fromIds(listOf("gpt-6-sol", "gpt-9-luna"))
-        assertEquals(listOf("gpt-9-luna"), catalog.text)
+private fun apiResponse(vararg entries: Pair<String, Int>): String {
+    val models = JSONArray()
+    entries.forEach { (id, created) ->
+        models.put(JSONObject().put("id", id).put("created", created))
     }
-
-    @Test
-    fun `replaces an old or unsuitable selection with the current model of the same role`() {
-        val available = listOf("gpt-7-luna", "gpt-7-sol")
-        assertEquals("gpt-7-sol", preferredModelId("gpt-6-sol", available, ModelCatalog.DEFAULT.text))
-        assertEquals("gpt-7-luna", preferredModelId("gpt-7-astra", available, ModelCatalog.DEFAULT.text))
-        assertEquals("gpt-transcribe", preferredModelId(
-            "gpt-transcribe-2026-09-01", emptyList(), ModelCatalog.DEFAULT.accurate,
-        ))
-    }
+    return JSONObject().put("data", models).toString()
 }

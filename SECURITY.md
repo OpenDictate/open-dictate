@@ -7,8 +7,8 @@ OpenDictate intentionally never logs authorization headers, API keys, audio,
 transcript contents, transformation instructions, or focused-field text.
 Model discovery calls OpenAI directly and stores only model IDs in app-private
 preferences. The model list API does not supply endpoint capabilities or prices,
-so the picker accepts only the transcription aliases and the newest Luna and Sol
-model IDs that match the request formats this app implements.
+so the picker keeps the transcription aliases and up to five recent general GPT
+text models, excluding Astra and specialized models.
 Release signing material is expected to live only in GitHub Actions secrets.
 
 Transcript history is stored only in the app-private SQLite database. Android

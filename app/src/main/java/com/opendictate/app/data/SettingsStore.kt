@@ -49,17 +49,23 @@ class SettingsStore(context: Context) {
         set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL_ID, value) }
 
     var modelCatalog: ModelCatalog
-        get() = ModelCatalog.fromIds(prefs.getStringSet(KEY_MODEL_CATALOG, emptySet()).orEmpty())
+        get() = ModelCatalog.fromCachedJson(prefs.getString(KEY_MODEL_CATALOG_V2, null))
         set(value) = prefs.edit {
-            putStringSet(KEY_MODEL_CATALOG, (value.live + value.accurate + value.text).toSet())
+            putString(KEY_MODEL_CATALOG_V2, value.toCachedJson())
+            remove(KEY_MODEL_CATALOG)
             putLong(KEY_MODEL_CATALOG_UPDATED, System.currentTimeMillis())
         }
 
     val modelCatalogUpdatedAt: Long
-        get() = prefs.getLong(KEY_MODEL_CATALOG_UPDATED, 0L)
+        get() = if (prefs.contains(KEY_MODEL_CATALOG_V2)) {
+            prefs.getLong(KEY_MODEL_CATALOG_UPDATED, 0L)
+        } else {
+            0L
+        }
 
     fun clearModelCatalog() = prefs.edit {
         remove(KEY_MODEL_CATALOG)
+        remove(KEY_MODEL_CATALOG_V2)
         remove(KEY_MODEL_CATALOG_UPDATED)
     }
 
@@ -103,6 +109,7 @@ class SettingsStore(context: Context) {
         private const val KEY_ACCURATE_MODEL_ID = "accurate_model_id"
         private const val KEY_TRANSFORMATION_MODEL_ID = "transformation_model_id"
         private const val KEY_MODEL_CATALOG = "model_catalog"
+        private const val KEY_MODEL_CATALOG_V2 = "model_catalog_v2"
         private const val KEY_MODEL_CATALOG_UPDATED = "model_catalog_updated"
         private const val KEY_LANGUAGES = "languages"
         private const val KEY_LANGUAGE = "language"

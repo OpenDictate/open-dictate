@@ -172,6 +172,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val catalog = apiClient.listModels(key)
                 val previous = mutableState.value.modelCatalog
+                val hadCatalog = settings.modelCatalogUpdatedAt > 0L
                 settings.modelCatalog = catalog
                 val added = (catalog.live + catalog.accurate + catalog.text).toSet() -
                     (previous.live + previous.accurate + previous.text).toSet()
@@ -182,7 +183,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         accurateModelId = settings.accurateModelId,
                         transformationModelId = settings.transformationModelId,
                         modelsLoading = false,
-                        newModelCount = added.size,
+                        newModelCount = if (hadCatalog) added.size else 0,
                     )
                 }
             } catch (error: Throwable) {
