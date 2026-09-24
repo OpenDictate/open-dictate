@@ -33,7 +33,7 @@ The app is used while an Android keyboard and editable field are visible. A fore
 
 ## Brand Commitments
 
-The product name is OpenDictate. Its established interface uses a dark navy surface, mint waveform mark, restrained coral accent, plain language, and compact monospaced utility labels. The GitHub presence and public documentation must use only the OpenDictate identity.
+The product name is OpenDictate. Its established interface uses a black canvas, white microphone mark, restrained silver state accents, plain language, and compact monospaced utility labels. The GitHub presence and public documentation must use only the OpenDictate identity.
 
 ## Evidence on Hand
 

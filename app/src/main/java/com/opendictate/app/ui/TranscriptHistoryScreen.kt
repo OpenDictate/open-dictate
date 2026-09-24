@@ -171,10 +171,10 @@ internal fun TranscriptHistoryScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         text = message,
-                        color = Coral,
+                        color = Silver,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Coral.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .background(Silver.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         fontSize = 13.sp,
                         lineHeight = 18.sp,
@@ -218,7 +218,7 @@ internal fun TranscriptHistoryScreen(
                         onDelete(item.id)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Coral,
+                        containerColor = Silver,
                         contentColor = Ink,
                     ),
                 ) {
@@ -293,7 +293,7 @@ private fun SearchModeButton(
             onClick = onClick,
             modifier = modifier.height(48.dp),
             enabled = enabled,
-            colors = ButtonDefaults.buttonColors(containerColor = Mint, contentColor = Ink),
+            colors = ButtonDefaults.buttonColors(containerColor = White, contentColor = Ink),
             content = { content() },
         )
     } else {
@@ -301,7 +301,7 @@ private fun SearchModeButton(
             onClick = onClick,
             modifier = modifier.height(48.dp),
             enabled = enabled,
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Mint),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = White),
             content = { content() },
         )
     }
@@ -317,7 +317,7 @@ private fun HistoryList(
     when {
         state.isLoading -> {
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Mint)
+                CircularProgressIndicator(color = White)
             }
         }
         state.entries.isEmpty() -> {
@@ -366,7 +366,7 @@ private fun HistoryEmptyState(title: String, message: String, modifier: Modifier
             Icon(
                 Icons.Outlined.History,
                 contentDescription = null,
-                tint = Mint,
+                tint = White,
                 modifier = Modifier.size(28.dp),
             )
         }
@@ -401,7 +401,7 @@ private fun HistoryItem(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = formattedDate,
-                    color = Mint,
+                    color = White,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
@@ -424,7 +424,7 @@ private fun HistoryItem(
                 Icon(
                     Icons.Outlined.DeleteOutline,
                     contentDescription = stringResource(R.string.history_delete_item),
-                    tint = Coral,
+                    tint = Silver,
                 )
             }
         }

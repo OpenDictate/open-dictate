@@ -15,7 +15,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -78,12 +77,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.LayoutAwareModifierNode
@@ -117,16 +112,13 @@ import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.model.TranscriptionResponseTimeout
 import com.opendictate.app.service.DictationPhase
 import com.opendictate.app.service.DictationStateBus
-import kotlin.math.PI
-import kotlin.math.sin
 
-internal val Ink = Color(0xFF101426)
-internal val Panel = Color(0xFF191F36)
-internal val PanelLight = Color(0xFF222A46)
-internal val Mint = Color(0xFF7DE4C4)
-internal val Coral = Color(0xFFFF6A6E)
-internal val Fog = Color(0xFFAAB2CB)
-internal val White = Color(0xFFF6F7FC)
+internal val Ink = Color(0xFF080808)
+internal val Panel = Color(0xFF171717)
+internal val PanelLight = Color(0xFF262626)
+internal val White = Color(0xFFFFFFFF)
+internal val Silver = Color(0xFFE3E3E3)
+internal val Fog = Color(0xFFC6C6C6)
 
 @Composable
 fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
@@ -190,6 +182,8 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
                         .verticalScroll(settingsScrollState)
                         .preferredFrameRate(
                             if (settingsScrollState.isScrollInProgress) {
@@ -198,8 +192,6 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                                 0f
                             },
                         )
-                        .statusBarsPadding()
-                        .navigationBarsPadding()
                         .padding(horizontal = 20.dp),
                 ) {
                     Header(onHistoryClick = { showHistory = true })
@@ -219,9 +211,9 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         if (state.modelsLoading) {
                             Text(stringResource(R.string.models_loading), color = Fog, fontSize = 12.sp)
                         } else if (state.modelsError) {
-                            Text(stringResource(R.string.models_error), color = Coral, fontSize = 12.sp)
+                            Text(stringResource(R.string.models_error), color = Fog, fontSize = 12.sp)
                         } else if (state.newModelCount > 0) {
-                            Text(stringResource(R.string.models_new, state.newModelCount), color = Mint, fontSize = 12.sp)
+                            Text(stringResource(R.string.models_new, state.newModelCount), color = White, fontSize = 12.sp)
                         }
                     }
                     Spacer(Modifier.height(26.dp))
@@ -381,8 +373,8 @@ private fun AppLanguageSwitcher() {
             onClick = { expanded = true },
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.textButtonColors(
-                containerColor = Mint.copy(alpha = 0.12f),
-                contentColor = Mint,
+                containerColor = White.copy(alpha = 0.12f),
+                contentColor = White,
             ),
             contentPadding = PaddingValues(horizontal = 10.dp),
         ) {
@@ -418,7 +410,7 @@ private fun AppLanguageSwitcher() {
                             Icon(
                                 Icons.Outlined.Check,
                                 contentDescription = null,
-                                tint = Mint,
+                                tint = White,
                             )
                         } else {
                             Spacer(Modifier.size(24.dp))
@@ -454,21 +446,19 @@ private fun Hero(phase: DictationPhase) {
 
 @Composable
 private fun WaveLogo() {
-    Canvas(
+    Box(
         modifier = Modifier
             .size(38.dp)
-            .background(Mint, CircleShape)
-            .padding(8.dp),
+            .background(Ink, CircleShape)
+            .border(1.dp, PanelLight, CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
-        val path = Path()
-        repeat(20) { index ->
-            val f = index / 19f
-            val x = size.width * f
-            val envelope = sin(PI * f).toFloat()
-            val y = size.height / 2 + sin(f * PI.toFloat() * 4) * size.height * 0.3f * envelope
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        drawPath(path, Ink, style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round))
+        Icon(
+            Icons.Outlined.Mic,
+            contentDescription = null,
+            tint = White,
+            modifier = Modifier.size(23.dp),
+        )
     }
 }
 
@@ -544,7 +534,7 @@ private fun TransformationModelCard(
                     Modifier.size(40.dp).background(PanelLight, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Outlined.AutoFixHigh, contentDescription = null, tint = Mint)
+                    Icon(Icons.Outlined.AutoFixHigh, contentDescription = null, tint = White)
                 }
                 Spacer(Modifier.width(13.dp))
                 Column(Modifier.weight(1f)) {
@@ -573,6 +563,7 @@ private fun TransformationModelCard(
             }
             Spacer(Modifier.height(12.dp))
             ModelIdPicker(selected, options, onSelect, settingEnabled)
+
         }
     }
 }
@@ -586,7 +577,7 @@ private fun ModelOption(
     badge: String,
     onClick: () -> Unit,
 ) {
-    val border by animateColorAsState(if (selected) Mint else Color.Transparent, label = "model-border")
+    val border by animateColorAsState(if (selected) White else Color.Transparent, label = "model-border")
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -599,7 +590,7 @@ private fun ModelOption(
             Box(
                 Modifier
                     .size(42.dp)
-                    .background(if (selected) Mint else PanelLight, CircleShape),
+                    .background(if (selected) White else PanelLight, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -612,7 +603,7 @@ private fun ModelOption(
             Column(Modifier.weight(1f)) {
                 Text(
                     eyebrow,
-                    color = if (selected) Mint else Fog,
+                    color = if (selected) White else Fog,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -625,7 +616,7 @@ private fun ModelOption(
                 badge,
                 color = if (selected) Ink else Fog,
                 modifier = Modifier
-                    .background(if (selected) Mint else PanelLight, RoundedCornerShape(6.dp))
+                    .background(if (selected) White else PanelLight, RoundedCornerShape(6.dp))
                     .padding(horizontal = 7.dp, vertical = 5.dp),
                 fontFamily = FontFamily.Monospace,
                 fontSize = 8.sp,
@@ -654,7 +645,7 @@ private fun SetupCard(
                 Modifier.size(40.dp).background(PanelLight, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = if (complete) Mint else Coral)
+                Icon(icon, contentDescription = null, tint = if (complete) White else Silver)
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
@@ -669,7 +660,7 @@ private fun SetupCard(
             }
             Text(
                 action,
-                color = if (complete) Mint else Coral,
+                color = if (complete) White else Silver,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
                 fontSize = 10.sp,
@@ -710,7 +701,7 @@ private fun PreferencesCard(
                 }
                 Box {
                     TextButton(onClick = { expanded = true }) {
-                        Text(languages.summary(), color = Mint)
+                        Text(languages.summary(), color = White)
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(
@@ -821,7 +812,7 @@ private fun AdvancedSettingsCard(
                             } else {
                                 stringResource(R.string.transcription_timeout_value, responseTimeoutSeconds)
                             },
-                            color = Mint,
+                            color = White,
                         )
                     }
                 }
@@ -959,11 +950,11 @@ private fun PrivacyNote() {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Mint.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+            .background(White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
             .padding(15.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Icon(Icons.Outlined.Lock, contentDescription = null, tint = Mint, modifier = Modifier.size(18.dp))
+        Icon(Icons.Outlined.Lock, contentDescription = null, tint = White, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
         Text(
             stringResource(R.string.privacy_note),
@@ -1027,7 +1018,7 @@ private fun ApiKeyDialog(
                 )
                 if (hasKey) {
                     TextButton(onClick = onDelete) {
-                        Text(stringResource(R.string.api_key_dialog_delete), color = Coral)
+                        Text(stringResource(R.string.api_key_dialog_delete), color = Silver)
                     }
                 }
             }
@@ -1036,7 +1027,7 @@ private fun ApiKeyDialog(
             Button(
                 onClick = { onSave(value) },
                 enabled = value.length >= 20,
-                colors = ButtonDefaults.buttonColors(containerColor = Mint, contentColor = Ink),
+                colors = ButtonDefaults.buttonColors(containerColor = White, contentColor = Ink),
             ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
@@ -1097,7 +1088,7 @@ private fun ModelIdPicker(
     var expanded by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth().background(PanelLight, RoundedCornerShape(12.dp))) {
         TextButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-            Text(selected, color = Mint, modifier = Modifier.weight(1f))
+            Text(selected, color = White, modifier = Modifier.weight(1f))
             Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = Fog)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -1117,7 +1108,7 @@ private fun ModelIdPicker(
 
 @Composable
 private fun languageCheckboxColors() = CheckboxDefaults.colors(
-    checkedColor = Mint,
+    checkedColor = White,
     checkmarkColor = Ink,
     uncheckedColor = Fog,
 )
@@ -1126,14 +1117,25 @@ private fun languageCheckboxColors() = CheckboxDefaults.colors(
 private fun OpenDictateTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = androidx.compose.material3.darkColorScheme(
-            primary = Mint,
-            secondary = Coral,
+            primary = White,
+            secondary = Silver,
+            tertiary = Fog,
             background = Ink,
             surface = Panel,
+            surfaceVariant = PanelLight,
+            primaryContainer = PanelLight,
+            secondaryContainer = PanelLight,
+            error = Silver,
             onPrimary = Ink,
+            onSecondary = Ink,
+            onPrimaryContainer = White,
+            onSecondaryContainer = White,
+            onSurfaceVariant = Fog,
+            onError = Ink,
             onBackground = White,
             onSurface = White,
             outline = Fog.copy(alpha = 0.45f),
+            surfaceTint = Color.Transparent,
         ),
         typography = MaterialTheme.typography.copy(
             bodyLarge = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.SansSerif),

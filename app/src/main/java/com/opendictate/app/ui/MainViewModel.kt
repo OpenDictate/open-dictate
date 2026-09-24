@@ -333,7 +333,7 @@ private const val MAX_HISTORY_QUERY_CHARS = 300
 private const val MODEL_REFRESH_MS = 24 * 60 * 60 * 1000L
 
 internal fun modelOptions(discovered: List<String>, selected: String, defaults: List<String>): List<String> =
-    (discovered + defaults + selected).distinct()
+    ((discovered.ifEmpty { defaults }) + selected).distinct()
 
 internal fun HistoryUiState.withHistoryQuery(query: String): HistoryUiState {
     val updatedQuery = query.take(MAX_HISTORY_QUERY_CHARS)

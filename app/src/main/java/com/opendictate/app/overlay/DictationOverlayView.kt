@@ -96,10 +96,10 @@ private class OverlayPrimaryActionView(
     private val idleIcon = icon(R.drawable.ic_mic_rounded_24)
     private val stopIcon = icon(R.drawable.ic_stop_rounded_24)
     private val closeIcon = icon(R.drawable.ic_close_rounded_24)
-    private val dictationColor = Color.rgb(125, 228, 196)
-    private val transformationColor = Color.rgb(181, 163, 255)
-    private val idleBackgroundColor = Color.rgb(16, 20, 38)
-    private val cancelBackgroundColor = Color.rgb(91, 28, 39)
+    private val dictationColor = Color.rgb(8, 8, 8)
+    private val transformationColor = Color.rgb(8, 8, 8)
+    private val idleBackgroundColor = Color.WHITE
+    private val cancelBackgroundColor = Color.rgb(38, 38, 38)
     private val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = idleBackgroundColor }
     private val spinner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -195,7 +195,7 @@ private class OverlayPrimaryActionView(
             isDraggingToCancel -> drawIcon(
                 canvas,
                 closeIcon,
-                if (cancelArmed) Color.WHITE else Color.rgb(255, 106, 110),
+                if (cancelArmed) Color.WHITE else Color.rgb(8, 8, 8),
             )
             phase == DictationPhase.PROCESSING -> drawSpinner(canvas)
             active -> drawIcon(canvas, stopIcon, activeColor())
@@ -499,7 +499,7 @@ private class OverlayMenuActionView(
     ).mutate()
     private val background = Paint(Paint.ANTI_ALIAS_FLAG)
     private val labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(244, 245, 250)
+        color = Color.rgb(8, 8, 8)
         textSize = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP,
             14f,
@@ -540,9 +540,9 @@ private class OverlayMenuActionView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         background.color = if (isPressed) {
-            Color.rgb(31, 37, 61)
+            Color.rgb(227, 227, 227)
         } else {
-            Color.rgb(16, 20, 38)
+            Color.WHITE
         }
         bounds.set(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawRoundRect(bounds, 14f * density, 14f * density, background)
@@ -550,7 +550,7 @@ private class OverlayMenuActionView(
         val iconSize = (ICON_SIZE_DP * density).roundToInt()
         val iconLeft = (MENU_START_PADDING_DP * density).roundToInt()
         val iconTop = (height - iconSize) / 2
-        icon.setTint(Color.rgb(181, 163, 255))
+        icon.setTint(Color.rgb(8, 8, 8))
         icon.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize)
         icon.draw(canvas)
 

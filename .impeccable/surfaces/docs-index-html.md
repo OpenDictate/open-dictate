@@ -11,11 +11,11 @@ AUDIENCE: Android users evaluating direct, system-wide dictation. Their primary 
 
 THESIS: Speech should visibly become text in the field where it belongs. Refuse the standard app-marketing stack of generic feature cards and detached phone screenshots.
 
-OWN-WORLD: Deep navy working surface, mint waveform geometry, coral only for mode contrast, hairline dividers, compact instrument labels, and the app's circular five-bar mark.
+OWN-WORLD: Black working surface, white microphone mark, silver only for mode contrast, hairline dividers, compact instrument labels, and the app's circular microphone mark.
 
 STORY: See dictation happen, understand Live versus Accurate, verify the direct-to-OpenAI privacy boundary, then download and set up the app.
 
-FIRST VIEWPORT: A large editable sentence spans the left; a floating mint mic drives cumulative words into it. A narrow right rail holds the release action and two-mode control. Motion runs once from audio bars to caret.
+FIRST VIEWPORT: A large editable sentence spans the left; a floating white mic drives cumulative words into it. A narrow right rail holds the release action and two-mode control. Motion runs once from audio bars to caret.
 
 FORM: Ranked candidate 4, the live sentence assembly, assigned by surface seed `ca42b3c5`.
 
