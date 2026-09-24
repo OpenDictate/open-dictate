@@ -8,6 +8,7 @@ import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TextTransformationModel
 import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.model.TranscriptionResponseTimeout
+import com.opendictate.app.model.preferredModelId
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -23,16 +24,28 @@ class SettingsStore(context: Context) {
         set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL, value.name) }
 
     var liveModelId: String
-        get() = prefs.getString(KEY_LIVE_MODEL_ID, null).orEmpty().ifBlank { ModelCatalog.DEFAULT.live.first() }
+        get() = preferredModelId(
+            prefs.getString(KEY_LIVE_MODEL_ID, null).orEmpty(),
+            modelCatalog.live,
+            ModelCatalog.DEFAULT.live,
+        )
         set(value) = prefs.edit { putString(KEY_LIVE_MODEL_ID, value) }
 
     var accurateModelId: String
-        get() = prefs.getString(KEY_ACCURATE_MODEL_ID, null).orEmpty().ifBlank { ModelCatalog.DEFAULT.accurate.first() }
+        get() = preferredModelId(
+            prefs.getString(KEY_ACCURATE_MODEL_ID, null).orEmpty(),
+            modelCatalog.accurate,
+            ModelCatalog.DEFAULT.accurate,
+        )
         set(value) = prefs.edit { putString(KEY_ACCURATE_MODEL_ID, value) }
 
     var transformationModelId: String
-        get() = prefs.getString(KEY_TRANSFORMATION_MODEL_ID, null).orEmpty()
-            .ifBlank { transformationModel.apiName }
+        get() = preferredModelId(
+            prefs.getString(KEY_TRANSFORMATION_MODEL_ID, null).orEmpty()
+                .ifBlank { transformationModel.apiName },
+            modelCatalog.text,
+            ModelCatalog.DEFAULT.text,
+        )
         set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL_ID, value) }
 
     var modelCatalog: ModelCatalog
