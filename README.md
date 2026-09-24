@@ -13,7 +13,7 @@ download the latest APK from [GitHub Releases](https://github.com/OpenDictate/op
   with minimal latency.
 - **GPT Transcribe** (`gpt-transcribe`) — accurately transcribes a completed recording.
 - Voice-directed text transformation through the Responses API, with
-  **GPT-5.6 Luna** (`gpt-5.6-luna`) as the default and Terra or Sol selectable.
+  **GPT-6 Luna** (`gpt-6-luna`) as the default and **GPT-6 Sol** (`gpt-6-sol`) selectable.
 - Text transformations stop after 30 seconds. The model can occasionally answer
   a direct question or explain a failed edit in a private Android notification.
 - Your own OpenAI API key, encrypted with Android Keystore.

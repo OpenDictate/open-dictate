@@ -51,7 +51,6 @@
     <string name="transformation_model_subtitle">Select text or leave the cursor in the field, long-press the floating button, choose Edit text, and speak the instruction</string>
     <string name="transformation_button_toggle">Show Edit text in the floating button menu</string>
     <string name="transformation_model_luna_description">Fastest and most economical · default</string>
-    <string name="transformation_model_terra_description">Balanced quality and cost</string>
     <string name="transformation_model_sol_description">Highest quality for complex edits</string>
 
     <string name="api_key_title" translatable="false">OpenAI API key</string>

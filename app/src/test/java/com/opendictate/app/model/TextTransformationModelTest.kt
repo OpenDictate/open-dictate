@@ -15,6 +15,11 @@ class TextTransformationModelTest {
     }
 
     @Test
+    fun `replaces retired Terra selection with Luna`() {
+        assertEquals(TextTransformationModel.LUNA, TextTransformationModel.fromStored("TERRA"))
+    }
+
+    @Test
     fun `restores every selectable transformation model`() {
         TextTransformationModel.entries.forEach { model ->
             assertEquals(model, TextTransformationModel.fromStored(model.name))
