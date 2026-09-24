@@ -72,6 +72,19 @@ class TranscriptHistoryStore(context: Context) :
         }
     }
 
+    fun getLatestText(): String? = readableDatabase.query(
+        TABLE_HISTORY,
+        arrayOf(COLUMN_TEXT),
+        null,
+        null,
+        null,
+        null,
+        "$COLUMN_CREATED_AT DESC, $COLUMN_ID DESC",
+        "1",
+    ).use { cursor ->
+        if (cursor.moveToFirst()) cursor.getString(0) else null
+    }
+
     fun delete(id: Long): Boolean = writableDatabase.delete(
         TABLE_HISTORY,
         "$COLUMN_ID = ?",

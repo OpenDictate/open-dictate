@@ -36,6 +36,7 @@ class DictationOverlayView(
     onDictationClick: () -> Unit,
     onOperationCancel: () -> Unit,
     onTransformationClick: () -> Unit,
+    onCopyLastClick: () -> Unit,
     onDismiss: () -> Unit,
     onMenuToggle: () -> Unit,
 ) : LinearLayout(context) {
@@ -43,6 +44,16 @@ class DictationOverlayView(
     private val transformationButton = OverlayMenuActionView(
         context = context,
         onClick = onTransformationClick,
+        iconResource = R.drawable.ic_auto_fix_high_rounded_24,
+        labelResource = R.string.overlay_edit_text,
+        descriptionResource = R.string.overlay_start_transformation,
+    )
+    private val copyLastButton = OverlayMenuActionView(
+        context = context,
+        onClick = onCopyLastClick,
+        iconResource = R.drawable.ic_content_copy_rounded_24,
+        labelResource = R.string.overlay_copy_last,
+        descriptionResource = R.string.overlay_copy_last_description,
     )
     private val dictationButton = OverlayPrimaryActionView(
         context = context,
@@ -57,6 +68,13 @@ class DictationOverlayView(
         gravity = Gravity.END
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         addView(
+            copyLastButton,
+            LayoutParams(
+                OverlayMotion.widthPx(density, showMenu = true),
+                OverlayMotion.actionHeightPx(density),
+            ).apply { bottomMargin = OverlayMotion.gapPx(density) },
+        )
+        addView(
             transformationButton,
             LayoutParams(
                 OverlayMotion.widthPx(density, showMenu = true),
@@ -70,17 +88,19 @@ class DictationOverlayView(
                 OverlayMotion.actionHeightPx(density),
             ),
         )
-        setMenuState(available = false, expanded = false)
+        setMenuState(showTransformation = false, expanded = false)
     }
 
     fun render(state: DictationState) {
         transformationButton.render(state)
+        copyLastButton.render(state)
         dictationButton.render(state)
     }
 
-    fun setMenuState(available: Boolean, expanded: Boolean) {
-        dictationButton.setMenuState(available, expanded)
-        transformationButton.visibility = if (available && expanded) VISIBLE else GONE
+    fun setMenuState(showTransformation: Boolean, expanded: Boolean) {
+        dictationButton.setMenuState(available = true, expanded = expanded)
+        copyLastButton.visibility = if (expanded) VISIBLE else GONE
+        transformationButton.visibility = if (showTransformation && expanded) VISIBLE else GONE
     }
 }
 
@@ -492,10 +512,13 @@ private class OverlayPrimaryActionView(
 private class OverlayMenuActionView(
     context: Context,
     onClick: () -> Unit,
+    iconResource: Int,
+    labelResource: Int,
+    descriptionResource: Int,
 ) : View(context) {
     private val density = resources.displayMetrics.density
     private val icon = requireNotNull(
-        ContextCompat.getDrawable(context, R.drawable.ic_auto_fix_high_rounded_24),
+        ContextCompat.getDrawable(context, iconResource),
     ).mutate()
     private val background = Paint(Paint.ANTI_ALIAS_FLAG)
     private val labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -508,14 +531,14 @@ private class OverlayMenuActionView(
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
     private val bounds = RectF()
-    private val label = context.getString(R.string.overlay_edit_text)
+    private val label = context.getString(labelResource)
     private var renderedLabel: CharSequence = label
 
     init {
         elevation = 12f * density
         isClickable = true
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-        contentDescription = context.getString(R.string.overlay_start_transformation)
+        contentDescription = context.getString(descriptionResource)
         setOnClickListener { onClick() }
     }
 

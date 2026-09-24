@@ -7,7 +7,7 @@ import kotlin.math.roundToInt
 
 internal object OverlayMotion {
     private const val WIDTH_DP = 52f
-    private const val MENU_WIDTH_DP = 204f
+    private const val MENU_WIDTH_DP = 232f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
     private const val FIELD_CLEARANCE_DP = 8f
@@ -20,6 +20,7 @@ internal object OverlayMotion {
         focusedFieldTopPx: Int?,
         density: Float,
         showMenu: Boolean = true,
+        showTransformation: Boolean = false,
     ): Int {
         val fieldTop = focusedFieldTopPx?.takeIf { it in 0..keyboardTopPx }
         val anchorTop = fieldTop ?: keyboardTopPx
@@ -27,15 +28,20 @@ internal object OverlayMotion {
         val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
             dpToPx(clearance, density)
         val maximumOffset = (
-            displayHeightPx - heightPx(density, showMenu) -
+            displayHeightPx - heightPx(density, showMenu, showTransformation) -
                 dpToPx(TOP_MARGIN_DP, density)
         ).coerceAtLeast(0)
         return min(preferredOffset, maximumOffset)
     }
 
-    fun heightPx(density: Float, showMenu: Boolean = true): Int {
+    fun heightPx(
+        density: Float,
+        showMenu: Boolean = true,
+        showTransformation: Boolean = false,
+    ): Int {
         val heightDp = if (showMenu) {
-            ACTION_HEIGHT_DP * 2 + GAP_DP
+            ACTION_HEIGHT_DP * (if (showTransformation) 3 else 2) +
+                GAP_DP * (if (showTransformation) 2 else 1)
         } else {
             ACTION_HEIGHT_DP
         }

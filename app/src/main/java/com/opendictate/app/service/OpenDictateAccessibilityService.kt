@@ -23,6 +23,7 @@ import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.opendictate.app.MainActivity
+import com.opendictate.app.OpenDictateApplication
 import com.opendictate.app.R
 import com.opendictate.app.data.SecureApiKeyStore
 import com.opendictate.app.data.SettingsStore
@@ -36,6 +37,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class OpenDictateAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -70,6 +72,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             onDictationClick = ::onOverlayTapped,
             onOperationCancel = ::onOverlayCancelled,
             onTransformationClick = ::onTransformationTapped,
+            onCopyLastClick = ::onCopyLastTapped,
             onDismiss = ::onOverlayDismissed,
             onMenuToggle = ::onOverlayMenuToggled,
         )
@@ -115,7 +118,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             if (!hasEligibleTarget) {
                 overlayMenuExpanded = false
                 transformationAvailable = false
-                overlay?.setMenuState(available = false, expanded = false)
+                overlay?.setMenuState(showTransformation = false, expanded = false)
             }
             removeOverlay()
             if (!hasEligibleTarget && DictationStateBus.state.value.isActive) stopDictation()
@@ -129,10 +132,9 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         val view = overlay ?: return
         transformationAvailable = settings.transformationButtonEnabled &&
             focused.captureEditableText().hasText
-        if (!transformationAvailable) overlayMenuExpanded = false
-        val showMenu = transformationAvailable && overlayMenuExpanded
-        view.setMenuState(available = transformationAvailable, expanded = showMenu)
-        val params = overlayParams(ime, focused, showMenu)
+        val showMenu = overlayMenuExpanded
+        view.setMenuState(showTransformation = transformationAvailable, expanded = showMenu)
+        val params = overlayParams(ime, focused, showMenu, transformationAvailable)
         if (overlayAttached) {
             val currentParams = overlayLayoutParams ?: return
             if (currentParams.width != params.width || currentParams.height != params.height) {
@@ -218,6 +220,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         ime: AccessibilityWindowInfo?,
         focused: AccessibilityNodeInfo,
         showMenu: Boolean,
+        showTransformation: Boolean,
     ): WindowManager.LayoutParams {
         val density = resources.displayMetrics.density
         val displayHeight = resources.displayMetrics.heightPixels
@@ -232,7 +235,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         }
         return WindowManager.LayoutParams(
             OverlayMotion.widthPx(density, showMenu),
-            OverlayMotion.heightPx(density, showMenu),
+            OverlayMotion.heightPx(density, showMenu, showTransformation),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -247,6 +250,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
                 focusedFieldTopPx = focusedBounds.takeUnless(Rect::isEmpty)?.top,
                 density = density,
                 showMenu = showMenu,
+                showTransformation = showTransformation,
             )
         }
     }
@@ -320,24 +324,52 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         ContextCompat.startForegroundService(this, intent)
     }
 
+    private fun onCopyLastTapped() {
+        if (DictationStateBus.state.value.isActive) return
+        setOverlayMenuExpanded(false)
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    (application as OpenDictateApplication).transcriptHistoryStore.getLatestText()
+                }
+            }.onSuccess { latest ->
+                if (latest == null) {
+                    Toast.makeText(
+                        this@OpenDictateAccessibilityService,
+                        R.string.overlay_no_transcripts,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                } else {
+                    copyTranscript(latest, R.string.history_copied)
+                }
+            }.onFailure {
+                Toast.makeText(
+                    this@OpenDictateAccessibilityService,
+                    R.string.overlay_copy_last_error,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
     private fun onOverlayDismissed() {
         if (DictationStateBus.state.value.isActive) return
         overlayVisibilitySession.dismiss()
         overlayMenuExpanded = false
-        overlay?.setMenuState(available = transformationAvailable, expanded = false)
+        overlay?.setMenuState(showTransformation = transformationAvailable, expanded = false)
         removeOverlay()
     }
 
     private fun onOverlayMenuToggled() {
-        if (DictationStateBus.state.value.isActive || !transformationAvailable) return
+        if (DictationStateBus.state.value.isActive) return
         setOverlayMenuExpanded(!overlayMenuExpanded)
     }
 
     private fun setOverlayMenuExpanded(expanded: Boolean) {
         if (overlayMenuExpanded == expanded) return
-        overlayMenuExpanded = expanded && transformationAvailable
+        overlayMenuExpanded = expanded
         overlay?.setMenuState(
-            available = transformationAvailable,
+            showTransformation = transformationAvailable,
             expanded = overlayMenuExpanded,
         )
         scheduleOverlayUpdate()
@@ -437,7 +469,10 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun copyTranscript(transcript: String) {
+    private fun copyTranscript(
+        transcript: String,
+        message: Int = R.string.transcript_copied_to_clipboard,
+    ) {
         val clip = ClipData.newPlainText(
             getString(R.string.clipboard_transcript_label),
             transcript,
@@ -447,7 +482,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             }
         }
         getSystemService(ClipboardManager::class.java).setPrimaryClip(clip)
-        Toast.makeText(this, R.string.transcript_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun restoreEditableSnapshot() {
