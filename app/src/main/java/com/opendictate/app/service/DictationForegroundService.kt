@@ -112,6 +112,7 @@ class DictationForegroundService : Service() {
                         recorder = recorder,
                         languages = settings.languages,
                         prompt = settings.prompt,
+                        responseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
                         waitForStop = { stopSignal.await() },
                         onReady = {
                             publishWhileActive(
@@ -177,6 +178,7 @@ class DictationForegroundService : Service() {
                             file,
                             settings.languages,
                             settings.prompt,
+                            settings.transcriptionResponseTimeoutSeconds,
                         )
                     }
                 }

@@ -76,6 +76,15 @@
     <string name="dictionary_label">Словарь (необязательно)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
+    <string name="advanced_settings_title">Дополнительные настройки</string>
+    <string name="transcription_timeout_title">Ожидание транскрипции</string>
+    <string name="transcription_timeout_subtitle">Максимум после остановки записи</string>
+    <string name="transcription_timeout_value">%1$d с</string>
+    <string name="transcription_timeout_unlimited">Без ограничения</string>
+    <string name="transcription_timeout_explanation">Если OpenAI не вернёт транскрипцию вовремя, ожидание прекратится. Уже вставленный промежуточный текст останется в поле.</string>
+    <string name="transcription_timeout_limit">Ограничить время</string>
+    <string name="transcription_timeout_seconds">Секунды</string>
+    <string name="transcription_timeout_range">От 1 до 600 секунд</string>
     <string name="test_field_label">Попробуйте здесь</string>
     <string name="test_field_placeholder">Откройте клавиатуру — кнопка появится над ней</string>
     <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenDictate. Транскрипты хранятся только на устройстве. Аудио, преобразуемый текст и история, в которой вы явно запускаете AI-поиск, отправляются напрямую в OpenAI.</string>

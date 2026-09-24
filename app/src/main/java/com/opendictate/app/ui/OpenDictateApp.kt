@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
@@ -97,6 +98,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
@@ -113,6 +115,7 @@ import com.opendictate.app.model.AppLanguage
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.TextTransformationModel
 import com.opendictate.app.model.TranscriptionModel
+import com.opendictate.app.model.TranscriptionResponseTimeout
 import com.opendictate.app.service.DictationPhase
 import com.opendictate.app.service.DictationStateBus
 import kotlin.math.PI
@@ -287,6 +290,11 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
                         onPrompt = viewModel::savePrompt,
                         onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    AdvancedSettingsCard(
+                        responseTimeoutSeconds = state.transcriptionResponseTimeoutSeconds,
+                        onResponseTimeoutChange = viewModel::setTranscriptionResponseTimeout,
                     )
                     Spacer(Modifier.height(10.dp))
                     TestField()
@@ -784,6 +792,120 @@ private fun PreferencesCard(
             )
         }
     }
+}
+
+@Composable
+private fun AdvancedSettingsCard(
+    responseTimeoutSeconds: Int?,
+    onResponseTimeoutChange: (Int?) -> Unit,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var showTimeoutDialog by remember { mutableStateOf(false) }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Panel),
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
+            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(R.string.advanced_settings_title),
+                    color = Fog,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = Fog)
+            }
+            if (expanded) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.transcription_timeout_title),
+                            color = White,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            stringResource(R.string.transcription_timeout_subtitle),
+                            color = Fog,
+                            fontSize = 12.sp,
+                        )
+                    }
+                    TextButton(onClick = { showTimeoutDialog = true }) {
+                        Text(
+                            if (responseTimeoutSeconds == null) {
+                                stringResource(R.string.transcription_timeout_unlimited)
+                            } else {
+                                stringResource(R.string.transcription_timeout_value, responseTimeoutSeconds)
+                            },
+                            color = Mint,
+                        )
+                    }
+                }
+            }
+        }
+    }
+    if (showTimeoutDialog) {
+        TranscriptionTimeoutDialog(
+            currentSeconds = responseTimeoutSeconds,
+            onDismiss = { showTimeoutDialog = false },
+            onSave = {
+                onResponseTimeoutChange(it)
+                showTimeoutDialog = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun TranscriptionTimeoutDialog(
+    currentSeconds: Int?,
+    onDismiss: () -> Unit,
+    onSave: (Int?) -> Unit,
+) {
+    var limitEnabled by rememberSaveable { mutableStateOf(currentSeconds != null) }
+    var secondsText by rememberSaveable {
+        mutableStateOf((currentSeconds ?: TranscriptionResponseTimeout.DEFAULT_SECONDS).toString())
+    }
+    val seconds = secondsText.toIntOrNull()?.takeIf(TranscriptionResponseTimeout::isValid)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.transcription_timeout_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.transcription_timeout_explanation))
+                Spacer(Modifier.height(14.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.transcription_timeout_limit),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(checked = limitEnabled, onCheckedChange = { limitEnabled = it })
+                }
+                if (limitEnabled) {
+                    OutlinedTextField(
+                        value = secondsText,
+                        onValueChange = { secondsText = it.filter(Char::isDigit).take(3) },
+                        label = { Text(stringResource(R.string.transcription_timeout_seconds)) },
+                        supportingText = {
+                            Text(stringResource(R.string.transcription_timeout_range))
+                        },
+                        isError = seconds == null,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(if (limitEnabled) seconds else null) },
+                enabled = !limitEnabled || seconds != null,
+            ) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
 }
 
 @Composable

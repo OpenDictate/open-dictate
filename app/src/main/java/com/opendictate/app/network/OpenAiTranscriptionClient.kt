@@ -49,6 +49,7 @@ class OpenAiTranscriptionClient(
         audioFile: File,
         languages: Set<DictationLanguage>,
         prompt: String,
+        responseTimeoutSeconds: Int?,
     ): String = withContext(Dispatchers.IO) {
         val multipart = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -63,10 +64,17 @@ class OpenAiTranscriptionClient(
         val request = authorizedRequest(apiKey, TRANSCRIPTIONS_URL)
             .post(multipart)
             .build()
-        client.newCall(request).await().use { response ->
-            val body = response.body.string()
-            if (!response.isSuccessful) throw OpenAiException(errorMessage(response.code, body))
-            JSONObject(body).optString("text").trim()
+        val transcriptionClient = client.forTranscriptionResponse(responseTimeoutSeconds)
+        try {
+            transcriptionClient.newCall(request).await().use { response ->
+                val body = response.body.string()
+                if (!response.isSuccessful) throw OpenAiException(errorMessage(response.code, body))
+                JSONObject(body).optString("text").trim()
+            }
+        } catch (error: OpenAiException) {
+            throw error
+        } catch (error: IOException) {
+            throw OpenAiException(error.userMessage(), error)
         }
     }
 
@@ -76,6 +84,7 @@ class OpenAiTranscriptionClient(
         recorder: PcmAudioRecorder,
         languages: Set<DictationLanguage>,
         prompt: String,
+        responseTimeoutSeconds: Int?,
         waitForStop: suspend () -> Unit,
         onReady: () -> Unit,
         onPartial: (String) -> Unit,
@@ -89,7 +98,14 @@ class OpenAiTranscriptionClient(
             waitForStop()
             recorder.stop()
             session.commit()
-            return withTimeout(FINAL_TIMEOUT_MS) { session.completed.await() }.trim()
+            return try {
+                awaitTranscriptionResponse(responseTimeoutSeconds) { session.completed.await() }.trim()
+            } catch (error: TimeoutCancellationException) {
+                throw OpenAiException(
+                    localized(R.string.error_openai_timeout, "OpenAI did not respond in time"),
+                    error,
+                )
+            }
         } finally {
             recorder.stop()
             session.close()
@@ -377,7 +393,7 @@ class OpenAiTranscriptionClient(
             R.string.error_no_internet,
             "No internet connection",
         )
-        is java.net.SocketTimeoutException -> localized(
+        is java.io.InterruptedIOException -> localized(
             R.string.error_openai_timeout,
             "OpenAI did not respond in time",
         )
@@ -394,13 +410,27 @@ class OpenAiTranscriptionClient(
         private const val TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
         private const val RESPONSES_URL = "https://api.openai.com/v1/responses"
         private const val CONNECT_TIMEOUT_MS = 12_000L
-        private const val FINAL_TIMEOUT_MS = 25_000L
         private const val TRANSFORMATION_TIMEOUT_MS = 30_000L
         private const val HISTORY_SEARCH_TIMEOUT_MS = 30_000L
         private const val MAX_QUEUED_CHUNKS = 300
         private val WAV = "audio/wav".toMediaType()
         private val JSON = "application/json; charset=utf-8".toMediaType()
     }
+}
+
+internal fun OkHttpClient.forTranscriptionResponse(timeoutSeconds: Int?): OkHttpClient =
+    newBuilder()
+        .readTimeout(0, TimeUnit.SECONDS)
+        .callTimeout(timeoutSeconds?.toLong() ?: 0L, TimeUnit.SECONDS)
+        .build()
+
+internal suspend fun <T> awaitTranscriptionResponse(
+    timeoutSeconds: Int?,
+    response: suspend () -> T,
+): T = if (timeoutSeconds == null) {
+    response()
+} else {
+    withTimeout(TimeUnit.SECONDS.toMillis(timeoutSeconds.toLong())) { response() }
 }
 
 data class TranscriptSearchDocument(
