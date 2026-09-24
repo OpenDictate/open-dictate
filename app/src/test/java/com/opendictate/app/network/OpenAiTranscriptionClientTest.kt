@@ -1,7 +1,6 @@
 package com.opendictate.app.network
 
 import com.opendictate.app.model.DictationLanguage
-import com.opendictate.app.model.TextTransformationModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
@@ -71,6 +70,7 @@ class OpenAiTranscriptionClientTest {
     @Test
     fun `session update configures live transcription without unsupported delay`() {
         val event = realtimeTranscriptionSessionUpdate(
+            modelId = "gpt-live-transcribe",
             languages = setOf(DictationLanguage.ENGLISH, DictationLanguage.RUSSIAN),
             prompt = "OpenDictate",
         )
@@ -97,6 +97,7 @@ class OpenAiTranscriptionClientTest {
     @Test
     fun `Russian transcription context does not override selected Ukrainian`() {
         val event = realtimeTranscriptionSessionUpdate(
+            modelId = "gpt-live-transcribe",
             languages = setOf(DictationLanguage.RUSSIAN, DictationLanguage.UKRAINIAN),
             prompt = "OpenDictate",
         )
@@ -112,7 +113,7 @@ class OpenAiTranscriptionClientTest {
     @Test
     fun `text transformation request uses selected model without storage`() {
         val request = textTransformationRequest(
-            model = TextTransformationModel.SOL,
+            model = "gpt-6-sol",
             sourceText = "Черновик",
             instruction = "Сделай вежливее",
         )
@@ -191,7 +192,7 @@ class OpenAiTranscriptionClientTest {
     @Test
     fun `history search request uses structured output without storage`() {
         val request = transcriptHistorySearchRequest(
-            model = TextTransformationModel.LUNA,
+            model = "gpt-6-luna",
             query = "project planning",
             documents = listOf(
                 TranscriptSearchDocument(7, "Discuss the roadmap"),

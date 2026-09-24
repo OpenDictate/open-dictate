@@ -113,7 +113,6 @@ import com.opendictate.app.R
 import com.opendictate.app.data.normalizeDictionaryTerms
 import com.opendictate.app.model.AppLanguage
 import com.opendictate.app.model.DictationLanguage
-import com.opendictate.app.model.TextTransformationModel
 import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.model.TranscriptionResponseTimeout
 import com.opendictate.app.service.DictationPhase
@@ -155,7 +154,10 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
     BackHandler(enabled = showHistory) { showHistory = false }
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshPermissions()
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshPermissions()
+                viewModel.refreshModelCatalog()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -205,12 +207,30 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     Spacer(Modifier.height(26.dp))
                     SectionLabel(stringResource(R.string.section_mode))
                     Spacer(Modifier.height(10.dp))
-                    ModelDeck(state.model, viewModel::selectModel)
+                    ModelDeck(
+                        state, viewModel::selectModel,
+                        viewModel::selectAccurateModel, viewModel::selectLiveModel,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(
+                            onClick = { viewModel.refreshModelCatalog(force = true) },
+                            enabled = state.hasApiKey && !state.modelsLoading,
+                        ) { Text(stringResource(R.string.models_refresh)) }
+                        if (state.modelsLoading) {
+                            Text(stringResource(R.string.models_loading), color = Fog, fontSize = 12.sp)
+                        } else if (state.modelsError) {
+                            Text(stringResource(R.string.models_error), color = Coral, fontSize = 12.sp)
+                        } else if (state.newModelCount > 0) {
+                            Text(stringResource(R.string.models_new, state.newModelCount), color = Mint, fontSize = 12.sp)
+                        }
+                    }
                     Spacer(Modifier.height(26.dp))
                     SectionLabel(stringResource(R.string.section_transformation))
                     Spacer(Modifier.height(10.dp))
                     TransformationModelCard(
-                        selected = state.transformationModel,
+                        selected = state.transformationModelId,
+                        options = modelOptions(state.modelCatalog.text, state.transformationModelId,
+                            com.opendictate.app.model.ModelCatalog.DEFAULT.text),
                         buttonEnabled = state.transformationButtonEnabled,
                         settingEnabled = !dictation.isActive,
                         onSelect = viewModel::selectTransformationModel,
@@ -465,36 +485,53 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun ModelDeck(selected: TranscriptionModel, onSelect: (TranscriptionModel) -> Unit) {
+private fun ModelDeck(
+    state: MainUiState,
+    onSelect: (TranscriptionModel) -> Unit,
+    onAccurateModel: (String) -> Unit,
+    onLiveModel: (String) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         ModelOption(
-            selected = selected == TranscriptionModel.ACCURATE,
+            selected = state.model == TranscriptionModel.ACCURATE,
             eyebrow = "GPT TRANSCRIBE",
             title = stringResource(R.string.model_accurate_title),
             description = stringResource(R.string.model_accurate_description),
             badge = stringResource(R.string.model_accurate_badge),
             onClick = { onSelect(TranscriptionModel.ACCURATE) },
         )
+        ModelIdPicker(
+            selected = state.accurateModelId,
+            options = modelOptions(state.modelCatalog.accurate, state.accurateModelId,
+                com.opendictate.app.model.ModelCatalog.DEFAULT.accurate),
+            onSelect = onAccurateModel,
+        )
         ModelOption(
-            selected = selected == TranscriptionModel.LIVE,
+            selected = state.model == TranscriptionModel.LIVE,
             eyebrow = "GPT LIVE TRANSCRIBE",
             title = stringResource(R.string.model_live_title),
             description = stringResource(R.string.model_live_description),
             badge = stringResource(R.string.model_live_badge),
             onClick = { onSelect(TranscriptionModel.LIVE) },
         )
+        ModelIdPicker(
+            selected = state.liveModelId,
+            options = modelOptions(state.modelCatalog.live, state.liveModelId,
+                com.opendictate.app.model.ModelCatalog.DEFAULT.live),
+            onSelect = onLiveModel,
+        )
     }
 }
 
 @Composable
 private fun TransformationModelCard(
-    selected: TextTransformationModel,
+    selected: String,
+    options: List<String>,
     buttonEnabled: Boolean,
     settingEnabled: Boolean,
-    onSelect: (TextTransformationModel) -> Unit,
+    onSelect: (String) -> Unit,
     onButtonEnabledChange: (Boolean) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
     val buttonToggleDescription = stringResource(R.string.transformation_button_toggle)
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -535,58 +572,7 @@ private fun TransformationModelCard(
                 )
             }
             Spacer(Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(PanelLight, RoundedCornerShape(12.dp)),
-            ) {
-                TextButton(
-                    onClick = { expanded = true },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        selected.title(),
-                        color = Mint,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Icon(
-                        Icons.Outlined.ArrowDropDown,
-                        contentDescription = null,
-                        tint = Fog,
-                    )
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                ) {
-                    TextTransformationModel.entries.forEach { model ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(model.title(), fontWeight = FontWeight.SemiBold)
-                                    Text(
-                                        stringResource(model.descriptionRes()),
-                                        color = Fog,
-                                        fontSize = 12.sp,
-                                    )
-                                }
-                            },
-                            onClick = {
-                                onSelect(model)
-                                expanded = false
-                            },
-                            leadingIcon = {
-                                if (model == selected) {
-                                    Icon(Icons.Outlined.Check, contentDescription = null, tint = Mint)
-                                } else {
-                                    Spacer(Modifier.size(24.dp))
-                                }
-                            },
-                        )
-                    }
-                }
-            }
+            ModelIdPicker(selected, options, onSelect, settingEnabled)
         }
     }
 }
@@ -1101,14 +1087,32 @@ private fun DictationLanguage.title(): String = when (this) {
     DictationLanguage.HINDI -> "हिन्दी"
 }
 
-private fun TextTransformationModel.title(): String = when (this) {
-    TextTransformationModel.LUNA -> "GPT-6 Luna"
-    TextTransformationModel.SOL -> "GPT-6 Sol"
-}
-
-private fun TextTransformationModel.descriptionRes(): Int = when (this) {
-    TextTransformationModel.LUNA -> R.string.transformation_model_luna_description
-    TextTransformationModel.SOL -> R.string.transformation_model_sol_description
+@Composable
+private fun ModelIdPicker(
+    selected: String,
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    enabled: Boolean = true,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxWidth().background(PanelLight, RoundedCornerShape(12.dp))) {
+        TextButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+            Text(selected, color = Mint, modifier = Modifier.weight(1f))
+            Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = Fog)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { id ->
+                DropdownMenuItem(
+                    text = { Text(id) },
+                    onClick = { onSelect(id); expanded = false },
+                    leadingIcon = {
+                        if (id == selected) Icon(Icons.Outlined.Check, contentDescription = null)
+                        else Spacer(Modifier.size(24.dp))
+                    },
+                )
+            }
+        }
+    }
 }
 
 @Composable

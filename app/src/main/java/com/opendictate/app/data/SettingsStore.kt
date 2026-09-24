@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import androidx.core.content.edit
 import com.opendictate.app.model.DictationLanguage
+import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TextTransformationModel
 import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.model.TranscriptionResponseTimeout
@@ -20,6 +21,34 @@ class SettingsStore(context: Context) {
             prefs.getString(KEY_TRANSFORMATION_MODEL, null),
         )
         set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL, value.name) }
+
+    var liveModelId: String
+        get() = prefs.getString(KEY_LIVE_MODEL_ID, null).orEmpty().ifBlank { ModelCatalog.DEFAULT.live.first() }
+        set(value) = prefs.edit { putString(KEY_LIVE_MODEL_ID, value) }
+
+    var accurateModelId: String
+        get() = prefs.getString(KEY_ACCURATE_MODEL_ID, null).orEmpty().ifBlank { ModelCatalog.DEFAULT.accurate.first() }
+        set(value) = prefs.edit { putString(KEY_ACCURATE_MODEL_ID, value) }
+
+    var transformationModelId: String
+        get() = prefs.getString(KEY_TRANSFORMATION_MODEL_ID, null).orEmpty()
+            .ifBlank { transformationModel.apiName }
+        set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL_ID, value) }
+
+    var modelCatalog: ModelCatalog
+        get() = ModelCatalog.fromIds(prefs.getStringSet(KEY_MODEL_CATALOG, emptySet()).orEmpty())
+        set(value) = prefs.edit {
+            putStringSet(KEY_MODEL_CATALOG, (value.live + value.accurate + value.text).toSet())
+            putLong(KEY_MODEL_CATALOG_UPDATED, System.currentTimeMillis())
+        }
+
+    val modelCatalogUpdatedAt: Long
+        get() = prefs.getLong(KEY_MODEL_CATALOG_UPDATED, 0L)
+
+    fun clearModelCatalog() = prefs.edit {
+        remove(KEY_MODEL_CATALOG)
+        remove(KEY_MODEL_CATALOG_UPDATED)
+    }
 
     var languages: Set<DictationLanguage>
         get() = DictationLanguage.fromStored(
@@ -57,6 +86,11 @@ class SettingsStore(context: Context) {
         private const val FILE_NAME = "opendictate_settings"
         private const val KEY_MODEL = "model"
         private const val KEY_TRANSFORMATION_MODEL = "transformation_model"
+        private const val KEY_LIVE_MODEL_ID = "live_model_id"
+        private const val KEY_ACCURATE_MODEL_ID = "accurate_model_id"
+        private const val KEY_TRANSFORMATION_MODEL_ID = "transformation_model_id"
+        private const val KEY_MODEL_CATALOG = "model_catalog"
+        private const val KEY_MODEL_CATALOG_UPDATED = "model_catalog_updated"
         private const val KEY_LANGUAGES = "languages"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_PROMPT = "prompt"

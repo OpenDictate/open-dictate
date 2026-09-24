@@ -87,6 +87,9 @@ class DictationForegroundService : Service() {
         }
         val settings = SettingsStore(this)
         val model = settings.model
+        val liveModelId = settings.liveModelId
+        val accurateModelId = settings.accurateModelId
+        val transformationModelId = settings.transformationModelId
         val keepTrailingPeriod = settings.keepTrailingPeriod
         val sessionId = nextSession.incrementAndGet()
         activeOperation = operation
@@ -110,6 +113,7 @@ class DictationForegroundService : Service() {
                 val transcript = when (model) {
                     TranscriptionModel.LIVE -> apiClient.transcribeLive(
                         apiKey = apiKey,
+                        modelId = liveModelId,
                         scope = scope,
                         recorder = recorder,
                         languages = settings.languages,
@@ -181,6 +185,7 @@ class DictationForegroundService : Service() {
                         updateNotification(true, operation)
                         apiClient.transcribeFile(
                             apiKey,
+                            accurateModelId,
                             file,
                             settings.languages,
                             settings.prompt,
@@ -204,7 +209,7 @@ class DictationForegroundService : Service() {
                     updateNotification(true, operation)
                     val transformation = apiClient.transformText(
                         apiKey = apiKey,
-                        model = settings.transformationModel,
+                        model = transformationModelId,
                         sourceText = requireNotNull(sourceText),
                         instruction = transcript.trim(),
                     )

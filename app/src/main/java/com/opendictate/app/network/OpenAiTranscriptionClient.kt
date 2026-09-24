@@ -6,7 +6,7 @@ import androidx.annotation.StringRes
 import com.opendictate.app.R
 import com.opendictate.app.audio.PcmAudioRecorder
 import com.opendictate.app.model.DictationLanguage
-import com.opendictate.app.model.TextTransformationModel
+import com.opendictate.app.model.ModelCatalog
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +44,19 @@ class OpenAiTranscriptionClient(
         .retryOnConnectionFailure(true)
         .build()
 
+    suspend fun listModels(apiKey: String): ModelCatalog = withContext(Dispatchers.IO) {
+        val request = authorizedRequest(apiKey, MODELS_URL).build()
+        client.newCall(request).await().use { response ->
+            if (!response.isSuccessful) {
+                throw OpenAiException(errorMessage(response.code, response.body.string()))
+            }
+            ModelCatalog.fromModelsResponse(response.body.string())
+        }
+    }
+
     suspend fun transcribeFile(
         apiKey: String,
+        modelId: String,
         audioFile: File,
         languages: Set<DictationLanguage>,
         prompt: String,
@@ -53,7 +64,7 @@ class OpenAiTranscriptionClient(
     ): String = withContext(Dispatchers.IO) {
         val multipart = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("model", "gpt-transcribe")
+            .addFormDataPart("model", modelId)
             .addFormDataPart("file", "dictation.wav", audioFile.asRequestBody(WAV))
             .apply {
                 val context = transcriptionPrompt(languages, prompt)
@@ -80,6 +91,7 @@ class OpenAiTranscriptionClient(
 
     suspend fun transcribeLive(
         apiKey: String,
+        modelId: String,
         scope: CoroutineScope,
         recorder: PcmAudioRecorder,
         languages: Set<DictationLanguage>,
@@ -89,7 +101,7 @@ class OpenAiTranscriptionClient(
         onReady: () -> Unit,
         onPartial: (String) -> Unit,
     ): String {
-        val session = LiveSession(apiKey, languages, prompt, onPartial)
+        val session = LiveSession(apiKey, modelId, languages, prompt, onPartial)
         try {
             session.connect()
             recorder.start(scope, session::sendAudio)
@@ -114,7 +126,7 @@ class OpenAiTranscriptionClient(
 
     internal suspend fun transformText(
         apiKey: String,
-        model: TextTransformationModel,
+        model: String,
         sourceText: String,
         instruction: String,
     ): TextTransformationResult = try {
@@ -162,7 +174,7 @@ class OpenAiTranscriptionClient(
 
     suspend fun searchTranscriptHistory(
         apiKey: String,
-        model: TextTransformationModel,
+        model: String,
         query: String,
         documents: List<TranscriptSearchDocument>,
     ): List<Long> {
@@ -175,7 +187,7 @@ class OpenAiTranscriptionClient(
 
     private suspend fun searchTranscriptHistoryBatch(
         apiKey: String,
-        model: TextTransformationModel,
+        model: String,
         query: String,
         documents: List<TranscriptSearchDocument>,
     ): List<Long> = try {
@@ -223,6 +235,7 @@ class OpenAiTranscriptionClient(
 
     private inner class LiveSession(
         private val apiKey: String,
+        private val modelId: String,
         private val languages: Set<DictationLanguage>,
         private val prompt: String,
         private val onPartial: (String) -> Unit,
@@ -244,7 +257,7 @@ class OpenAiTranscriptionClient(
         }
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            webSocket.send(realtimeTranscriptionSessionUpdate(languages, prompt).toString())
+            webSocket.send(realtimeTranscriptionSessionUpdate(modelId, languages, prompt).toString())
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -408,6 +421,7 @@ class OpenAiTranscriptionClient(
 
     companion object {
         private const val TRANSCRIPTIONS_URL = "https://api.openai.com/v1/audio/transcriptions"
+        private const val MODELS_URL = "https://api.openai.com/v1/models"
         private const val RESPONSES_URL = "https://api.openai.com/v1/responses"
         private const val CONNECT_TIMEOUT_MS = 12_000L
         private const val TRANSFORMATION_TIMEOUT_MS = 30_000L
@@ -463,11 +477,11 @@ internal fun historySearchBatches(
 }
 
 internal fun transcriptHistorySearchRequest(
-    model: TextTransformationModel,
+    model: String,
     query: String,
     documents: List<TranscriptSearchDocument>,
 ): JSONObject = JSONObject()
-    .put("model", model.apiName)
+    .put("model", model)
     .put("store", false)
     .put("reasoning", JSONObject().put("effort", "low"))
     .put(
@@ -534,11 +548,11 @@ private const val MAX_HISTORY_DOCUMENT_CHARS = 4_000
 private const val MAX_HISTORY_REQUEST_CHARS = 40_000
 
 internal fun textTransformationRequest(
-    model: TextTransformationModel,
+    model: String,
     sourceText: String,
     instruction: String,
 ): JSONObject = JSONObject()
-    .put("model", model.apiName)
+    .put("model", model)
     .put("store", false)
     .put("reasoning", JSONObject().put("effort", "low"))
     .put(
@@ -648,11 +662,12 @@ internal fun realtimeTranscriptionUrl(): String =
     "wss://api.openai.com/v1/realtime?intent=transcription"
 
 internal fun realtimeTranscriptionSessionUpdate(
+    modelId: String,
     languages: Set<DictationLanguage>,
     prompt: String,
 ): JSONObject {
     val transcription = JSONObject()
-        .put("model", "gpt-live-transcribe")
+        .put("model", modelId)
     val context = transcriptionPrompt(languages, prompt)
     if (context.isNotBlank()) transcription.put("prompt", context)
     if (languages.isNotEmpty()) {

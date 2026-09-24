@@ -46,6 +46,10 @@
     <string name="model_accurate_title">More accurate</string>
     <string name="model_accurate_description">Listens first, then inserts the finished text.</string>
     <string name="model_accurate_badge">DEFAULT</string>
+    <string name="models_refresh">Refresh OpenAI models</string>
+    <string name="models_loading">Checking…</string>
+    <string name="models_error">Could not refresh models</string>
+    <string name="models_new">%1$d new models available</string>
 
     <string name="transformation_model_title">Text transformation</string>
     <string name="transformation_model_subtitle">Select text or leave the cursor in the field, long-press the floating button, choose Edit text, and speak the instruction</string>

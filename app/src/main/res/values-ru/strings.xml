@@ -44,6 +44,10 @@
     <string name="model_accurate_title">Точнее</string>
     <string name="model_accurate_description">Сначала слушает, затем вставляет готовый текст.</string>
     <string name="model_accurate_badge">ПО УМОЛЧАНИЮ</string>
+    <string name="models_refresh">Обновить модели OpenAI</string>
+    <string name="models_loading">Проверка…</string>
+    <string name="models_error">Не удалось обновить модели</string>
+    <string name="models_new">Новых моделей: %1$d</string>
 
     <string name="transformation_model_title">Преобразование текста</string>
     <string name="transformation_model_subtitle">Выделите текст или оставьте курсор в поле, удерживайте плавающую кнопку, выберите «Изменить текст» и надиктуйте инструкцию</string>

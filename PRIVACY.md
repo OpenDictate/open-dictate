@@ -3,6 +3,10 @@
 OpenDictate does not operate a backend and does not include analytics or ads.
 
 - Your OpenAI API key is encrypted locally with Android Keystore.
+- When the settings screen opens, OpenDictate may use that key to fetch the
+  available model IDs directly from OpenAI. It caches only model IDs locally
+  and checks again after 24 hours when the settings screen opens. You can also
+  refresh the list manually.
 - Microphone audio is sent directly to OpenAI only while dictation is active.
 - Temporary recordings used by GPT Transcribe are deleted after each request.
 - Successful dictation transcripts are stored in the application's private

@@ -16,7 +16,7 @@ import com.opendictate.app.data.SettingsStore
 import com.opendictate.app.data.TranscriptHistoryItem
 import com.opendictate.app.data.fuzzySearch
 import com.opendictate.app.model.DictationLanguage
-import com.opendictate.app.model.TextTransformationModel
+import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.model.TranscriptionResponseTimeout
 import com.opendictate.app.network.OpenAiTranscriptionClient
@@ -35,7 +35,13 @@ data class MainUiState(
     val accessibilityEnabled: Boolean = false,
     val microphoneGranted: Boolean = false,
     val model: TranscriptionModel = TranscriptionModel.ACCURATE,
-    val transformationModel: TextTransformationModel = TextTransformationModel.LUNA,
+    val liveModelId: String = ModelCatalog.DEFAULT.live.first(),
+    val accurateModelId: String = ModelCatalog.DEFAULT.accurate.first(),
+    val transformationModelId: String = ModelCatalog.DEFAULT.text.first(),
+    val modelCatalog: ModelCatalog = ModelCatalog.DEFAULT,
+    val modelsLoading: Boolean = false,
+    val modelsError: Boolean = false,
+    val newModelCount: Int = 0,
     val transformationButtonEnabled: Boolean = true,
     val languages: Set<DictationLanguage> = emptySet(),
     val keepTrailingPeriod: Boolean = true,
@@ -78,6 +84,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val historyState = mutableHistoryState.asStateFlow()
     private var historyLoadJob: Job? = null
     private var historySearchJob: Job? = null
+    private var modelLoadJob: Job? = null
+
+    init {
+        refreshModelCatalog()
+    }
     val prompt: String
         get() = settings.prompt
 
@@ -92,14 +103,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun saveApiKey(key: String) {
+        modelLoadJob?.cancel()
+        modelLoadJob = null
         apiKeyStore.save(key)
+        settings.clearModelCatalog()
+        mutableState.update { it.copy(modelCatalog = ModelCatalog.DEFAULT, newModelCount = 0) }
         refreshPermissions()
+        refreshModelCatalog(force = true)
     }
 
     fun getApiKey(): String = apiKeyStore.get().orEmpty()
 
     fun clearApiKey() {
         apiKeyStore.clear()
+        modelLoadJob?.cancel()
+        modelLoadJob = null
+        settings.clearModelCatalog()
+        mutableState.update { it.copy(modelCatalog = ModelCatalog.DEFAULT, modelsLoading = false) }
         refreshPermissions()
     }
 
@@ -108,9 +128,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(model = model) }
     }
 
-    fun selectTransformationModel(model: TextTransformationModel) {
-        settings.transformationModel = model
-        mutableState.update { it.copy(transformationModel = model) }
+    fun selectLiveModel(id: String) {
+        if (id !in modelOptions(mutableState.value.modelCatalog.live, settings.liveModelId, ModelCatalog.DEFAULT.live)) return
+        settings.liveModelId = id
+        mutableState.update { it.copy(liveModelId = id) }
+    }
+
+    fun selectAccurateModel(id: String) {
+        if (id !in modelOptions(mutableState.value.modelCatalog.accurate, settings.accurateModelId, ModelCatalog.DEFAULT.accurate)) return
+        settings.accurateModelId = id
+        mutableState.update { it.copy(accurateModelId = id) }
+    }
+
+    fun selectTransformationModel(id: String) {
+        if (id !in modelOptions(mutableState.value.modelCatalog.text, settings.transformationModelId, ModelCatalog.DEFAULT.text)) return
+        settings.transformationModelId = id
+        mutableState.update { it.copy(transformationModelId = id) }
+    }
+
+    fun refreshModelCatalog(force: Boolean = false) {
+        if (!force && System.currentTimeMillis() - settings.modelCatalogUpdatedAt < MODEL_REFRESH_MS) return
+        if (modelLoadJob?.isActive == true) return
+        val key = apiKeyStore.get() ?: return
+        modelLoadJob = viewModelScope.launch {
+            mutableState.update { it.copy(modelsLoading = true, modelsError = false) }
+            try {
+                val catalog = apiClient.listModels(key)
+                val previous = mutableState.value.modelCatalog
+                settings.modelCatalog = catalog
+                val added = (catalog.live + catalog.accurate + catalog.text).toSet() -
+                    (previous.live + previous.accurate + previous.text).toSet()
+                mutableState.update {
+                    it.copy(modelCatalog = catalog, modelsLoading = false,
+                        newModelCount = added.size)
+                }
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                mutableState.update { it.copy(modelsLoading = false, modelsError = true) }
+            }
+        }
     }
 
     fun setTransformationButtonEnabled(enabled: Boolean) {
@@ -196,7 +252,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val matches = apiClient.searchTranscriptHistory(
                     apiKey = apiKey,
-                    model = settings.transformationModel,
+                    model = settings.transformationModelId,
                     query = query,
                     documents = state.entries.map {
                         TranscriptSearchDocument(id = it.id, text = it.text)
@@ -251,7 +307,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
         microphoneGranted = hasMicrophonePermission(getApplication()),
         model = settings.model,
-        transformationModel = settings.transformationModel,
+        liveModelId = settings.liveModelId,
+        accurateModelId = settings.accurateModelId,
+        transformationModelId = settings.transformationModelId,
+        modelCatalog = settings.modelCatalog,
         transformationButtonEnabled = settings.transformationButtonEnabled,
         languages = settings.languages,
         keepTrailingPeriod = settings.keepTrailingPeriod,
@@ -271,6 +330,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 }
 
 private const val MAX_HISTORY_QUERY_CHARS = 300
+private const val MODEL_REFRESH_MS = 24 * 60 * 60 * 1000L
+
+internal fun modelOptions(discovered: List<String>, selected: String, defaults: List<String>): List<String> =
+    (discovered + defaults + selected).distinct()
 
 internal fun HistoryUiState.withHistoryQuery(query: String): HistoryUiState {
     val updatedQuery = query.take(MAX_HISTORY_QUERY_CHARS)
