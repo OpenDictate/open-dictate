@@ -6,6 +6,7 @@ import androidx.core.content.edit
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.TextTransformationModel
 import com.opendictate.app.model.TranscriptionModel
+import com.opendictate.app.model.TranscriptionResponseTimeout
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -43,6 +44,15 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_TRANSFORMATION_BUTTON_ENABLED, true)
         set(value) = prefs.edit { putBoolean(KEY_TRANSFORMATION_BUTTON_ENABLED, value) }
 
+    var transcriptionResponseTimeoutSeconds: Int?
+        get() = TranscriptionResponseTimeout.fromStored(
+            prefs.getInt(KEY_TRANSCRIPTION_RESPONSE_TIMEOUT, TranscriptionResponseTimeout.DEFAULT_SECONDS),
+        )
+        set(value) {
+            require(value == null || TranscriptionResponseTimeout.isValid(value))
+            prefs.edit { putInt(KEY_TRANSCRIPTION_RESPONSE_TIMEOUT, value ?: 0) }
+        }
+
     companion object {
         private const val FILE_NAME = "opendictate_settings"
         private const val KEY_MODEL = "model"
@@ -52,6 +62,7 @@ class SettingsStore(context: Context) {
         private const val KEY_PROMPT = "prompt"
         private const val KEY_KEEP_TRAILING_PERIOD = "keep_trailing_period"
         private const val KEY_TRANSFORMATION_BUTTON_ENABLED = "transformation_button_enabled"
+        private const val KEY_TRANSCRIPTION_RESPONSE_TIMEOUT = "transcription_response_timeout_seconds"
         private const val DEFAULT_PROMPT = "OpenDictate\nDictate"
     }
 }

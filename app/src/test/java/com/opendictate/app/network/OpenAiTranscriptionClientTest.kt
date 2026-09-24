@@ -2,15 +2,59 @@ package com.opendictate.app.network
 
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.TextTransformationModel
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
+import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.URI
+import java.util.concurrent.TimeUnit
 import org.json.JSONArray
 import org.json.JSONObject
 
 class OpenAiTranscriptionClientTest {
+    @Test
+    fun `file transcription uses configured overall timeout or none`() {
+        val base = OkHttpClient.Builder()
+            .callTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
+            .build()
+
+        assertEquals(30_000, base.forTranscriptionResponse(30).callTimeoutMillis)
+        assertEquals(0, base.forTranscriptionResponse(30).readTimeoutMillis)
+        assertEquals(0, base.forTranscriptionResponse(null).callTimeoutMillis)
+        assertEquals(0, base.forTranscriptionResponse(null).readTimeoutMillis)
+    }
+
+    @Test
+    fun `live final response times out after configured interval`() = runTest {
+        var timedOut = false
+        try {
+            awaitTranscriptionResponse(30) { awaitCancellation() }
+        } catch (_: TimeoutCancellationException) {
+            timedOut = true
+        }
+
+        assertTrue(timedOut)
+    }
+
+    @Test
+    fun `live final response can wait without an overall limit`() = runTest {
+        val response = CompletableDeferred<String>()
+        val waiting = async { awaitTranscriptionResponse(null) { response.await() } }
+
+        delay(600_000)
+        assertFalse(waiting.isCompleted)
+        response.complete("recognized")
+        assertEquals("recognized", waiting.await())
+    }
+
     @Test
     fun `realtime transcription URL selects transcription intent without a model`() {
         val query = URI(realtimeTranscriptionUrl()).rawQuery

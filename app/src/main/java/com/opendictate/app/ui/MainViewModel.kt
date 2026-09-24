@@ -18,6 +18,7 @@ import com.opendictate.app.data.fuzzySearch
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.TextTransformationModel
 import com.opendictate.app.model.TranscriptionModel
+import com.opendictate.app.model.TranscriptionResponseTimeout
 import com.opendictate.app.network.OpenAiTranscriptionClient
 import com.opendictate.app.network.TranscriptSearchDocument
 import kotlinx.coroutines.CancellationException
@@ -38,6 +39,7 @@ data class MainUiState(
     val transformationButtonEnabled: Boolean = true,
     val languages: Set<DictationLanguage> = emptySet(),
     val keepTrailingPeriod: Boolean = true,
+    val transcriptionResponseTimeoutSeconds: Int? = TranscriptionResponseTimeout.DEFAULT_SECONDS,
 )
 
 enum class HistorySearchMode {
@@ -136,6 +138,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setKeepTrailingPeriod(enabled: Boolean) {
         settings.keepTrailingPeriod = enabled
         mutableState.update { it.copy(keepTrailingPeriod = enabled) }
+    }
+
+    fun setTranscriptionResponseTimeout(seconds: Int?) {
+        settings.transcriptionResponseTimeoutSeconds = seconds
+        mutableState.update { it.copy(transcriptionResponseTimeoutSeconds = seconds) }
     }
 
     fun refreshHistory() {
@@ -248,6 +255,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         transformationButtonEnabled = settings.transformationButtonEnabled,
         languages = settings.languages,
         keepTrailingPeriod = settings.keepTrailingPeriod,
+        transcriptionResponseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
     )
 
     private fun isAccessibilityEnabled(context: Context): Boolean {

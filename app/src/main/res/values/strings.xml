@@ -79,6 +79,15 @@
     <string name="dictionary_label">Vocabulary (optional)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
+    <string name="advanced_settings_title">Advanced settings</string>
+    <string name="transcription_timeout_title">Transcription response time</string>
+    <string name="transcription_timeout_subtitle">Maximum wait after you stop recording</string>
+    <string name="transcription_timeout_value">%1$d s</string>
+    <string name="transcription_timeout_unlimited">No limit</string>
+    <string name="transcription_timeout_explanation">Stop waiting if OpenAI has not returned the transcription. Live partial text already inserted remains in the field.</string>
+    <string name="transcription_timeout_limit">Set a time limit</string>
+    <string name="transcription_timeout_seconds">Seconds</string>
+    <string name="transcription_timeout_range">1–600 seconds</string>
     <string name="test_field_label">Try it here</string>
     <string name="test_field_placeholder">Open the keyboard — the button will appear above it</string>
     <string name="privacy_note">Your key, recordings, and text never pass through an OpenDictate server. Transcripts are saved only on this device. Audio, text you transform, and history you explicitly search with AI are sent directly to OpenAI.</string>

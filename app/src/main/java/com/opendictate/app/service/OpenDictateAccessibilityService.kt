@@ -396,7 +396,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         val state = DictationStateBus.state.value
         if (!state.isActive) return
         ignoredSessionId = state.sessionId
-        if (state.operation == DictationOperation.DICTATION) {
+        if (state.shouldRestoreTextOnCancellation()) {
             editableSnapshot?.let(pendingTextRestoration::begin)
             restoreEditableSnapshot()
         }
