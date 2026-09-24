@@ -59,7 +59,9 @@ The debug APK will be in `app/build/outputs/apk/debug/`.
 ## Releases
 
 The `.github/workflows/release.yml` workflow builds and publishes a signed APK
-for stable `v*` tags (preview tags are excluded). The repository requires four
+for `v*` tags other than preview tags. Tags with a prerelease suffix, such as
+`v0.6.6-rc.1`, publish as GitHub prereleases and use the regular
+`com.opendictate.app` application ID. The repository requires four
 Actions secrets:
 
 - `SIGNING_KEY` — a base64-encoded JKS file;

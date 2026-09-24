@@ -2,17 +2,17 @@
 name: OpenDictate
 description: A dark, instrument-like visual system that makes speech becoming text feel immediate and trustworthy.
 colors:
-  ink: "#0b1020"
-  ink-deep: "#070b16"
-  panel: "#11182a"
-  panel-raised: "#172137"
-  white: "#f7f9fc"
-  fog: "#aab5c8"
-  line: "#2c3953"
-  mint: "#7de4c4"
-  mint-deep: "#45cba3"
-  mint-hover: "#9aefd5"
-  coral: "#ff8d7f"
+  ink: "#080808"
+  ink-deep: "#030303"
+  panel: "#171717"
+  panel-raised: "#242424"
+  white: "#f7f7f5"
+  fog: "#a9a9a6"
+  line: "#363636"
+  signal: "#f7f7f5"
+  signal-deep: "#e0e0de"
+  signal-hover: "#ffffff"
+  secondary: "#d0d0cd"
 typography:
   display:
     fontFamily: "Unbounded, Arial, sans-serif"
@@ -67,14 +67,14 @@ spacing:
   section-desktop: "130px"
 components:
   button-primary:
-    backgroundColor: "{colors.mint}"
+    backgroundColor: "{colors.signal}"
     textColor: "{colors.ink-deep}"
     typography: "{typography.button}"
     rounded: "{rounded.control}"
     padding: "0 20px"
     height: "56px"
   button-primary-hover:
-    backgroundColor: "{colors.mint-hover}"
+    backgroundColor: "{colors.signal-hover}"
     textColor: "{colors.ink-deep}"
     rounded: "{rounded.control}"
   button-secondary:
@@ -85,24 +85,24 @@ components:
     padding: "0 20px"
     height: "56px"
   mic:
-    backgroundColor: "{colors.mint}"
+    backgroundColor: "{colors.signal}"
     textColor: "{colors.ink}"
     rounded: "{rounded.full}"
     size: "68px"
   mic-listening:
-    backgroundColor: "{colors.coral}"
+    backgroundColor: "{colors.secondary}"
     textColor: "{colors.ink}"
     rounded: "{rounded.full}"
     size: "68px"
   mode-live:
-    backgroundColor: "{colors.mint}"
+    backgroundColor: "{colors.signal}"
     textColor: "{colors.ink-deep}"
     typography: "{typography.label}"
     rounded: "{rounded.inset-control}"
     padding: "0 12px"
     height: "46px"
   mode-accurate:
-    backgroundColor: "{colors.coral}"
+    backgroundColor: "{colors.secondary}"
     textColor: "{colors.ink-deep}"
     typography: "{typography.label}"
     rounded: "{rounded.inset-control}"
@@ -121,15 +121,15 @@ components:
 
 **Creative North Star: "The Live Dictation Instrument"**
 
-OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Deep navy surfaces, hairline structure, compact instrument labels, a live caret, and the five-bar waveform make the interface feel focused, technical, and calm. Mint carries the active voice signal; coral appears only when a mode or state needs meaningful contrast.
+OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.
 
-This file is the repository-wide authority for web and public brand surfaces. The Android app shares the navy–mint–coral character, but its current Compose palette intentionally differs at several values and its controls, typography scale, insets, motion, and 48 dp touch targets remain Material 3-native. Do not mechanically transplant web pixels or fonts into Android.
+This file is the repository-wide authority for the Android app and public web surface. Both use black, white, and graphite, while Android retains Material 3 controls, insets, motion, and 48 dp touch targets. Do not mechanically transplant web pixels or fonts into Android.
 
 **Key Characteristics:**
 
-- Deep navy work surfaces with no light-theme inversion.
-- Mint waveform geometry and caret behavior as the signature motif.
-- Restrained coral reserved for Accurate/listening contrast and focus.
+- Black work surfaces with no light-theme inversion.
+- White microphone mark, white primary actions, and a white live caret.
+- Restrained silver reserved for alternate modes and state contrast.
 - Unbounded display statements, Golos body copy, and monospaced utility labels.
 - Hairline ledgers and routes instead of floating marketing cards.
 - Direct, literal diagrams and interactions instead of decorative product mockups.
@@ -140,13 +140,13 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 
 ### Primary
 
-- **Signal Mint:** The main action, live state, caret, waveform, active status, and positive emphasis.
-- **Deep Signal Mint:** A darker companion available for denser brand applications; do not substitute it for the brighter interactive signal by default.
-- **Air Mint:** Hover feedback for filled mint controls.
+- **Signal White:** The main action, live state, caret, waveform, active status, and positive emphasis.
+- **Soft White:** A quieter companion for dense surfaces.
+- **Bright White:** Hover feedback for filled controls.
 
 ### Secondary
 
-- **Mode Coral:** Accurate-mode contrast, replay/listening state, focus outlines, and cautionary diagrams. It is a state distinction, not a second general-purpose brand fill.
+- **Mode Silver:** Accurate-mode contrast, replay/listening state, and focus outlines. It is a state distinction, not a second general-purpose brand fill.
 
 ### Neutral
 
@@ -158,7 +158,7 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 - **Interface Fog:** Secondary copy and inactive controls.
 - **Hairline Slate:** Dividers, routes, borders, and structural drawing.
 
-**The Two-Signal Rule.** Mint means live, primary, or device-side activity; coral means a deliberate alternate mode, active replay, or focus. Never decorate with both indiscriminately.
+**The Contrast Rule.** White marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.
 
 **The Dark-Only Rule.** Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.
 
@@ -205,8 +205,8 @@ The form language mixes gently rounded rectangular controls with a perfect circu
 
 ### Buttons
 
-- **Primary:** A full-width or content-width mint action, 56px tall, with dark text and a 12px corner.
-- **Hover / Active / Focus:** Hover shifts to Air Mint and lifts 3px; active settles 1px and may scale to 0.97 where tactile; focus is a 3px coral outline offset by 4px.
+- **Primary:** A full-width or content-width signal action, 56px tall, with dark text and a 12px corner.
+- **Hover / Active / Focus:** Hover shifts to bright white and lifts 3px; active settles 1px and may scale to 0.97 where tactile; focus is a 3px silver outline offset by 4px.
 - **Secondary:** Transparent with a hairline border; hover raises it 3px and fills with the panel tone.
 
 ### Cards / Containers
@@ -217,15 +217,15 @@ The form language mixes gently rounded rectangular controls with a perfect circu
 
 ### Navigation
 
-Desktop navigation uses uppercase mono links in Interface Fog, turning mint on hover. At the tablet breakpoint the text navigation disappears and a compact bordered APK action appears; the brand and language switch remain. All keyboard focus uses the shared coral outline.
+Desktop navigation uses uppercase mono links in Interface Fog, turning signal on hover. At the tablet breakpoint the text navigation disappears and a compact bordered APK action appears; the brand and language switch remain. All keyboard focus uses the shared secondary outline.
 
 ### Mode Switch
 
-The two-option control has a Hairline Slate frame, a 13px outer corner, 4px inset, and 46px options. Live selects mint; Accurate selects coral. `aria-pressed` is the state source, and Left/Right arrows move between options.
+The two-option control has a Hairline Slate frame, a 13px outer corner, 4px inset, and 46px options. Live selects signal; Accurate selects secondary. `aria-pressed` is the state source, and Left/Right arrows move between options.
 
 ### Dictation Signal
 
-The circular microphone contains the five-bar mark. It is mint at rest and coral while replaying; its bars animate with staggered 760ms alternate pulses, while the caret blinks every 900ms. The demo builds a cumulative phrase word by word and runs once after load. Under reduced motion, it resolves immediately and all CSS motion collapses to 1ms.
+The public demo uses a five-bar signal inside its microphone control. It is white at rest and silver while replaying; its bars animate with staggered 760ms alternate pulses, while the caret blinks every 900ms. The Android launcher and header use the white microphone mark on black. Under reduced motion, the web demo resolves immediately and all CSS motion collapses to 1ms.
 
 ## Do's and Don'ts
 
@@ -235,12 +235,12 @@ The circular microphone contains the five-bar mark. It is mint at rest and coral
 - **Do** use hairline structure and tonal layers to organize dense information.
 - **Do** preserve the bilingual Latin/Cyrillic font setup and responsive English/Russian copy behavior.
 - **Do** keep every web control keyboard-visible and honor `prefers-reduced-motion`.
-- **Do** theme Android through Material 3 roles and components while retaining its existing Compose palette and 48 dp minimum targets.
+- **Do** theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets.
 
 ### Don't:
 
 - **Don't** introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.
-- **Don't** use coral as routine decoration or let it compete with mint for the primary action.
+- **Don't** use secondary as routine decoration or let it compete with signal for the primary action.
 - **Don't** replace Unbounded headlines with default sans type or use Unbounded for paragraphs.
 - **Don't** flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.
 - **Don't** copy web pixel values, web fonts, or hover-only affordances directly into native Android UI.

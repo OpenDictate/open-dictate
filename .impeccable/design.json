@@ -1,20 +1,20 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-22T00:00:00+04:00",
+  "generatedAt": "2026-09-24T00:00:00+04:00",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
-      "ink": { "role": "neutral", "displayName": "Working Ink", "tonalRamp": ["#030509", "#070b16", "#0b1020", "#242a3b", "#4d5261", "#7b7f8b", "#acafb6", "#e0e1e4"] },
-      "ink-deep": { "role": "neutral", "displayName": "Deep Ink", "tonalRamp": ["#020307", "#070b16", "#111625", "#2b303e", "#535762", "#80838b", "#afb1b7", "#e1e2e5"] },
-      "panel": { "role": "neutral", "displayName": "Instrument Panel", "tonalRamp": ["#05080e", "#0a0e18", "#11182a", "#2a3141", "#515766", "#7d818c", "#adafb6", "#dfe0e4"] },
-      "panel-raised": { "role": "neutral", "displayName": "Raised Panel", "tonalRamp": ["#070a11", "#0d121e", "#172137", "#30394a", "#565d6b", "#818690", "#afb2b9", "#e1e2e5"] },
-      "white": { "role": "neutral", "displayName": "Signal White", "tonalRamp": ["#252526", "#505152", "#7c7d7e", "#a9aaab", "#d8d9da", "#f7f9fc", "#fafbfd", "#fdfdfe"] },
-      "fog": { "role": "neutral", "displayName": "Interface Fog", "tonalRamp": ["#191b1e", "#373b42", "#575d67", "#78818f", "#9ca6b7", "#aab5c8", "#cbd2dd", "#edf0f4"] },
-      "line": { "role": "neutral", "displayName": "Hairline Slate", "tonalRamp": ["#07090d", "#111620", "#202a3d", "#2c3953", "#576176", "#81899a", "#adb3bf", "#dde0e6"] },
-      "mint": { "role": "primary", "displayName": "Signal Mint", "tonalRamp": ["#102d25", "#1d5143", "#2b7763", "#3d9e84", "#53c7a6", "#7de4c4", "#b2efdD", "#e6faf4"] },
-      "mint-deep": { "role": "primary", "displayName": "Deep Signal Mint", "tonalRamp": ["#09271f", "#104b3c", "#19735b", "#269c7c", "#45cba3", "#79ddbd", "#afeed9", "#e4faf2"] },
-      "mint-hover": { "role": "primary", "displayName": "Air Mint", "tonalRamp": ["#17302a", "#2b594d", "#418373", "#5caf91", "#7fdbb7", "#9aefd5", "#c1f5e5", "#ecfcf7"] },
-      "coral": { "role": "secondary", "displayName": "Mode Coral", "tonalRamp": ["#391915", "#672d28", "#98443c", "#ca5c51", "#f47a6d", "#ff8d7f", "#ffb9b1", "#ffe8e5"] }
+      "ink": { "role": "neutral", "displayName": "Working Ink", "tonalRamp": ["#000000", "#030303", "#080808", "#242424", "#505050", "#797979", "#aaaaaa", "#e1e1df"] },
+      "ink-deep": { "role": "neutral", "displayName": "Deep Ink", "tonalRamp": ["#000000", "#030303", "#101010", "#2b2b2b", "#555555", "#808080", "#b0b0ae", "#e2e2e0"] },
+      "panel": { "role": "neutral", "displayName": "Instrument Panel", "tonalRamp": ["#060606", "#101010", "#171717", "#303030", "#585858", "#828282", "#b0b0ae", "#e1e1df"] },
+      "panel-raised": { "role": "neutral", "displayName": "Raised Panel", "tonalRamp": ["#0a0a0a", "#191919", "#242424", "#3a3a3a", "#626262", "#8b8b8b", "#b6b6b4", "#e5e5e3"] },
+      "white": { "role": "neutral", "displayName": "Signal White", "tonalRamp": ["#242424", "#505050", "#7c7c7a", "#aaaaa7", "#d8d8d5", "#f7f7f5", "#fbfbf9", "#ffffff"] },
+      "fog": { "role": "neutral", "displayName": "Interface Fog", "tonalRamp": ["#191919", "#393939", "#5b5b59", "#81817e", "#9b9b98", "#a9a9a6", "#cdcdca", "#ededeb"] },
+      "line": { "role": "neutral", "displayName": "Hairline Slate", "tonalRamp": ["#080808", "#151515", "#272727", "#363636", "#606060", "#898989", "#b8b8b6", "#e0e0de"] },
+      "signal": { "role": "primary", "displayName": "Signal White", "tonalRamp": ["#242424", "#505050", "#7c7c7a", "#aaaaa7", "#d8d8d5", "#f7f7f5", "#fbfbf9", "#ffffff"] },
+      "signal-deep": { "role": "primary", "displayName": "Deep Signal White", "tonalRamp": ["#1d1d1d", "#444444", "#707070", "#9b9b99", "#c6c6c3", "#e0e0de", "#eeeeec", "#ffffff"] },
+      "signal-hover": { "role": "primary", "displayName": "Air White", "tonalRamp": ["#242424", "#505050", "#7c7c7a", "#aaaaa7", "#d8d8d5", "#f7f7f5", "#fbfbf9", "#ffffff"] },
+      "secondary": { "role": "secondary", "displayName": "Mode Silver", "tonalRamp": ["#1a1a1a", "#3b3b3b", "#616161", "#898989", "#adadaa", "#d0d0cd", "#e5e5e2", "#f7f7f5"] }
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Hero statements only." },
@@ -43,9 +43,9 @@
       "name": "Primary Download Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The canonical release action in mint.",
+      "description": "The canonical white release action.",
       "html": "<a class=\"ds-download\" href=\"#\"><span>Download latest APK</span><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3v12m0 0 5-5m-5 5-5-5M5 21h14\"/></svg></a>",
-      "css": ".ds-download{min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;border:0;border-radius:12px;background:var(--mint,#7de4c4);color:var(--ink-deep,#070b16);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-download svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}.ds-download:hover{background:var(--mint-hover,#9aefd5);transform:translateY(-3px)}.ds-download:active{transform:translateY(1px) scale(.97)}.ds-download:focus-visible{outline:3px solid var(--coral,#ff8d7f);outline-offset:4px}"
+      "css": ".ds-download{min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;border:0;border-radius:12px;background:var(--signal,#f7f7f5);color:var(--ink-deep,#030303);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-download svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}.ds-download:hover{background:var(--signal-hover,#ffffff);transform:translateY(-3px)}.ds-download:active{transform:translateY(1px) scale(.97)}.ds-download:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
     },
     {
       "name": "Secondary Source Button",
@@ -53,15 +53,15 @@
       "refersTo": "button-secondary",
       "description": "A quiet bordered action paired with the primary release action.",
       "html": "<a class=\"ds-source\" href=\"#\">View source</a>",
-      "css": ".ds-source{min-width:230px;min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#2c3953);border-radius:12px;background:transparent;color:var(--white,#f7f9fc);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,border-color 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-source:hover{border-color:var(--fog,#aab5c8);background:var(--panel,#11182a);transform:translateY(-3px)}.ds-source:focus-visible{outline:3px solid var(--coral,#ff8d7f);outline-offset:4px}"
+      "css": ".ds-source{min-width:230px;min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#363636);border-radius:12px;background:transparent;color:var(--white,#f7f7f5);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,border-color 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-source:hover{border-color:var(--fog,#a9a9a6);background:var(--panel,#171717);transform:translateY(-3px)}.ds-source:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
     },
     {
       "name": "Mode Switch",
       "kind": "custom",
       "refersTo": "mode-live",
-      "description": "A two-state transcription selector with semantically distinct signal colors.",
+      "description": "A two-state transcription selector with white and silver selected states.",
       "html": "<div class=\"ds-modes\" role=\"group\" aria-label=\"Transcription mode\"><button aria-pressed=\"true\">Live</button><button data-accurate aria-pressed=\"false\">Accurate</button></div>",
-      "css": ".ds-modes{display:grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line,#2c3953);border-radius:13px;background:var(--ink,#0b1020)}.ds-modes button{min-height:46px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--fog,#aab5c8);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:color 180ms ease,background 180ms ease}.ds-modes button[aria-pressed=true]{background:var(--mint,#7de4c4);color:var(--ink-deep,#070b16);font-weight:700}.ds-modes button[data-accurate][aria-pressed=true]{background:var(--coral,#ff8d7f)}.ds-modes button:focus-visible{outline:3px solid var(--coral,#ff8d7f);outline-offset:4px}"
+      "css": ".ds-modes{display:grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line,#363636);border-radius:13px;background:var(--ink,#080808)}.ds-modes button{min-height:46px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--fog,#a9a9a6);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:color 180ms ease,background 180ms ease}.ds-modes button[aria-pressed=true]{background:var(--signal,#f7f7f5);color:var(--ink-deep,#030303);font-weight:700}.ds-modes button[data-accurate][aria-pressed=true]{background:var(--secondary,#d0d0cd)}.ds-modes button:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
     },
     {
       "name": "Live Dictation Field",
@@ -69,37 +69,37 @@
       "refersTo": "dictation-field",
       "description": "The signature field showing cumulative transcript insertion and live status.",
       "html": "<div class=\"ds-field\"><div class=\"ds-field-meta\"><span>Focused text field</span><span class=\"ds-ready\"><i></i>Ready</span></div><div class=\"ds-transcript\">Move the release to Friday morning and add the APK link.<i class=\"ds-caret\"></i></div></div>",
-      "css": ".ds-field{min-height:190px;padding:25px 92px 30px 28px;border:1px solid var(--line,#2c3953);border-radius:16px;background:var(--panel,#11182a);color:var(--white,#f7f9fc)}.ds-field-meta{display:flex;justify-content:space-between;gap:20px;color:var(--fog,#aab5c8);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.06em;text-transform:uppercase}.ds-ready{display:inline-flex;align-items:center;gap:8px;color:var(--mint,#7de4c4)}.ds-ready i{width:7px;height:7px;border-radius:50%;background:currentColor}.ds-transcript{margin-top:34px;font:500 clamp(22px,2.55vw,38px)/1.32 'Golos Text','Segoe UI',sans-serif;letter-spacing:-.025em}.ds-caret{display:inline-block;width:2px;height:1em;margin-left:4px;background:var(--mint,#7de4c4);vertical-align:-.12em;animation:ds-blink 900ms step-end infinite}@keyframes ds-blink{0%,45%{opacity:1}46%,100%{opacity:0}}@media(prefers-reduced-motion:reduce){.ds-caret{animation-duration:1ms;animation-iteration-count:1}}"
+      "css": ".ds-field{min-height:190px;padding:25px 92px 30px 28px;border:1px solid var(--line,#363636);border-radius:16px;background:var(--panel,#171717);color:var(--white,#f7f7f5)}.ds-field-meta{display:flex;justify-content:space-between;gap:20px;color:var(--fog,#a9a9a6);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.06em;text-transform:uppercase}.ds-ready{display:inline-flex;align-items:center;gap:8px;color:var(--signal,#f7f7f5)}.ds-ready i{width:7px;height:7px;border-radius:50%;background:currentColor}.ds-transcript{margin-top:34px;font:500 clamp(22px,2.55vw,38px)/1.32 'Golos Text','Segoe UI',sans-serif;letter-spacing:-.025em}.ds-caret{display:inline-block;width:2px;height:1em;margin-left:4px;background:var(--signal,#f7f7f5);vertical-align:-.12em;animation:ds-blink 900ms step-end infinite}@keyframes ds-blink{0%,45%{opacity:1}46%,100%{opacity:0}}@media(prefers-reduced-motion:reduce){.ds-caret{animation-duration:1ms;animation-iteration-count:1}}"
     },
     {
       "name": "Microphone Signal",
       "kind": "button",
       "refersTo": "mic",
-      "description": "The circular five-bar action that changes from mint to coral while listening.",
+      "description": "The circular five-bar demo action that changes from white to silver while listening.",
       "html": "<button class=\"ds-mic\" aria-label=\"Replay dictation\"><span><i></i><i></i><i></i><i></i><i></i></span></button>",
-      "css": ".ds-mic{width:68px;height:68px;padding:0;display:grid;place-items:center;border:0;border-radius:50%;background:var(--mint,#7de4c4);color:var(--ink,#0b1020);cursor:pointer;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-mic span{display:flex;align-items:center;gap:3px}.ds-mic i{width:3px;height:20px;border-radius:3px;background:currentColor}.ds-mic i:nth-child(1),.ds-mic i:nth-child(5){transform:scaleY(.3)}.ds-mic i:nth-child(2),.ds-mic i:nth-child(4){transform:scaleY(.65)}.ds-mic:hover{background:var(--mint-hover,#9aefd5);transform:translateY(-3px)}.ds-mic:active{transform:translateY(1px) scale(.97)}.ds-mic:focus-visible{outline:3px solid var(--coral,#ff8d7f);outline-offset:4px}"
+      "css": ".ds-mic{width:68px;height:68px;padding:0;display:grid;place-items:center;border:0;border-radius:50%;background:var(--signal,#f7f7f5);color:var(--ink,#080808);cursor:pointer;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-mic span{display:flex;align-items:center;gap:3px}.ds-mic i{width:3px;height:20px;border-radius:3px;background:currentColor}.ds-mic i:nth-child(1),.ds-mic i:nth-child(5){transform:scaleY(.3)}.ds-mic i:nth-child(2),.ds-mic i:nth-child(4){transform:scaleY(.65)}.ds-mic:hover{background:var(--signal-hover,#ffffff);transform:translateY(-3px)}.ds-mic:active{transform:translateY(1px) scale(.97)}.ds-mic:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
     },
     {
       "name": "Instrument Navigation",
       "kind": "nav",
       "description": "Compact uppercase navigation that recedes until hover or focus.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a href=\"#\">Modes</a><a href=\"#\">Privacy</a><a href=\"#\">Setup</a><a href=\"#\">Source</a></nav>",
-      "css": ".ds-nav{display:flex;align-items:center;gap:30px}.ds-nav a{color:var(--fog,#aab5c8);font:400 12px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-decoration:none;text-transform:uppercase;transition:color 180ms ease}.ds-nav a:hover{color:var(--mint,#7de4c4)}.ds-nav a:focus-visible{outline:3px solid var(--coral,#ff8d7f);outline-offset:4px}@media(max-width:1040px){.ds-nav{display:none}}"
+      "css": ".ds-nav{display:flex;align-items:center;gap:30px}.ds-nav a{color:var(--fog,#a9a9a6);font:400 12px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-decoration:none;text-transform:uppercase;transition:color 180ms ease}.ds-nav a:hover{color:var(--signal,#f7f7f5)}.ds-nav a:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}@media(max-width:1040px){.ds-nav{display:none}}"
     }
   ],
   "narrative": {
     "northStar": "The Live Dictation Instrument",
-    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Deep navy surfaces, hairline structure, compact instrument labels, a live caret, and the five-bar waveform make the interface feel focused, technical, and calm. Mint carries the active voice signal; coral appears only when a mode or state needs meaningful contrast.\n\nThis file is the repository-wide authority for web and public brand surfaces. The Android app shares the navy–mint–coral character, but its current Compose palette intentionally differs at several values and its controls, typography scale, insets, motion, and 48 dp touch targets remain Material 3-native. Do not mechanically transplant web pixels or fonts into Android.",
+    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nThis file is the repository-wide authority for the Android app and public web surface. Both use black, white, and graphite, while Android retains Material 3 controls, insets, motion, and 48 dp touch targets. Do not mechanically transplant web pixels or fonts into Android.",
     "keyCharacteristics": [
-      "Deep navy work surfaces with no light-theme inversion.",
-      "Mint waveform geometry and caret behavior as the signature motif.",
-      "Restrained coral reserved for Accurate/listening contrast and focus.",
+      "Black work surfaces with no light-theme inversion.",
+      "White microphone mark, white primary actions, and a white live caret.",
+      "Restrained silver reserved for alternate modes and state contrast.",
       "Unbounded display statements, Golos body copy, and monospaced utility labels.",
       "Hairline ledgers and routes instead of floating marketing cards.",
       "Direct, literal diagrams and interactions instead of decorative product mockups."
     ],
     "rules": [
-      { "name": "The Two-Signal Rule", "body": "Mint means live, primary, or device-side activity; coral means a deliberate alternate mode, active replay, or focus. Never decorate with both indiscriminately.", "section": "colors" },
+      { "name": "The Contrast Rule", "body": "White marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.", "section": "colors" },
       { "name": "The Dark-Only Rule", "body": "Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.", "section": "colors" },
       { "name": "The Three-Voice Rule", "body": "Unbounded states the proposition, Golos explains it, and mono labels the instrument. Do not swap their jobs.", "section": "typography" },
       { "name": "The Working-Surface Rule", "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.", "section": "layout" },
@@ -111,11 +111,11 @@
       "Do use hairline structure and tonal layers to organize dense information.",
       "Do preserve the bilingual Latin/Cyrillic font setup and responsive English/Russian copy behavior.",
       "Do keep every web control keyboard-visible and honor prefers-reduced-motion.",
-      "Do theme Android through Material 3 roles and components while retaining its existing Compose palette and 48 dp minimum targets."
+      "Do theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets."
     ],
     "donts": [
       "Don't introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.",
-      "Don't use coral as routine decoration or let it compete with mint for the primary action.",
+      "Don't use secondary as routine decoration or let it compete with signal for the primary action.",
       "Don't replace Unbounded headlines with default sans type or use Unbounded for paragraphs.",
       "Don't flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.",
       "Don't copy web pixel values, web fonts, or hover-only affordances directly into native Android UI."

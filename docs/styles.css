@@ -36,16 +36,16 @@
 
 :root {
   color-scheme: dark;
-  --ink: #0b1020;
-  --ink-deep: #070b16;
-  --panel: #11182a;
-  --panel-raised: #172137;
-  --white: #f7f9fc;
-  --fog: #aab5c8;
-  --line: #2c3953;
-  --mint: #7de4c4;
-  --mint-deep: #45cba3;
-  --coral: #ff8d7f;
+  --ink: #080808;
+  --ink-deep: #030303;
+  --panel: #171717;
+  --panel-raised: #242424;
+  --white: #f7f7f5;
+  --fog: #a9a9a6;
+  --line: #363636;
+  --signal: #f7f7f5;
+  --signal-hover: #ffffff;
+  --secondary: #d0d0cd;
   --display: "Unbounded", "Arial", sans-serif;
   --body: "Golos Text", "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;
@@ -59,7 +59,7 @@
 
 html {
   scroll-behavior: smooth;
-  scrollbar-color: var(--mint) var(--ink-deep);
+  scrollbar-color: var(--signal) var(--ink-deep);
   scrollbar-width: thin;
 }
 
@@ -78,14 +78,14 @@ body::before {
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(90deg, transparent calc(50% - 1px), rgb(125 228 196 / 5%) 50%, transparent calc(50% + 1px)),
+    linear-gradient(90deg, transparent calc(50% - 1px), rgb(255 255 255 / 4%) 50%, transparent calc(50% + 1px)),
     var(--ink);
   content: "";
   pointer-events: none;
 }
 
 ::selection {
-  background: var(--mint);
+  background: var(--signal);
   color: var(--ink-deep);
 }
 
@@ -98,7 +98,7 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--mint);
+  background: var(--signal);
   border: 2px solid var(--ink-deep);
   border-radius: 10px;
 }
@@ -120,7 +120,7 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--coral);
+  outline: 3px solid var(--secondary);
   outline-offset: 4px;
 }
 
@@ -187,7 +187,7 @@ button {
 
 .site-nav a:hover,
 .language-switch:hover {
-  color: var(--mint);
+  color: var(--signal);
 }
 
 .language-switch {
@@ -235,7 +235,7 @@ button {
 }
 
 .stage-copy h1 em {
-  color: var(--mint);
+  color: var(--signal);
   font-style: normal;
 }
 
@@ -273,14 +273,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--mint);
+  color: var(--signal);
 }
 
 .field-status i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--mint);
+  background: var(--signal);
 }
 
 .field-line {
@@ -297,7 +297,7 @@ button {
   width: 2px;
   height: 1em;
   margin-left: 4px;
-  background: var(--mint);
+  background: var(--signal);
   vertical-align: -0.12em;
 }
 
@@ -316,13 +316,13 @@ button {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: var(--mint);
+  background: var(--signal);
   cursor: pointer;
   transition: background 180ms ease, transform 400ms var(--ease);
 }
 
 .mic-button:hover {
-  background: #9aefd5;
+  background: var(--signal-hover);
   transform: translateY(-3px);
 }
 
@@ -357,7 +357,7 @@ button {
 .wave i:nth-child(5) { --bar: 0.3; animation-delay: -340ms; }
 
 .mic-button.is-replaying {
-  background: var(--coral);
+  background: var(--secondary);
 }
 
 .proof-strip {
@@ -436,13 +436,13 @@ button {
 }
 
 .mode-switch button[aria-pressed="true"] {
-  background: var(--mint);
+  background: var(--signal);
   color: var(--ink-deep);
   font-weight: 700;
 }
 
 .mode-switch button[data-mode="accurate"][aria-pressed="true"] {
-  background: var(--coral);
+  background: var(--secondary);
 }
 
 .mode-name {
@@ -488,12 +488,12 @@ button {
 .download-button {
   width: 100%;
   padding: 0 20px;
-  background: var(--mint);
+  background: var(--signal);
   color: var(--ink-deep);
 }
 
 .download-button:hover {
-  background: #9aefd5;
+  background: var(--signal-hover);
   transform: translateY(-3px);
 }
 
@@ -572,11 +572,11 @@ button {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--mint);
+  background: var(--signal);
 }
 
 .mode-row-accurate .mode-id i {
-  background: var(--coral);
+  background: var(--secondary);
 }
 
 .mode-row h3 {
@@ -595,14 +595,14 @@ button {
 
 .mode-row code {
   justify-self: end;
-  color: var(--mint);
+  color: var(--signal);
   font-family: var(--mono);
   font-size: 11px;
   word-break: break-word;
 }
 
 .mode-row-accurate code {
-  color: var(--coral);
+  color: var(--secondary);
 }
 
 .edit-note {
@@ -619,7 +619,7 @@ button {
   width: 38px;
   height: 38px;
   fill: none;
-  stroke: var(--coral);
+  stroke: var(--secondary);
   stroke-linecap: round;
   stroke-width: 1.5;
 }
@@ -647,7 +647,7 @@ button {
 }
 
 .text-link {
-  color: var(--mint);
+  color: var(--signal);
   font-weight: 600;
 }
 
@@ -672,7 +672,7 @@ button {
   margin: 0 auto 20px;
   display: block;
   fill: none;
-  stroke: var(--mint);
+  stroke: var(--signal);
   stroke-width: 1.5;
 }
 
@@ -695,7 +695,7 @@ button {
 }
 
 .cloud-node svg {
-  stroke: var(--coral);
+  stroke: var(--secondary);
 }
 
 .route-line {
@@ -768,7 +768,7 @@ button {
   width: 25px;
   height: 25px;
   flex: 0 0 auto;
-  border: 1px solid var(--coral);
+  border: 1px solid var(--secondary);
   border-radius: 50%;
 }
 
@@ -778,7 +778,7 @@ button {
   left: 4px;
   width: 15px;
   height: 1px;
-  background: var(--coral);
+  background: var(--secondary);
   content: "";
   transform: rotate(-45deg);
 }
@@ -824,7 +824,7 @@ button {
 }
 
 .setup-list > li > span {
-  color: var(--mint);
+  color: var(--signal);
   font-family: var(--mono);
   font-size: 12px;
 }
@@ -857,7 +857,7 @@ button {
 .closing-wave i {
   width: 13px;
   border-radius: 8px;
-  background: var(--mint);
+  background: var(--signal);
 }
 
 .closing-wave i:nth-child(1) { height: 25px; }
@@ -924,7 +924,7 @@ button {
 }
 
 .site-footer > div a:hover {
-  color: var(--mint);
+  color: var(--signal);
 }
 
 @keyframes blink {
@@ -961,7 +961,7 @@ button {
     gap: 7px;
     border: 1px solid var(--line);
     border-radius: 10px;
-    color: var(--mint);
+    color: var(--signal);
     font-family: var(--mono);
     font-size: 11px;
     font-weight: 700;
