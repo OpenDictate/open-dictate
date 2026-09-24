@@ -17,8 +17,8 @@
 }
 
 @font-face {
-  font-family: "Unbounded";
-  src: url("fonts/unbounded-latin.woff2") format("woff2");
+  font-family: "Literata";
+  src: url("fonts/literata-latin.woff2") format("woff2");
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
@@ -26,8 +26,8 @@
 }
 
 @font-face {
-  font-family: "Unbounded";
-  src: url("fonts/unbounded-cyrillic.woff2") format("woff2");
+  font-family: "Literata";
+  src: url("fonts/literata-cyrillic.woff2") format("woff2");
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
@@ -99,10 +99,10 @@ button { font: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: "Unbounded", sans-serif;
-  font-size: 15px;
+  font-family: "Literata", Georgia, serif;
+  font-size: 19px;
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
 }
 
 .brand img { display: block; }
@@ -164,11 +164,11 @@ h1, h2, p { margin-top: 0; }
 
 h1 {
   margin-bottom: 26px;
-  font-family: "Unbounded", sans-serif;
-  font-size: clamp(48px, 5.1vw, 76px);
+  font-family: "Literata", Georgia, serif;
+  font-size: clamp(52px, 5.2vw, 76px);
   font-weight: 500;
-  letter-spacing: -0.055em;
-  line-height: 1.08;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
   text-wrap: balance;
 }
 
@@ -330,10 +330,11 @@ h1 {
 .info-block h2,
 .privacy h2 {
   margin-bottom: 28px;
-  font-family: "Unbounded", sans-serif;
-  font-size: 21px;
+  font-family: "Literata", Georgia, serif;
+  font-size: 28px;
   font-weight: 500;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .mode-list, .setup-list {
@@ -408,11 +409,11 @@ h1 {
 @media (max-width: 620px) {
   :root { --page-width: min(100% - 36px, 500px); }
   .site-header { height: 70px; }
-  .brand { font-size: 13px; }
+  .brand { font-size: 17px; }
   .brand img { width: 32px; height: 32px; }
   .header-actions { gap: 14px; }
   .hero { min-height: 0; padding-block: 70px 66px; gap: 52px; }
-  h1 { font-size: clamp(38px, 10.5vw, 58px); }
+  h1 { font-size: clamp(40px, 10.5vw, 58px); }
   .hero-description { font-size: 17px; }
   .interface-preview { height: 390px; }
   .preview-content { padding: 30px 18px 0; }
@@ -426,7 +427,7 @@ h1 {
 }
 
 @media (max-width: 360px) {
-  .brand { font-size: 12px; }
+  .brand { font-size: 16px; }
   .header-actions { gap: 10px; }
   .header-actions a span { display: none; }
 }
