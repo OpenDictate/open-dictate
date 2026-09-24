@@ -399,7 +399,9 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         if (DictationStateBus.state.value.isActive) return
         setOverlayMenuExpanded(false)
         val focused = findFocusedEditable()
-        if (focused?.isTextInput() != true || !focused.isFocused) {
+        if (focused?.isTextInput() != true || !focused.isFocused ||
+            settings.isPackageExcluded(focused.packageName)
+        ) {
             Toast.makeText(this, R.string.overlay_paste_unavailable, Toast.LENGTH_SHORT).show()
             return
         }
@@ -427,7 +429,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             val current = findFocusedEditable()
             if (DictationStateBus.state.value.isActive ||
                 windows.none { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } ||
-                current == null || !current.isFocused || current != focused
+                current == null || !current.isFocused || current != focused ||
+                settings.isPackageExcluded(current.packageName)
             ) return@launch
             editableSnapshot = current.captureEditableText()
             clearPendingTextRestoration()
