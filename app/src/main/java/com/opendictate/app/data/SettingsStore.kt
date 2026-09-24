@@ -92,6 +92,14 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_TRANSFORMATION_BUTTON_ENABLED, true)
         set(value) = prefs.edit { putBoolean(KEY_TRANSFORMATION_BUTTON_ENABLED, value) }
 
+    var excludedPackages: Set<String>
+        get() = prefs.getStringSet(KEY_EXCLUDED_PACKAGES, emptySet()).orEmpty().toSet()
+        set(value) = prefs.edit { putStringSet(KEY_EXCLUDED_PACKAGES, value.toSet()) }
+
+    fun isPackageExcluded(packageName: CharSequence?): Boolean =
+        packageName != null && prefs.getStringSet(KEY_EXCLUDED_PACKAGES, null)
+            ?.contains(packageName.toString()) == true
+
     var transcriptionResponseTimeoutSeconds: Int?
         get() = TranscriptionResponseTimeout.fromStored(
             prefs.getInt(KEY_TRANSCRIPTION_RESPONSE_TIMEOUT, TranscriptionResponseTimeout.DEFAULT_SECONDS),
@@ -116,6 +124,7 @@ class SettingsStore(context: Context) {
         private const val KEY_PROMPT = "prompt"
         private const val KEY_KEEP_TRAILING_PERIOD = "keep_trailing_period"
         private const val KEY_TRANSFORMATION_BUTTON_ENABLED = "transformation_button_enabled"
+        private const val KEY_EXCLUDED_PACKAGES = "excluded_packages"
         private const val KEY_TRANSCRIPTION_RESPONSE_TIMEOUT = "transcription_response_timeout_seconds"
         private const val DEFAULT_PROMPT = "OpenDictate\nDictate"
     }

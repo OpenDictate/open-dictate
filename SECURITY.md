@@ -9,6 +9,9 @@ Model discovery calls OpenAI directly and stores only model IDs in app-private
 preferences. The model list API does not supply endpoint capabilities or prices,
 so the picker keeps the transcription aliases and up to five recent general GPT
 text models, excluding Astra and specialized models.
+The app exclusion picker queries launchable apps only. Excluded package names
+stay in app-private preferences; the accessibility service checks them before
+showing the overlay or starting an action.
 Release signing material is expected to live only in GitHub Actions secrets.
 
 Transcript history is stored only in the app-private SQLite database. Android

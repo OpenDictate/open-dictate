@@ -112,7 +112,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         overlayUpdateScheduled = false
         val ime = windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
         val focused = findFocusedEditable()
-        val hasEligibleTarget = ime != null && focused?.isTextInput() == true
+        val hasEligibleTarget = ime != null && focused?.isTextInput() == true &&
+            !settings.isPackageExcluded(focused.packageName)
         if (overlayVisibilitySession.shouldShow(hasEligibleTarget)) {
             showOrMoveOverlay(ime, requireNotNull(focused))
         } else {
@@ -279,6 +280,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         if (!isReadyToStart()) return
         val focused = findFocusedEditable()
         if (focused?.isTextInput() != true) return
+        if (settings.isPackageExcluded(focused.packageName)) return
         editableSnapshot = focused.captureEditableText()
         clearPendingTextRestoration()
         targetPackage = focused.packageName
@@ -299,6 +301,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         if (!isReadyToStart()) return
         val focused = findFocusedEditable()
         if (focused?.isTextInput() != true) return
+        if (settings.isPackageExcluded(focused.packageName)) return
         if (focused.isPassword) {
             showOverlayError(R.string.error_password_field_transformation)
             return
@@ -333,6 +336,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             Toast.makeText(this, R.string.overlay_paste_unavailable, Toast.LENGTH_SHORT).show()
             return
         }
+        if (settings.isPackageExcluded(target.packageName)) return
         if (target.isPassword) {
             Toast.makeText(this, R.string.overlay_paste_password, Toast.LENGTH_SHORT).show()
             return
