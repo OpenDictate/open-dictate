@@ -112,12 +112,12 @@ class OpenAiTranscriptionClientTest {
     @Test
     fun `text transformation request uses selected model without storage`() {
         val request = textTransformationRequest(
-            model = TextTransformationModel.LUNA,
+            model = TextTransformationModel.SOL,
             sourceText = "Черновик",
             instruction = "Сделай вежливее",
         )
 
-        assertEquals("gpt-5.6-luna", request.getString("model"))
+        assertEquals("gpt-6-sol", request.getString("model"))
         assertFalse(request.getBoolean("store"))
         assertEquals("low", request.getJSONObject("reasoning").getString("effort"))
         val format = request.getJSONObject("text").getJSONObject("format")
@@ -199,7 +199,7 @@ class OpenAiTranscriptionClientTest {
             ),
         )
 
-        assertEquals("gpt-5.6-luna", request.getString("model"))
+        assertEquals("gpt-6-luna", request.getString("model"))
         assertFalse(request.getBoolean("store"))
         val format = request.getJSONObject("text").getJSONObject("format")
         assertEquals("json_schema", format.getString("type"))
