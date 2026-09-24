@@ -114,9 +114,9 @@ import com.opendictate.app.service.DictationStateBus
 internal val Ink = Color(0xFF080808)
 internal val Panel = Color(0xFF171717)
 internal val PanelLight = Color(0xFF262626)
-internal val White = Color(0xFFF7F7F5)
-internal val Silver = Color(0xFFD0D0CD)
-internal val Fog = Color(0xFFA9A9A6)
+internal val White = Color(0xFFFFFFFF)
+internal val Silver = Color(0xFFE3E3E3)
+internal val Fog = Color(0xFFC6C6C6)
 
 @Composable
 fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {

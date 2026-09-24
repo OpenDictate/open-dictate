@@ -8,13 +8,13 @@
       "ink-deep": { "role": "neutral", "displayName": "Deep Ink", "tonalRamp": ["#000000", "#030303", "#101010", "#2b2b2b", "#555555", "#808080", "#b0b0ae", "#e2e2e0"] },
       "panel": { "role": "neutral", "displayName": "Instrument Panel", "tonalRamp": ["#060606", "#101010", "#171717", "#303030", "#585858", "#828282", "#b0b0ae", "#e1e1df"] },
       "panel-raised": { "role": "neutral", "displayName": "Raised Panel", "tonalRamp": ["#0a0a0a", "#191919", "#242424", "#3a3a3a", "#626262", "#8b8b8b", "#b6b6b4", "#e5e5e3"] },
-      "white": { "role": "neutral", "displayName": "Signal White", "tonalRamp": ["#242424", "#505050", "#7c7c7a", "#aaaaa7", "#d8d8d5", "#f7f7f5", "#fbfbf9", "#ffffff"] },
-      "fog": { "role": "neutral", "displayName": "Interface Fog", "tonalRamp": ["#191919", "#393939", "#5b5b59", "#81817e", "#9b9b98", "#a9a9a6", "#cdcdca", "#ededeb"] },
-      "line": { "role": "neutral", "displayName": "Hairline Slate", "tonalRamp": ["#080808", "#151515", "#272727", "#363636", "#606060", "#898989", "#b8b8b6", "#e0e0de"] },
-      "signal": { "role": "primary", "displayName": "Signal White", "tonalRamp": ["#242424", "#505050", "#7c7c7a", "#aaaaa7", "#d8d8d5", "#f7f7f5", "#fbfbf9", "#ffffff"] },
-      "signal-deep": { "role": "primary", "displayName": "Deep Signal White", "tonalRamp": ["#1d1d1d", "#444444", "#707070", "#9b9b99", "#c6c6c3", "#e0e0de", "#eeeeec", "#ffffff"] },
-      "signal-hover": { "role": "primary", "displayName": "Air White", "tonalRamp": ["#242424", "#505050", "#7c7c7a", "#aaaaa7", "#d8d8d5", "#f7f7f5", "#fbfbf9", "#ffffff"] },
-      "secondary": { "role": "secondary", "displayName": "Mode Silver", "tonalRamp": ["#1a1a1a", "#3b3b3b", "#616161", "#898989", "#adadaa", "#d0d0cd", "#e5e5e2", "#f7f7f5"] }
+      "white": { "role": "neutral", "displayName": "Signal White", "tonalRamp": ["#252525", "#525252", "#818181", "#b0b0b0", "#dedede", "#ffffff", "#ffffff", "#ffffff"] },
+      "fog": { "role": "neutral", "displayName": "Interface Fog", "tonalRamp": ["#1f1f1f", "#444444", "#6c6c6c", "#999999", "#b6b6b6", "#c6c6c6", "#dedede", "#f0f0f0"] },
+      "line": { "role": "neutral", "displayName": "Hairline Slate", "tonalRamp": ["#080808", "#151515", "#272727", "#363636", "#606060", "#898989", "#b8b8b6", "#e8e8e8"] },
+      "signal": { "role": "primary", "displayName": "Signal White", "tonalRamp": ["#252525", "#525252", "#818181", "#b0b0b0", "#dedede", "#ffffff", "#ffffff", "#ffffff"] },
+      "signal-deep": { "role": "primary", "displayName": "Deep Signal White", "tonalRamp": ["#1d1d1d", "#444444", "#707070", "#9b9b9b", "#cccccc", "#e8e8e8", "#f3f3f3", "#ffffff"] },
+      "signal-hover": { "role": "primary", "displayName": "Hover White", "tonalRamp": ["#252525", "#525252", "#818181", "#b0b0b0", "#dedede", "#f0f0f0", "#f8f8f8", "#ffffff"] },
+      "secondary": { "role": "secondary", "displayName": "Mode Silver", "tonalRamp": ["#202020", "#505050", "#7f7f7f", "#aaaaaa", "#d0d0d0", "#e3e3e3", "#f0f0f0", "#ffffff"] }
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Hero statements only." },
@@ -45,7 +45,7 @@
       "refersTo": "button-primary",
       "description": "The canonical white release action.",
       "html": "<a class=\"ds-download\" href=\"#\"><span>Download latest APK</span><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3v12m0 0 5-5m-5 5-5-5M5 21h14\"/></svg></a>",
-      "css": ".ds-download{min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;border:0;border-radius:12px;background:var(--signal,#f7f7f5);color:var(--ink-deep,#030303);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-download svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}.ds-download:hover{background:var(--signal-hover,#ffffff);transform:translateY(-3px)}.ds-download:active{transform:translateY(1px) scale(.97)}.ds-download:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
+      "css": ".ds-download{min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;border:0;border-radius:12px;background:var(--signal,#ffffff);color:var(--ink-deep,#030303);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-download svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}.ds-download:hover{background:var(--signal-hover,#f0f0f0);transform:translateY(-3px)}.ds-download:active{transform:translateY(1px) scale(.97)}.ds-download:focus-visible{outline:3px solid var(--secondary,#e3e3e3);outline-offset:4px}"
     },
     {
       "name": "Secondary Source Button",
@@ -53,7 +53,7 @@
       "refersTo": "button-secondary",
       "description": "A quiet bordered action paired with the primary release action.",
       "html": "<a class=\"ds-source\" href=\"#\">View source</a>",
-      "css": ".ds-source{min-width:230px;min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#363636);border-radius:12px;background:transparent;color:var(--white,#f7f7f5);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,border-color 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-source:hover{border-color:var(--fog,#a9a9a6);background:var(--panel,#171717);transform:translateY(-3px)}.ds-source:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
+      "css": ".ds-source{min-width:230px;min-height:56px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#363636);border-radius:12px;background:transparent;color:var(--white,#ffffff);font:600 17px/1.55 'Golos Text','Segoe UI',sans-serif;text-decoration:none;transition:background 180ms ease,border-color 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-source:hover{border-color:var(--fog,#c6c6c6);background:var(--panel,#171717);transform:translateY(-3px)}.ds-source:focus-visible{outline:3px solid var(--secondary,#e3e3e3);outline-offset:4px}"
     },
     {
       "name": "Mode Switch",
@@ -61,7 +61,7 @@
       "refersTo": "mode-live",
       "description": "A two-state transcription selector with white and silver selected states.",
       "html": "<div class=\"ds-modes\" role=\"group\" aria-label=\"Transcription mode\"><button aria-pressed=\"true\">Live</button><button data-accurate aria-pressed=\"false\">Accurate</button></div>",
-      "css": ".ds-modes{display:grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line,#363636);border-radius:13px;background:var(--ink,#080808)}.ds-modes button{min-height:46px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--fog,#a9a9a6);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:color 180ms ease,background 180ms ease}.ds-modes button[aria-pressed=true]{background:var(--signal,#f7f7f5);color:var(--ink-deep,#030303);font-weight:700}.ds-modes button[data-accurate][aria-pressed=true]{background:var(--secondary,#d0d0cd)}.ds-modes button:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
+      "css": ".ds-modes{display:grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line,#363636);border-radius:13px;background:var(--ink,#080808)}.ds-modes button{min-height:46px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--fog,#c6c6c6);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:color 180ms ease,background 180ms ease}.ds-modes button[aria-pressed=true]{background:var(--signal,#ffffff);color:var(--ink-deep,#030303);font-weight:700}.ds-modes button[data-accurate][aria-pressed=true]{background:var(--secondary,#e3e3e3)}.ds-modes button:focus-visible{outline:3px solid var(--secondary,#e3e3e3);outline-offset:4px}"
     },
     {
       "name": "Live Dictation Field",
@@ -69,7 +69,7 @@
       "refersTo": "dictation-field",
       "description": "The signature field showing cumulative transcript insertion and live status.",
       "html": "<div class=\"ds-field\"><div class=\"ds-field-meta\"><span>Focused text field</span><span class=\"ds-ready\"><i></i>Ready</span></div><div class=\"ds-transcript\">Move the release to Friday morning and add the APK link.<i class=\"ds-caret\"></i></div></div>",
-      "css": ".ds-field{min-height:190px;padding:25px 92px 30px 28px;border:1px solid var(--line,#363636);border-radius:16px;background:var(--panel,#171717);color:var(--white,#f7f7f5)}.ds-field-meta{display:flex;justify-content:space-between;gap:20px;color:var(--fog,#a9a9a6);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.06em;text-transform:uppercase}.ds-ready{display:inline-flex;align-items:center;gap:8px;color:var(--signal,#f7f7f5)}.ds-ready i{width:7px;height:7px;border-radius:50%;background:currentColor}.ds-transcript{margin-top:34px;font:500 clamp(22px,2.55vw,38px)/1.32 'Golos Text','Segoe UI',sans-serif;letter-spacing:-.025em}.ds-caret{display:inline-block;width:2px;height:1em;margin-left:4px;background:var(--signal,#f7f7f5);vertical-align:-.12em;animation:ds-blink 900ms step-end infinite}@keyframes ds-blink{0%,45%{opacity:1}46%,100%{opacity:0}}@media(prefers-reduced-motion:reduce){.ds-caret{animation-duration:1ms;animation-iteration-count:1}}"
+      "css": ".ds-field{min-height:190px;padding:25px 92px 30px 28px;border:1px solid var(--line,#363636);border-radius:16px;background:var(--panel,#171717);color:var(--white,#ffffff)}.ds-field-meta{display:flex;justify-content:space-between;gap:20px;color:var(--fog,#c6c6c6);font:400 11px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.06em;text-transform:uppercase}.ds-ready{display:inline-flex;align-items:center;gap:8px;color:var(--signal,#ffffff)}.ds-ready i{width:7px;height:7px;border-radius:50%;background:currentColor}.ds-transcript{margin-top:34px;font:500 clamp(22px,2.55vw,38px)/1.32 'Golos Text','Segoe UI',sans-serif;letter-spacing:-.025em}.ds-caret{display:inline-block;width:2px;height:1em;margin-left:4px;background:var(--signal,#ffffff);vertical-align:-.12em;animation:ds-blink 900ms step-end infinite}@keyframes ds-blink{0%,45%{opacity:1}46%,100%{opacity:0}}@media(prefers-reduced-motion:reduce){.ds-caret{animation-duration:1ms;animation-iteration-count:1}}"
     },
     {
       "name": "Microphone Signal",
@@ -77,14 +77,14 @@
       "refersTo": "mic",
       "description": "The circular five-bar demo action that changes from white to silver while listening.",
       "html": "<button class=\"ds-mic\" aria-label=\"Replay dictation\"><span><i></i><i></i><i></i><i></i><i></i></span></button>",
-      "css": ".ds-mic{width:68px;height:68px;padding:0;display:grid;place-items:center;border:0;border-radius:50%;background:var(--signal,#f7f7f5);color:var(--ink,#080808);cursor:pointer;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-mic span{display:flex;align-items:center;gap:3px}.ds-mic i{width:3px;height:20px;border-radius:3px;background:currentColor}.ds-mic i:nth-child(1),.ds-mic i:nth-child(5){transform:scaleY(.3)}.ds-mic i:nth-child(2),.ds-mic i:nth-child(4){transform:scaleY(.65)}.ds-mic:hover{background:var(--signal-hover,#ffffff);transform:translateY(-3px)}.ds-mic:active{transform:translateY(1px) scale(.97)}.ds-mic:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}"
+      "css": ".ds-mic{width:68px;height:68px;padding:0;display:grid;place-items:center;border:0;border-radius:50%;background:var(--signal,#ffffff);color:var(--ink,#080808);cursor:pointer;transition:background 180ms ease,transform 400ms cubic-bezier(.16,1,.3,1)}.ds-mic span{display:flex;align-items:center;gap:3px}.ds-mic i{width:3px;height:20px;border-radius:3px;background:currentColor}.ds-mic i:nth-child(1),.ds-mic i:nth-child(5){transform:scaleY(.3)}.ds-mic i:nth-child(2),.ds-mic i:nth-child(4){transform:scaleY(.65)}.ds-mic:hover{background:var(--signal-hover,#f0f0f0);transform:translateY(-3px)}.ds-mic:active{transform:translateY(1px) scale(.97)}.ds-mic:focus-visible{outline:3px solid var(--secondary,#e3e3e3);outline-offset:4px}"
     },
     {
       "name": "Instrument Navigation",
       "kind": "nav",
       "description": "Compact uppercase navigation that recedes until hover or focus.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a href=\"#\">Modes</a><a href=\"#\">Privacy</a><a href=\"#\">Setup</a><a href=\"#\">Source</a></nav>",
-      "css": ".ds-nav{display:flex;align-items:center;gap:30px}.ds-nav a{color:var(--fog,#a9a9a6);font:400 12px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-decoration:none;text-transform:uppercase;transition:color 180ms ease}.ds-nav a:hover{color:var(--signal,#f7f7f5)}.ds-nav a:focus-visible{outline:3px solid var(--secondary,#d0d0cd);outline-offset:4px}@media(max-width:1040px){.ds-nav{display:none}}"
+      "css": ".ds-nav{display:flex;align-items:center;gap:30px}.ds-nav a{color:var(--fog,#c6c6c6);font:400 12px/1.55 'SFMono-Regular','Cascadia Code','Roboto Mono',monospace;letter-spacing:.05em;text-decoration:none;text-transform:uppercase;transition:color 180ms ease}.ds-nav a:hover{color:var(--signal,#ffffff)}.ds-nav a:focus-visible{outline:3px solid var(--secondary,#e3e3e3);outline-offset:4px}@media(max-width:1040px){.ds-nav{display:none}}"
     }
   ],
   "narrative": {

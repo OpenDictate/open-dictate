@@ -40,12 +40,12 @@
   --ink-deep: #030303;
   --panel: #171717;
   --panel-raised: #242424;
-  --white: #f7f7f5;
-  --fog: #a9a9a6;
+  --white: #ffffff;
+  --fog: #c6c6c6;
   --line: #363636;
-  --signal: #f7f7f5;
-  --signal-hover: #ffffff;
-  --secondary: #d0d0cd;
+  --signal: #ffffff;
+  --signal-hover: #f0f0f0;
+  --secondary: #e3e3e3;
   --display: "Unbounded", "Arial", sans-serif;
   --body: "Golos Text", "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;

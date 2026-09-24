@@ -98,7 +98,7 @@ private class OverlayPrimaryActionView(
     private val closeIcon = icon(R.drawable.ic_close_rounded_24)
     private val dictationColor = Color.rgb(8, 8, 8)
     private val transformationColor = Color.rgb(8, 8, 8)
-    private val idleBackgroundColor = Color.rgb(247, 247, 245)
+    private val idleBackgroundColor = Color.WHITE
     private val cancelBackgroundColor = Color.rgb(38, 38, 38)
     private val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = idleBackgroundColor }
     private val spinner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -540,9 +540,9 @@ private class OverlayMenuActionView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         background.color = if (isPressed) {
-            Color.rgb(208, 208, 205)
+            Color.rgb(227, 227, 227)
         } else {
-            Color.rgb(247, 247, 245)
+            Color.WHITE
         }
         bounds.set(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawRoundRect(bounds, 14f * density, 14f * density, background)

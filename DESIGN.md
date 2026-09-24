@@ -6,13 +6,13 @@ colors:
   ink-deep: "#030303"
   panel: "#171717"
   panel-raised: "#242424"
-  white: "#f7f7f5"
-  fog: "#a9a9a6"
+  white: "#ffffff"
+  fog: "#c6c6c6"
   line: "#363636"
-  signal: "#f7f7f5"
-  signal-deep: "#e0e0de"
-  signal-hover: "#ffffff"
-  secondary: "#d0d0cd"
+  signal: "#ffffff"
+  signal-deep: "#e8e8e8"
+  signal-hover: "#f0f0f0"
+  secondary: "#e3e3e3"
 typography:
   display:
     fontFamily: "Unbounded, Arial, sans-serif"
@@ -142,7 +142,7 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 
 - **Signal White:** The main action, live state, caret, waveform, active status, and positive emphasis.
 - **Soft White:** A quieter companion for dense surfaces.
-- **Bright White:** Hover feedback for filled controls.
+- **Hover White:** Subtle press feedback for filled controls.
 
 ### Secondary
 
@@ -206,7 +206,7 @@ The form language mixes gently rounded rectangular controls with a perfect circu
 ### Buttons
 
 - **Primary:** A full-width or content-width signal action, 56px tall, with dark text and a 12px corner.
-- **Hover / Active / Focus:** Hover shifts to bright white and lifts 3px; active settles 1px and may scale to 0.97 where tactile; focus is a 3px silver outline offset by 4px.
+- **Hover / Active / Focus:** Hover shifts to a slightly softer white and lifts 3px; active settles 1px and may scale to 0.97 where tactile; focus is a 3px silver outline offset by 4px.
 - **Secondary:** Transparent with a hairline border; hover raises it 3px and fills with the panel tone.
 
 ### Cards / Containers
