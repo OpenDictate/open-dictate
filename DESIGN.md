@@ -14,6 +14,12 @@ colors:
   signal-hover: "#f0f0f0"
   secondary: "#e3e3e3"
 typography:
+  webDisplay:
+    fontFamily: "Literata, Georgia, serif"
+    fontSize: "clamp(52px, 5.2vw, 76px)"
+    fontWeight: 500
+    lineHeight: 1.12
+    letterSpacing: "-0.025em"
   display:
     fontFamily: "Unbounded, Arial, sans-serif"
     fontSize: "clamp(48px, 6.35vw, 92px)"
@@ -130,7 +136,7 @@ This file is the repository-wide authority for the Android app and public web su
 - Black work surfaces with no light-theme inversion.
 - White microphone mark, white primary actions, and a white live caret.
 - Restrained silver reserved for alternate modes and state contrast.
-- Unbounded display statements, Golos body copy, and monospaced utility labels.
+- Unbounded display statements in the Android app; the GitHub Pages site pairs Literata headings with Golos body copy.
 - Hairline ledgers and routes instead of floating marketing cards.
 - Direct, literal diagrams and interactions instead of decorative product mockups.
 
@@ -166,6 +172,8 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 
 **Display Font:** Unbounded (Arial fallback)
 
+**GitHub Pages display font:** Literata (Georgia fallback). The site uses it for the hero, section headings, and wordmark. Its calmer letterforms give the download page a more considered tone while keeping the black instrument palette and direct copy.
+
 **Body Font:** Golos Text (Segoe UI fallback)
 **Label/Mono Font:** SFMono-Regular (Cascadia Code and Roboto Mono fallbacks)
 
@@ -179,7 +187,7 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 - **Body:** Explanations and supporting prose; keep readable line lengths and use fog for secondary copy.
 - **Label:** Uppercase metadata, navigation, mode IDs, and technical annotations.
 
-**The Three-Voice Rule.** Unbounded states the proposition, Golos explains it, and mono labels the instrument. Do not swap their jobs.
+**The Three-Voice Rule.** Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic; the Android app retains Unbounded.
 
 ## Layout
 
@@ -241,6 +249,6 @@ The public demo uses a five-bar signal inside its microphone control. It is whit
 
 - **Don't** introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.
 - **Don't** use secondary as routine decoration or let it compete with signal for the primary action.
-- **Don't** replace Unbounded headlines with default sans type or use Unbounded for paragraphs.
+- **Don't** use display faces for paragraphs or replace the chosen display face with a default system sans.
 - **Don't** flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.
 - **Don't** copy web pixel values, web fonts, or hover-only affordances directly into native Android UI.
