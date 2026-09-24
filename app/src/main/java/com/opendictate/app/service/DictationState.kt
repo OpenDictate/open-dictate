@@ -1,5 +1,6 @@
 package com.opendictate.app.service
 
+import com.opendictate.app.model.TranscriptionModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -21,9 +22,14 @@ data class DictationState(
     val sessionId: Long = 0,
     val phase: DictationPhase = DictationPhase.IDLE,
     val operation: DictationOperation = DictationOperation.DICTATION,
+    val model: TranscriptionModel? = null,
     val transcript: String = "",
     val message: String? = null,
 ) {
+    init {
+        require(!isActive || model != null) { "Active dictation requires a transcription model" }
+    }
+
     val isActive: Boolean
         get() = phase == DictationPhase.CONNECTING ||
             phase == DictationPhase.LISTENING ||
@@ -34,6 +40,9 @@ data class DictationState(
 
     internal fun acceptsCancellation(sessionId: Long): Boolean =
         sessionId != 0L && acceptsActiveUpdate(sessionId)
+
+    internal fun shouldRestoreTextOnCancellation(): Boolean =
+        operation == DictationOperation.DICTATION && model == TranscriptionModel.LIVE
 }
 
 object DictationStateBus {
