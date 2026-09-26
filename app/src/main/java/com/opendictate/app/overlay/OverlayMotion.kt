@@ -10,7 +10,7 @@ internal object OverlayMotion {
     private const val MENU_WIDTH_DP = 232f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
-    // Leave room inside the overlay window for the native elevation shadows.
+    // Leave vertical room for shadows without shifting actions away from the screen edge.
     private const val SHADOW_INSET_DP = 8f
     private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
@@ -56,9 +56,6 @@ internal object OverlayMotion {
     )
 
     fun shadowInsetPx(density: Float): Int = dpToPx(SHADOW_INSET_DP, density)
-
-    fun windowWidthPx(density: Float, showMenu: Boolean = false): Int =
-        widthPx(density, showMenu) + 2 * shadowInsetPx(density)
 
     fun windowHeightPx(
         density: Float,

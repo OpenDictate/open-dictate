@@ -78,7 +78,7 @@ class DictationOverlayView(
         gravity = Gravity.END
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         val shadowInset = OverlayMotion.shadowInsetPx(density)
-        setPadding(shadowInset, shadowInset, shadowInset, shadowInset)
+        setPadding(0, shadowInset, 0, shadowInset)
         clipChildren = false
         clipToPadding = false
         addView(

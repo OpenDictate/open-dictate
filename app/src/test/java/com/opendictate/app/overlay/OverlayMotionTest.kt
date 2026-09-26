@@ -7,7 +7,7 @@ import org.junit.Test
 
 class OverlayMotionTest {
     @Test
-    fun `window leaves room around visible actions for shadows`() {
+    fun `window leaves vertical room for shadows and keeps original width`() {
         val density = 2f
 
         assertEquals(344, OverlayMotion.heightPx(density, showMenu = true))
@@ -16,8 +16,8 @@ class OverlayMotionTest {
         assertEquals(376, OverlayMotion.windowHeightPx(density, showMenu = true))
         assertEquals(496, OverlayMotion.windowHeightPx(density, showMenu = true, showTransformation = true))
         assertEquals(136, OverlayMotion.windowHeightPx(density, showMenu = false))
-        assertEquals(136, OverlayMotion.windowWidthPx(density))
-        assertEquals(496, OverlayMotion.windowWidthPx(density, showMenu = true))
+        assertEquals(104, OverlayMotion.widthPx(density))
+        assertEquals(464, OverlayMotion.widthPx(density, showMenu = true))
     }
 
     @Test
