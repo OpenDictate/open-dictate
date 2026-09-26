@@ -7,7 +7,7 @@ import org.junit.Test
 
 class OverlayMotionTest {
     @Test
-    fun `window leaves vertical room for shadows and keeps original width`() {
+    fun `window leaves room for shadows while keeping actions at original right edge`() {
         val density = 2f
 
         assertEquals(344, OverlayMotion.heightPx(density, showMenu = true))
@@ -18,6 +18,12 @@ class OverlayMotionTest {
         assertEquals(136, OverlayMotion.windowHeightPx(density, showMenu = false))
         assertEquals(104, OverlayMotion.widthPx(density))
         assertEquals(464, OverlayMotion.widthPx(density, showMenu = true))
+        assertEquals(160, OverlayMotion.windowWidthPx(density))
+        assertEquals(520, OverlayMotion.windowWidthPx(density, showMenu = true))
+        assertEquals(0, OverlayMotion.windowOffsetX(density))
+        val actionRightInset = OverlayMotion.windowOffsetX(density) +
+            (OverlayMotion.windowWidthPx(density) - OverlayMotion.widthPx(density)) / 2
+        assertEquals(28, actionRightInset)
     }
 
     @Test
@@ -181,7 +187,7 @@ class OverlayMotionTest {
             focusedFieldTopPx = fieldTop,
             density = density,
         )
-        val buttonBottom = displayHeight - offset - OverlayMotion.shadowInsetPx(density)
+        val buttonBottom = displayHeight - offset - OverlayMotion.verticalShadowInsetPx(density)
 
         assertEquals(8f * density, (fieldTop - buttonBottom).toFloat(), 0.001f)
     }
@@ -198,7 +204,7 @@ class OverlayMotionTest {
             focusedFieldTopPx = null,
             density = density,
         )
-        val buttonBottom = displayHeight - offset - OverlayMotion.shadowInsetPx(density)
+        val buttonBottom = displayHeight - offset - OverlayMotion.verticalShadowInsetPx(density)
 
         assertEquals(72f * density, (keyboardTop - buttonBottom).toFloat(), 0.001f)
     }
@@ -215,7 +221,7 @@ class OverlayMotionTest {
             focusedFieldTopPx = 1_700,
             density = density,
         )
-        val buttonBottom = displayHeight - offset - OverlayMotion.shadowInsetPx(density)
+        val buttonBottom = displayHeight - offset - OverlayMotion.verticalShadowInsetPx(density)
 
         assertEquals(72f * density, (keyboardTop - buttonBottom).toFloat(), 0.001f)
     }

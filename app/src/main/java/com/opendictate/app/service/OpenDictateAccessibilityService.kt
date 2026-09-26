@@ -237,7 +237,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             displayHeight - (DEFAULT_KEYBOARD_HEIGHT_DP * density).toInt()
         }
         return WindowManager.LayoutParams(
-            OverlayMotion.widthPx(density, showMenu),
+            OverlayMotion.windowWidthPx(density, showMenu),
             OverlayMotion.windowHeightPx(density, showMenu, showTransformation),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -246,7 +246,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.END or Gravity.BOTTOM
-            x = (OVERLAY_END_MARGIN_DP * density).toInt()
+            x = OverlayMotion.windowOffsetX(density)
             y = OverlayMotion.windowOffsetY(
                 displayHeightPx = displayHeight,
                 keyboardTopPx = keyboardTop,
@@ -696,7 +696,6 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         private const val TAG = "OpenDictateA11y"
         private const val MAX_NODE_SCAN = 200
         private const val DEFAULT_KEYBOARD_HEIGHT_DP = 300
-        private const val OVERLAY_END_MARGIN_DP = 14
         private const val OVERLAY_UPDATE_DELAY_MS = 32L
         private const val DEFAULT_FRAME_MILLIS = 16L
         private const val NANOS_PER_MILLISECOND = 1_000_000L

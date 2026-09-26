@@ -10,8 +10,10 @@ internal object OverlayMotion {
     private const val MENU_WIDTH_DP = 232f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
-    // Leave vertical room for shadows without shifting actions away from the screen edge.
-    private const val SHADOW_INSET_DP = 8f
+    private const val VERTICAL_SHADOW_INSET_DP = 8f
+    // The content stays 14 dp from the screen edge; the window reaches the edge.
+    private const val HORIZONTAL_SHADOW_INSET_DP = 14f
+    private const val CONTENT_END_MARGIN_DP = 14f
     private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
     private const val TOP_MARGIN_DP = 32f
@@ -28,7 +30,7 @@ internal object OverlayMotion {
         val anchorTop = fieldTop ?: keyboardTopPx
         val clearance = if (fieldTop != null) FIELD_CLEARANCE_DP else KEYBOARD_CLEARANCE_DP
         val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
-            dpToPx(clearance, density) - shadowInsetPx(density)
+            dpToPx(clearance, density) - verticalShadowInsetPx(density)
         val maximumOffset = (
             displayHeightPx - windowHeightPx(density, showMenu, showTransformation) -
                 dpToPx(TOP_MARGIN_DP, density)
@@ -55,13 +57,24 @@ internal object OverlayMotion {
         density,
     )
 
-    fun shadowInsetPx(density: Float): Int = dpToPx(SHADOW_INSET_DP, density)
+    fun verticalShadowInsetPx(density: Float): Int =
+        dpToPx(VERTICAL_SHADOW_INSET_DP, density)
+
+    fun horizontalShadowInsetPx(density: Float): Int =
+        dpToPx(HORIZONTAL_SHADOW_INSET_DP, density)
+
+    fun windowWidthPx(density: Float, showMenu: Boolean = false): Int =
+        widthPx(density, showMenu) + 2 * horizontalShadowInsetPx(density)
+
+    fun windowOffsetX(density: Float): Int =
+        dpToPx(CONTENT_END_MARGIN_DP, density) - horizontalShadowInsetPx(density)
 
     fun windowHeightPx(
         density: Float,
         showMenu: Boolean = true,
         showTransformation: Boolean = false,
-    ): Int = heightPx(density, showMenu, showTransformation) + 2 * shadowInsetPx(density)
+    ): Int = heightPx(density, showMenu, showTransformation) +
+        2 * verticalShadowInsetPx(density)
 
     fun actionHeightPx(density: Float): Int = dpToPx(ACTION_HEIGHT_DP, density)
 
