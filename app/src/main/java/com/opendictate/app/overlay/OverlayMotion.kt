@@ -10,6 +10,8 @@ internal object OverlayMotion {
     private const val MENU_WIDTH_DP = 232f
     private const val ACTION_HEIGHT_DP = 52f
     private const val GAP_DP = 8f
+    // Leave room inside the overlay window for the native elevation shadows.
+    private const val SHADOW_INSET_DP = 8f
     private const val FIELD_CLEARANCE_DP = 8f
     private const val KEYBOARD_CLEARANCE_DP = 72f
     private const val TOP_MARGIN_DP = 32f
@@ -26,9 +28,9 @@ internal object OverlayMotion {
         val anchorTop = fieldTop ?: keyboardTopPx
         val clearance = if (fieldTop != null) FIELD_CLEARANCE_DP else KEYBOARD_CLEARANCE_DP
         val preferredOffset = (displayHeightPx - anchorTop).coerceAtLeast(0) +
-            dpToPx(clearance, density)
+            dpToPx(clearance, density) - shadowInsetPx(density)
         val maximumOffset = (
-            displayHeightPx - heightPx(density, showMenu, showTransformation) -
+            displayHeightPx - windowHeightPx(density, showMenu, showTransformation) -
                 dpToPx(TOP_MARGIN_DP, density)
         ).coerceAtLeast(0)
         return min(preferredOffset, maximumOffset)
@@ -52,6 +54,17 @@ internal object OverlayMotion {
         if (showMenu) MENU_WIDTH_DP else WIDTH_DP,
         density,
     )
+
+    fun shadowInsetPx(density: Float): Int = dpToPx(SHADOW_INSET_DP, density)
+
+    fun windowWidthPx(density: Float, showMenu: Boolean = false): Int =
+        widthPx(density, showMenu) + 2 * shadowInsetPx(density)
+
+    fun windowHeightPx(
+        density: Float,
+        showMenu: Boolean = true,
+        showTransformation: Boolean = false,
+    ): Int = heightPx(density, showMenu, showTransformation) + 2 * shadowInsetPx(density)
 
     fun actionHeightPx(density: Float): Int = dpToPx(ACTION_HEIGHT_DP, density)
 

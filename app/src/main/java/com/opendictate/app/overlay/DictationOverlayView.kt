@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -19,6 +20,7 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewOutlineProvider
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.DecelerateInterpolator
 import android.widget.LinearLayout
@@ -75,6 +77,10 @@ class DictationOverlayView(
         orientation = VERTICAL
         gravity = Gravity.END
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+        val shadowInset = OverlayMotion.shadowInsetPx(density)
+        setPadding(shadowInset, shadowInset, shadowInset, shadowInset)
+        clipChildren = false
+        clipToPadding = false
         addView(
             lastDictationButton,
             LayoutParams(
@@ -168,7 +174,12 @@ private class OverlayPrimaryActionView(
     }
 
     init {
-        elevation = 12f * density
+        elevation = 5f * density
+        outlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) {
+                outline.setOval(0, 0, view.width, view.height)
+            }
+        }
         isClickable = true
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         updateContentDescription()
@@ -552,7 +563,12 @@ private class OverlayMenuActionView(
     private var renderedLabel: CharSequence = label
 
     init {
-        elevation = 12f * density
+        elevation = 5f * density
+        outlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) {
+                outline.setRoundRect(0, 0, view.width, view.height, 14f * density)
+            }
+        }
         isClickable = true
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         contentDescription = context.getString(descriptionResource)

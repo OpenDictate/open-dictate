@@ -237,8 +237,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             displayHeight - (DEFAULT_KEYBOARD_HEIGHT_DP * density).toInt()
         }
         return WindowManager.LayoutParams(
-            OverlayMotion.widthPx(density, showMenu),
-            OverlayMotion.heightPx(density, showMenu, showTransformation),
+            OverlayMotion.windowWidthPx(density, showMenu),
+            OverlayMotion.windowHeightPx(density, showMenu, showTransformation),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
