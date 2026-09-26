@@ -209,6 +209,7 @@ private class OverlayPrimaryActionView(
         menuExpanded = available && expanded
         isLongClickable = menuAvailable
         updateContentDescription()
+        invalidate()
     }
 
     private fun updateContentDescription() {
@@ -221,6 +222,7 @@ private class OverlayPrimaryActionView(
                 isActionActive() && operation == DictationOperation.TRANSFORMATION ->
                     R.string.overlay_active_transformation_description
                 isActionActive() -> R.string.overlay_active_dictation_description
+                menuExpanded -> R.string.overlay_close_menu
                 menuAvailable -> R.string.overlay_start_dictation_with_actions
                 else -> R.string.overlay_start_dictation_with_dismiss
             },
@@ -253,6 +255,7 @@ private class OverlayPrimaryActionView(
             )
             phase == DictationPhase.PROCESSING -> drawSpinner(canvas)
             active -> drawIcon(canvas, stopIcon, activeColor())
+            menuExpanded -> drawIcon(canvas, closeIcon, dictationColor)
             else -> drawIcon(canvas, idleIcon, dictationColor)
         }
         canvas.restoreToCount(checkpoint)
@@ -399,7 +402,11 @@ private class OverlayPrimaryActionView(
 
     override fun performClick(): Boolean {
         super.performClick()
-        onClick()
+        if (menuExpanded && !isActionActive()) {
+            onMenuToggle()
+        } else {
+            onClick()
+        }
         return true
     }
 
