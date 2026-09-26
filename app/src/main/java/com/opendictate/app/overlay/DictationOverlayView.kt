@@ -267,8 +267,6 @@ private class OverlayPrimaryActionView(
         super.onDraw(canvas)
         val cancelProgress = OverlaySwipeToCancel.progress(cancelDragOffsetPx, density)
         background.color = blendColor(idleBackgroundColor, cancelBackgroundColor, cancelProgress)
-        val checkpoint = canvas.save()
-        canvas.translate(dismissDragOffsetPx, 0f)
         bounds.set(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawRoundRect(bounds, height / 2f, height / 2f, background)
         val active = isActionActive()
@@ -284,7 +282,6 @@ private class OverlayPrimaryActionView(
             menuExpanded -> drawIcon(canvas, closeIcon, dictationColor)
             else -> drawIcon(canvas, idleIcon, dictationColor)
         }
-        canvas.restoreToCount(checkpoint)
     }
 
     private fun drawIcon(canvas: Canvas, icon: Drawable, color: Int) {
@@ -528,7 +525,7 @@ private class OverlayPrimaryActionView(
     private fun setDismissDragOffset(value: Float) {
         if (dismissDragOffsetPx == value) return
         dismissDragOffsetPx = value
-        invalidate()
+        translationX = value
     }
 
     private fun settleDrags() {
@@ -543,6 +540,7 @@ private class OverlayPrimaryActionView(
                 val fraction = it.animatedValue as Float
                 cancelDragOffsetPx = initialCancelOffset * fraction
                 dismissDragOffsetPx = initialDismissOffset * fraction
+                translationX = dismissDragOffsetPx
                 invalidate()
             }
             start()
@@ -553,6 +551,7 @@ private class OverlayPrimaryActionView(
         if (!keepOffsets) {
             cancelDragOffsetPx = 0f
             dismissDragOffsetPx = 0f
+            translationX = 0f
         }
         dragStartedActive = false
         cancelArmed = false
