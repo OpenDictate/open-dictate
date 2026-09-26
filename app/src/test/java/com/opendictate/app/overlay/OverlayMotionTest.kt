@@ -60,6 +60,67 @@ class OverlayMotionTest {
     }
 
     @Test
+    fun `menu opens below a button near the top without moving the button`() {
+        val density = 2f
+        val displayHeight = 600
+        val primaryOffset = OverlayMotion.windowOffsetY(
+            displayHeightPx = displayHeight,
+            keyboardTopPx = 80,
+            focusedFieldTopPx = null,
+            density = density,
+            showMenu = false,
+        )
+        val menuOffset = OverlayMotion.menuWindowOffsetY(
+            primaryOffsetY = primaryOffset,
+            displayHeightPx = displayHeight,
+            density = density,
+            showTransformation = false,
+        )
+        val primaryBottom = displayHeight - primaryOffset -
+            OverlayMotion.verticalShadowInsetPx(density)
+        val menuTop = displayHeight - menuOffset -
+            OverlayMotion.menuWindowHeightPx(density, false) +
+            OverlayMotion.verticalShadowInsetPx(density)
+
+        assertEquals(OverlayMotion.gapPx(density), menuTop - primaryBottom)
+        assertEquals(OverlayMotion.widthPx(density), OverlayMotion.actionHeightPx(density))
+        assertEquals(224, OverlayMotion.menuHeightPx(density, false))
+    }
+
+    @Test
+    fun `menu opens above a button when there is room`() {
+        val density = 3f
+        val displayHeight = 2_400
+        val primaryOffset = OverlayMotion.windowOffsetY(
+            displayHeightPx = displayHeight,
+            keyboardTopPx = 1_600,
+            focusedFieldTopPx = 1_200,
+            density = density,
+            showMenu = false,
+        )
+
+        listOf(false, true).forEach { showTransformation ->
+            val menuOffset = OverlayMotion.menuWindowOffsetY(
+                primaryOffsetY = primaryOffset,
+                displayHeightPx = displayHeight,
+                density = density,
+                showTransformation = showTransformation,
+            )
+            val primaryTop = displayHeight - primaryOffset -
+                OverlayMotion.verticalShadowInsetPx(density) -
+                OverlayMotion.actionHeightPx(density)
+            val menuBottom = displayHeight - menuOffset -
+                OverlayMotion.verticalShadowInsetPx(density)
+
+            assertEquals(OverlayMotion.gapPx(density), primaryTop - menuBottom)
+            assertTrue(
+                displayHeight - menuOffset -
+                    OverlayMotion.menuWindowHeightPx(density, showTransformation) >= 0,
+            )
+        }
+    }
+
+    @Test
     fun `swipe to cancel follows leftward motion and clamps its travel`() {
         val density = 2f
 

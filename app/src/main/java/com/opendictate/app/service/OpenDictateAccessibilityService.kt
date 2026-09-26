@@ -28,6 +28,7 @@ import com.opendictate.app.R
 import com.opendictate.app.data.SecureApiKeyStore
 import com.opendictate.app.data.SettingsStore
 import com.opendictate.app.overlay.DictationOverlayView
+import com.opendictate.app.overlay.DictationOverlayMenuView
 import com.opendictate.app.overlay.OverlayMotion
 import com.opendictate.app.overlay.OverlayPositionMotion
 import com.opendictate.app.overlay.OverlayVisibilitySession
@@ -48,7 +49,10 @@ class OpenDictateAccessibilityService : AccessibilityService() {
     private lateinit var windowManager: WindowManager
     private lateinit var settings: SettingsStore
     private var overlay: DictationOverlayView? = null
+    private var overlayMenu: DictationOverlayMenuView? = null
     private var overlayAttached = false
+    private var overlayMenuAttached = false
+    private var overlayMenuLayoutParams: WindowManager.LayoutParams? = null
     private var overlayWindowOffsetY: Int? = null
     private var overlayLayoutParams: WindowManager.LayoutParams? = null
     private var overlayPositionMotion: OverlayPositionMotion? = null
@@ -72,15 +76,19 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             context = this,
             onDictationClick = ::onOverlayTapped,
             onOperationCancel = ::onOverlayCancelled,
+            onDismiss = ::onOverlayDismissed,
+            onMenuToggle = ::onOverlayMenuToggled,
+        )
+        overlayMenu = DictationOverlayMenuView(
+            context = this,
             onTransformationClick = ::onTransformationTapped,
             onPasteLastClick = ::onPasteLastTapped,
             onLastDictationClick = ::onLastDictationTapped,
-            onDismiss = ::onOverlayDismissed,
-            onMenuToggle = ::onOverlayMenuToggled,
         )
         scope.launch {
             DictationStateBus.state.collectLatest { state ->
                 overlay?.render(state)
+                overlayMenu?.render(state)
                 handleTranscriptState(state)
             }
         }
@@ -121,7 +129,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             if (!hasEligibleTarget) {
                 overlayMenuExpanded = false
                 transformationAvailable = false
-                overlay?.setMenuState(showTransformation = false, expanded = false)
+                overlay?.setMenuState(expanded = false)
             }
             removeOverlay()
             if (!hasEligibleTarget && DictationStateBus.state.value.isActive) stopDictation()
@@ -136,8 +144,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         transformationAvailable = settings.transformationButtonEnabled &&
             focused.captureEditableText().hasText
         val showMenu = overlayMenuExpanded
-        view.setMenuState(showTransformation = transformationAvailable, expanded = showMenu)
-        val params = overlayParams(ime, focused, showMenu, transformationAvailable)
+        view.setMenuState(expanded = showMenu)
+        val params = overlayParams(ime, focused)
         if (overlayAttached) {
             val currentParams = overlayLayoutParams ?: return
             if (currentParams.width != params.width || currentParams.height != params.height) {
@@ -166,6 +174,68 @@ class OpenDictateAccessibilityService : AccessibilityService() {
                 overlayPositionMotion = OverlayPositionMotion(params.y)
             }.onFailure { Log.w(TAG, "Could not add accessibility overlay", it) }
         }
+        if (showMenu && overlayAttached) {
+            showOrMoveMenuOverlay(
+                primaryOffsetY = requireNotNull(overlayLayoutParams).y,
+                showTransformation = transformationAvailable,
+            )
+        } else {
+            removeMenuOverlay()
+        }
+    }
+
+    private fun showOrMoveMenuOverlay(primaryOffsetY: Int, showTransformation: Boolean) {
+        val view = overlayMenu ?: return
+        view.setTransformationAvailable(showTransformation)
+        val density = resources.displayMetrics.density
+        val width = OverlayMotion.windowWidthPx(density, showMenu = true)
+        val height = OverlayMotion.menuWindowHeightPx(density, showTransformation)
+        val y = OverlayMotion.menuWindowOffsetY(
+            primaryOffsetY = primaryOffsetY,
+            displayHeightPx = resources.displayMetrics.heightPixels,
+            density = density,
+            showTransformation = showTransformation,
+        )
+        val currentParams = overlayMenuLayoutParams
+        if (overlayMenuAttached && currentParams != null) {
+            if (currentParams.width == width && currentParams.height == height &&
+                currentParams.y == y
+            ) return
+            currentParams.width = width
+            currentParams.height = height
+            currentParams.y = y
+            runCatching { windowManager.updateViewLayout(view, currentParams) }
+                .onFailure { Log.w(TAG, "Could not update accessibility menu", it) }
+        } else {
+            val params = WindowManager.LayoutParams(
+                width,
+                height,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT,
+            ).apply {
+                gravity = Gravity.END or Gravity.BOTTOM
+                x = OverlayMotion.windowOffsetX(density)
+                this.y = y
+            }
+            runCatching {
+                windowManager.addView(view, params)
+                overlayMenuAttached = true
+                overlayMenuLayoutParams = params
+            }.onFailure { Log.w(TAG, "Could not add accessibility menu", it) }
+        }
+    }
+
+    private fun removeMenuOverlay() {
+        if (!overlayMenuAttached) return
+        overlayMenu?.let { view ->
+            runCatching { windowManager.removeView(view) }
+                .onFailure { Log.w(TAG, "Could not remove accessibility menu", it) }
+        }
+        overlayMenuAttached = false
+        overlayMenuLayoutParams = null
     }
 
     private fun scheduleOverlayPositionAnimation() {
@@ -212,6 +282,10 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             }
         }
 
+        if (overlayMenuExpanded) {
+            showOrMoveMenuOverlay(nextOffsetY, transformationAvailable)
+        }
+
         if (motion.isAtRest) {
             lastOverlayPositionFrameNanos = 0L
         } else {
@@ -222,8 +296,6 @@ class OpenDictateAccessibilityService : AccessibilityService() {
     private fun overlayParams(
         ime: AccessibilityWindowInfo?,
         focused: AccessibilityNodeInfo,
-        showMenu: Boolean,
-        showTransformation: Boolean,
     ): WindowManager.LayoutParams {
         val density = resources.displayMetrics.density
         val displayHeight = resources.displayMetrics.heightPixels
@@ -237,8 +309,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             displayHeight - (DEFAULT_KEYBOARD_HEIGHT_DP * density).toInt()
         }
         return WindowManager.LayoutParams(
-            OverlayMotion.windowWidthPx(density, showMenu),
-            OverlayMotion.windowHeightPx(density, showMenu, showTransformation),
+            OverlayMotion.windowWidthPx(density),
+            OverlayMotion.windowHeightPx(density, showMenu = false),
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -252,14 +324,14 @@ class OpenDictateAccessibilityService : AccessibilityService() {
                 keyboardTopPx = keyboardTop,
                 focusedFieldTopPx = focusedBounds.takeUnless(Rect::isEmpty)?.top,
                 density = density,
-                showMenu = showMenu,
-                showTransformation = showTransformation,
+                showMenu = false,
             )
         }
     }
 
     private fun removeOverlay() {
         val view = overlay ?: return
+        removeMenuOverlay()
         view.removeCallbacks(updateOverlayPositionRunnable)
         overlayPositionAnimationScheduled = false
         lastOverlayPositionFrameNanos = 0L
@@ -450,7 +522,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         if (DictationStateBus.state.value.isActive) return
         overlayVisibilitySession.dismiss()
         overlayMenuExpanded = false
-        overlay?.setMenuState(showTransformation = transformationAvailable, expanded = false)
+        overlay?.setMenuState(expanded = false)
         removeOverlay()
     }
 
@@ -462,10 +534,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
     private fun setOverlayMenuExpanded(expanded: Boolean) {
         if (overlayMenuExpanded == expanded) return
         overlayMenuExpanded = expanded
-        overlay?.setMenuState(
-            showTransformation = transformationAvailable,
-            expanded = overlayMenuExpanded,
-        )
+        overlay?.setMenuState(expanded = overlayMenuExpanded)
+        if (!expanded) removeMenuOverlay()
         scheduleOverlayUpdate()
     }
 

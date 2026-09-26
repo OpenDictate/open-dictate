@@ -37,13 +37,52 @@ class DictationOverlayView(
     context: Context,
     onDictationClick: () -> Unit,
     onOperationCancel: () -> Unit,
-    onTransformationClick: () -> Unit,
-    onPasteLastClick: () -> Unit,
-    onLastDictationClick: () -> Unit,
     onDismiss: () -> Unit,
     onMenuToggle: () -> Unit,
 ) : LinearLayout(context) {
     private val density = resources.displayMetrics.density
+    private val dictationButton = OverlayPrimaryActionView(
+        context = context,
+        onClick = onDictationClick,
+        onCancel = onOperationCancel,
+        onDismiss = onDismiss,
+        onMenuToggle = onMenuToggle,
+    )
+
+    init {
+        gravity = Gravity.END
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+        setPadding(
+            OverlayMotion.horizontalShadowInsetPx(density),
+            OverlayMotion.verticalShadowInsetPx(density),
+            OverlayMotion.horizontalShadowInsetPx(density),
+            OverlayMotion.verticalShadowInsetPx(density),
+        )
+        clipChildren = false
+        clipToPadding = false
+        addView(
+            dictationButton,
+            LayoutParams(OverlayMotion.widthPx(density), OverlayMotion.actionHeightPx(density)),
+        )
+        setMenuState(expanded = false)
+    }
+
+    fun render(state: DictationState) = dictationButton.render(state)
+
+    fun setMenuState(expanded: Boolean) {
+        dictationButton.setMenuState(available = true, expanded = expanded)
+    }
+}
+
+@SuppressLint("ViewConstructor")
+class DictationOverlayMenuView(
+    context: Context,
+    onTransformationClick: () -> Unit,
+    onPasteLastClick: () -> Unit,
+    onLastDictationClick: () -> Unit,
+) : LinearLayout(context) {
+    private val density = resources.displayMetrics.density
+    private var transformationAvailable: Boolean? = null
     private val transformationButton = OverlayMenuActionView(
         context = context,
         onClick = onTransformationClick,
@@ -65,14 +104,6 @@ class DictationOverlayView(
         labelResource = R.string.overlay_last_dictation,
         descriptionResource = R.string.overlay_last_dictation_description,
     )
-    private val dictationButton = OverlayPrimaryActionView(
-        context = context,
-        onClick = onDictationClick,
-        onCancel = onOperationCancel,
-        onDismiss = onDismiss,
-        onMenuToggle = onMenuToggle,
-    )
-
     init {
         orientation = VERTICAL
         gravity = Gravity.END
@@ -99,37 +130,32 @@ class DictationOverlayView(
             LayoutParams(
                 OverlayMotion.widthPx(density, showMenu = true),
                 OverlayMotion.actionHeightPx(density),
-            ).apply { bottomMargin = OverlayMotion.gapPx(density) },
+            ),
         )
         addView(
             transformationButton,
             LayoutParams(
                 OverlayMotion.widthPx(density, showMenu = true),
                 OverlayMotion.actionHeightPx(density),
-            ).apply { bottomMargin = OverlayMotion.gapPx(density) },
-        )
-        addView(
-            dictationButton,
-            LayoutParams(
-                OverlayMotion.widthPx(density),
-                OverlayMotion.actionHeightPx(density),
             ),
         )
-        setMenuState(showTransformation = false, expanded = false)
+        setTransformationAvailable(false)
     }
 
     fun render(state: DictationState) {
         lastDictationButton.render(state)
         transformationButton.render(state)
         pasteLastButton.render(state)
-        dictationButton.render(state)
     }
 
-    fun setMenuState(showTransformation: Boolean, expanded: Boolean) {
-        dictationButton.setMenuState(available = true, expanded = expanded)
-        lastDictationButton.visibility = if (expanded) VISIBLE else GONE
-        pasteLastButton.visibility = if (expanded) VISIBLE else GONE
-        transformationButton.visibility = if (showTransformation && expanded) VISIBLE else GONE
+    fun setTransformationAvailable(available: Boolean) {
+        if (transformationAvailable == available) return
+        transformationAvailable = available
+        transformationButton.visibility = if (available) VISIBLE else GONE
+        (pasteLastButton.layoutParams as LayoutParams).apply {
+            bottomMargin = if (available) OverlayMotion.gapPx(density) else 0
+            pasteLastButton.layoutParams = this
+        }
     }
 }
 
