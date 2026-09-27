@@ -88,7 +88,7 @@
     <string name="dictionary_label">Словарь (необязательно)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
-    <string name="dictionary_add_action">Добавить в словарь OpenDictate</string>
+    <string name="dictionary_add_action">В словарь</string>
     <string name="dictionary_share_action">В словарь OpenDictate</string>
     <string name="dictionary_added">Добавлено в словарь</string>
     <string name="dictionary_no_selection">Выделите текст для добавления</string>

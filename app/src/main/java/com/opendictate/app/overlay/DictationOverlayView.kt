@@ -102,7 +102,7 @@ class DictationOverlayMenuView(
     private val dictionaryButton = OverlayMenuActionView(
         context = context,
         onClick = onAddToDictionaryClick,
-        iconResource = R.drawable.ic_library_add_24,
+        iconResource = R.drawable.ic_menu_book_24,
         labelResource = R.string.overlay_add_to_dictionary,
         descriptionResource = R.string.dictionary_add_action,
     )

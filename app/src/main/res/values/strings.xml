@@ -91,8 +91,8 @@
     <string name="dictionary_label">Vocabulary (optional)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
-    <string name="dictionary_add_action">Add to OpenDictate dictionary</string>
-    <string name="dictionary_share_action">Add to OpenDictate dictionary</string>
+    <string name="dictionary_add_action">Add to dictionary</string>
+    <string name="dictionary_share_action">To OpenDictate dictionary</string>
     <string name="dictionary_added">Added to dictionary</string>
     <string name="dictionary_no_selection">Select text to add</string>
     <string name="dictionary_already_added">Already in dictionary</string>
