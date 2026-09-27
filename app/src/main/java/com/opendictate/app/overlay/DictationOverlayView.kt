@@ -78,11 +78,13 @@ class DictationOverlayView(
 class DictationOverlayMenuView(
     context: Context,
     onTransformationClick: () -> Unit,
+    onAddToDictionaryClick: () -> Unit,
     onPasteLastClick: () -> Unit,
     onLastDictationClick: () -> Unit,
 ) : LinearLayout(context) {
     private val density = resources.displayMetrics.density
     private var transformationAvailable: Boolean? = null
+    private var dictionaryAvailable: Boolean? = null
     private val transformationButton = OverlayMenuActionView(
         context = context,
         onClick = onTransformationClick,
@@ -96,6 +98,13 @@ class DictationOverlayMenuView(
         iconResource = R.drawable.ic_content_paste_rounded_24,
         labelResource = R.string.overlay_paste_last,
         descriptionResource = R.string.overlay_paste_last_description,
+    )
+    private val dictionaryButton = OverlayMenuActionView(
+        context = context,
+        onClick = onAddToDictionaryClick,
+        iconResource = R.drawable.ic_library_add_24,
+        labelResource = R.string.overlay_add_to_dictionary,
+        descriptionResource = R.string.dictionary_add_action,
     )
     private val lastDictationButton = OverlayMenuActionView(
         context = context,
@@ -139,22 +148,50 @@ class DictationOverlayMenuView(
                 OverlayMotion.actionHeightPx(density),
             ),
         )
+        addView(
+            dictionaryButton,
+            LayoutParams(
+                OverlayMotion.widthPx(density, showMenu = true),
+                OverlayMotion.actionHeightPx(density),
+            ),
+        )
         setTransformationAvailable(false)
+        setDictionaryAvailable(false)
     }
 
     fun render(state: DictationState) {
         lastDictationButton.render(state)
         transformationButton.render(state)
         pasteLastButton.render(state)
+        dictionaryButton.render(state)
     }
 
     fun setTransformationAvailable(available: Boolean) {
         if (transformationAvailable == available) return
         transformationAvailable = available
         transformationButton.visibility = if (available) VISIBLE else GONE
+        updateTrailingButtons()
+    }
+
+    fun setDictionaryAvailable(available: Boolean) {
+        if (dictionaryAvailable == available) return
+        dictionaryAvailable = available
+        dictionaryButton.visibility = if (available) VISIBLE else GONE
+        updateTrailingButtons()
+    }
+
+    private fun updateTrailingButtons() {
         (pasteLastButton.layoutParams as LayoutParams).apply {
-            bottomMargin = if (available) OverlayMotion.gapPx(density) else 0
+            bottomMargin = if (transformationAvailable == true || dictionaryAvailable == true) {
+                OverlayMotion.gapPx(density)
+            } else 0
             pasteLastButton.layoutParams = this
+        }
+        (transformationButton.layoutParams as LayoutParams).apply {
+            bottomMargin = if (transformationAvailable == true && dictionaryAvailable == true) {
+                OverlayMotion.gapPx(density)
+            } else 0
+            transformationButton.layoutParams = this
         }
     }
 }

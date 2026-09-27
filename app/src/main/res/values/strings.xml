@@ -92,12 +92,13 @@
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
     <string name="dictionary_add_action">Add to OpenDictate dictionary</string>
+    <string name="dictionary_share_action">Add to OpenDictate dictionary</string>
     <string name="dictionary_added">Added to dictionary</string>
     <string name="dictionary_no_selection">Select text to add</string>
     <string name="dictionary_already_added">Already in dictionary</string>
     <string name="dictionary_full">Dictionary is full</string>
     <string name="dictionary_selection_action_title">Add selected text to dictionary</string>
-    <string name="dictionary_selection_action_subtitle">Show in the Android text selection menu</string>
+    <string name="dictionary_selection_action_subtitle">Show in the Android text selection menu (possibly under ⋮)</string>
     <string name="advanced_settings_title">Advanced settings</string>
     <string name="transcription_timeout_title">Transcription response time</string>
     <string name="transcription_timeout_subtitle">Maximum wait after you stop recording</string>
@@ -125,6 +126,7 @@
     <string name="overlay_start_dictation_with_dismiss">Start dictation. Swipe right to hide until the keyboard closes.</string>
     <string name="overlay_start_transformation">Dictate a text transformation instruction</string>
     <string name="overlay_edit_text">Edit text</string>
+    <string name="overlay_add_to_dictionary">Add to dictionary</string>
     <string name="overlay_paste_last">Paste last</string>
     <string name="overlay_last_dictation">Last dictation</string>
     <string name="overlay_last_dictation_description">Transcribe the latest recorded dictation again</string>

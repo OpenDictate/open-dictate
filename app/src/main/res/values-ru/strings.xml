@@ -89,12 +89,13 @@
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
     <string name="dictionary_add_action">Добавить в словарь OpenDictate</string>
+    <string name="dictionary_share_action">В словарь OpenDictate</string>
     <string name="dictionary_added">Добавлено в словарь</string>
     <string name="dictionary_no_selection">Выделите текст для добавления</string>
     <string name="dictionary_already_added">Уже есть в словаре</string>
     <string name="dictionary_full">Словарь заполнен</string>
     <string name="dictionary_selection_action_title">Добавление выделенного текста в словарь</string>
-    <string name="dictionary_selection_action_subtitle">Показывать пункт в меню выделения Android</string>
+    <string name="dictionary_selection_action_subtitle">Показывать в меню выделения Android (возможно, под ⋮)</string>
     <string name="advanced_settings_title">Дополнительные настройки</string>
     <string name="transcription_timeout_title">Ожидание транскрипции</string>
     <string name="transcription_timeout_subtitle">Максимум после остановки записи</string>
@@ -122,6 +123,7 @@
     <string name="overlay_start_dictation_with_dismiss">Начать диктовку. Потяните вправо, чтобы скрыть до закрытия клавиатуры.</string>
     <string name="overlay_start_transformation">Надиктовать инструкцию для преобразования текста</string>
     <string name="overlay_edit_text">Изменить текст</string>
+    <string name="overlay_add_to_dictionary">В словарь</string>
     <string name="overlay_paste_last">Вставить последнюю</string>
     <string name="overlay_last_dictation">Последняя диктовка</string>
     <string name="overlay_last_dictation_description">Повторно распознать последнюю записанную диктовку</string>

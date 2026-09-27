@@ -27,6 +27,7 @@ import com.opendictate.app.OpenDictateApplication
 import com.opendictate.app.R
 import com.opendictate.app.data.SecureApiKeyStore
 import com.opendictate.app.data.SettingsStore
+import com.opendictate.app.data.addToDictionary
 import com.opendictate.app.overlay.DictationOverlayView
 import com.opendictate.app.overlay.DictationOverlayMenuView
 import com.opendictate.app.overlay.OverlayMotion
@@ -62,6 +63,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
     private val overlayVisibilitySession = OverlayVisibilitySession()
     private var overlayMenuExpanded = false
     private var transformationAvailable = false
+    private var dictionaryAvailable = false
+    private var overlayTargetPackage: CharSequence? = null
     private var editableSnapshot: EditableTextSnapshot? = null
     private var targetPackage: CharSequence? = null
     private var activeSessionId = 0L
@@ -82,6 +85,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         overlayMenu = DictationOverlayMenuView(
             context = this,
             onTransformationClick = ::onTransformationTapped,
+            onAddToDictionaryClick = ::onAddToDictionaryTapped,
             onPasteLastClick = ::onPasteLastTapped,
             onLastDictationClick = ::onLastDictationTapped,
         )
@@ -129,6 +133,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             if (!hasEligibleTarget) {
                 overlayMenuExpanded = false
                 transformationAvailable = false
+                dictionaryAvailable = false
+                overlayTargetPackage = null
                 overlay?.setMenuState(expanded = false)
             }
             removeOverlay()
@@ -141,8 +147,10 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         focused: AccessibilityNodeInfo,
     ) {
         val view = overlay ?: return
-        transformationAvailable = settings.transformationButtonEnabled &&
-            focused.captureEditableText().hasText
+        val captured = focused.captureEditableText()
+        transformationAvailable = settings.transformationButtonEnabled && captured.hasText
+        dictionaryAvailable = !focused.isPassword && captured.selectedText() != null
+        overlayTargetPackage = focused.packageName
         val showMenu = overlayMenuExpanded
         view.setMenuState(expanded = showMenu)
         val params = overlayParams(ime, focused)
@@ -178,23 +186,30 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             showOrMoveMenuOverlay(
                 primaryOffsetY = requireNotNull(overlayLayoutParams).y,
                 showTransformation = transformationAvailable,
+                showDictionary = dictionaryAvailable,
             )
         } else {
             removeMenuOverlay()
         }
     }
 
-    private fun showOrMoveMenuOverlay(primaryOffsetY: Int, showTransformation: Boolean) {
+    private fun showOrMoveMenuOverlay(
+        primaryOffsetY: Int,
+        showTransformation: Boolean,
+        showDictionary: Boolean,
+    ) {
         val view = overlayMenu ?: return
         view.setTransformationAvailable(showTransformation)
+        view.setDictionaryAvailable(showDictionary)
         val density = resources.displayMetrics.density
         val width = OverlayMotion.windowWidthPx(density, showMenu = true)
-        val height = OverlayMotion.menuWindowHeightPx(density, showTransformation)
+        val height = OverlayMotion.menuWindowHeightPx(density, showTransformation, showDictionary)
         val y = OverlayMotion.menuWindowOffsetY(
             primaryOffsetY = primaryOffsetY,
             displayHeightPx = resources.displayMetrics.heightPixels,
             density = density,
             showTransformation = showTransformation,
+            showDictionary = showDictionary,
         )
         val currentParams = overlayMenuLayoutParams
         if (overlayMenuAttached && currentParams != null) {
@@ -283,7 +298,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
         }
 
         if (overlayMenuExpanded) {
-            showOrMoveMenuOverlay(nextOffsetY, transformationAvailable)
+            showOrMoveMenuOverlay(nextOffsetY, transformationAvailable, dictionaryAvailable)
         }
 
         if (motion.isAtRest) {
@@ -331,6 +346,7 @@ class OpenDictateAccessibilityService : AccessibilityService() {
 
     private fun removeOverlay() {
         val view = overlay ?: return
+        overlayTargetPackage = null
         removeMenuOverlay()
         view.removeCallbacks(updateOverlayPositionRunnable)
         overlayPositionAnimationScheduled = false
@@ -399,6 +415,25 @@ class OpenDictateAccessibilityService : AccessibilityService() {
             .setAction(DictationForegroundService.ACTION_START_TRANSFORMATION)
             .putExtra(DictationForegroundService.EXTRA_SOURCE_TEXT, target.sourceText)
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun onAddToDictionaryTapped() {
+        if (DictationStateBus.state.value.isActive) return
+        setOverlayMenuExpanded(false)
+        val focused = findFocusedEditable()
+        val selected = focused
+            ?.takeIf {
+                it.isTextInput() && it.isFocused && !it.isPassword &&
+                    !settings.isPackageExcluded(it.packageName) &&
+                    it.packageName == overlayTargetPackage
+            }
+            ?.captureEditableText()
+            ?.selectedText()
+        Toast.makeText(
+            this,
+            settings.addToDictionary(selected),
+            Toast.LENGTH_SHORT,
+        ).show()
     }
 
     private fun onPasteLastTapped() {

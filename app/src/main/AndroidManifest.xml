@@ -37,6 +37,19 @@
         </activity>
 
         <activity
+            android:name=".ui.ShareToDictionaryActivity"
+            android:exported="true"
+            android:label="@string/dictionary_share_action"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".ui.AddToDictionaryActivity"
             android:exported="true"
             android:label="@string/dictionary_add_action"

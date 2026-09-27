@@ -26,7 +26,9 @@ download the latest APK from [GitHub Releases](https://github.com/OpenDictate/op
   is no longer available.
 - Russian and English speech recognition, or automatic language detection.
 - Add selected text to the transcription dictionary from Android's text
-  selection menu. The action can be turned off in OpenDictate settings.
+  selection menu (sometimes under ⋮), the floating button's long-press menu,
+  or Android's Share menu. The text selection action can be turned off in
+  OpenDictate settings.
 
 ## Installation
 
