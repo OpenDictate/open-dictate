@@ -45,6 +45,14 @@ class DictionaryTermsTest {
     }
 
     @Test
+    fun `does not add duplicate after selection whitespace is normalized`() {
+        assertEquals(
+            DictionaryAddition.Duplicate,
+            addDictionaryTerm("OpenDictate\nJetpack Compose", "  jetpack\n  compose  "),
+        )
+    }
+
+    @Test
     fun `ignores empty selection`() {
         assertEquals(DictionaryAddition.Empty, addDictionaryTerm("OpenDictate", " \n "))
     }

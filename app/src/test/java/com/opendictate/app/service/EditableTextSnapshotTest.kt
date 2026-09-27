@@ -118,6 +118,13 @@ class EditableTextSnapshotTest {
     }
 
     @Test
+    fun `dictionary selection uses only highlighted text`() {
+        assertEquals("two", EditableTextSnapshot("one two three", 7, 4).selectedText())
+        assertNull(EditableTextSnapshot("one two", 3, 3).selectedText())
+        assertNull(EditableTextSnapshot("one   two", 3, 6).selectedText())
+    }
+
+    @Test
     fun `restoration returns the original text and selection`() {
         val snapshot = EditableTextSnapshot("wrong answer", 5, 0)
 

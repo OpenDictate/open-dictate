@@ -121,6 +121,18 @@ class OverlayMotionTest {
     }
 
     @Test
+    fun `dictionary action increases menu height by one action and gap`() {
+        val density = 3f
+        listOf(false, true).forEach { showTransformation ->
+            assertEquals(
+                OverlayMotion.menuHeightPx(density, showTransformation) +
+                    OverlayMotion.actionHeightPx(density) + OverlayMotion.gapPx(density),
+                OverlayMotion.menuHeightPx(density, showTransformation, showDictionary = true),
+            )
+        }
+    }
+
+    @Test
     fun `swipe to cancel follows leftward motion and clamps its travel`() {
         val density = 2f
 

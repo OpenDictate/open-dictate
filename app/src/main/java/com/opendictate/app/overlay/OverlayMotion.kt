@@ -76,12 +76,21 @@ internal object OverlayMotion {
     ): Int = heightPx(density, showMenu, showTransformation) +
         2 * verticalShadowInsetPx(density)
 
-    fun menuHeightPx(density: Float, showTransformation: Boolean): Int =
-        (if (showTransformation) 3 else 2) * actionHeightPx(density) +
-            (if (showTransformation) 2 else 1) * gapPx(density)
+    fun menuHeightPx(
+        density: Float,
+        showTransformation: Boolean,
+        showDictionary: Boolean = false,
+    ): Int {
+        val actions = 2 + (if (showTransformation) 1 else 0) + (if (showDictionary) 1 else 0)
+        return actions * actionHeightPx(density) + (actions - 1) * gapPx(density)
+    }
 
-    fun menuWindowHeightPx(density: Float, showTransformation: Boolean): Int =
-        menuHeightPx(density, showTransformation) + 2 * verticalShadowInsetPx(density)
+    fun menuWindowHeightPx(
+        density: Float,
+        showTransformation: Boolean,
+        showDictionary: Boolean = false,
+    ): Int = menuHeightPx(density, showTransformation, showDictionary) +
+        2 * verticalShadowInsetPx(density)
 
     /** Places the menu beside the fixed button, above it when there is room. */
     fun menuWindowOffsetY(
@@ -89,12 +98,13 @@ internal object OverlayMotion {
         displayHeightPx: Int,
         density: Float,
         showTransformation: Boolean,
+        showDictionary: Boolean = false,
     ): Int {
-        val menuHeight = menuHeightPx(density, showTransformation)
+        val menuHeight = menuHeightPx(density, showTransformation, showDictionary)
         val gap = gapPx(density)
         val aboveOffset = primaryOffsetY + actionHeightPx(density) + gap
         val aboveTop = displayHeightPx - aboveOffset -
-            menuWindowHeightPx(density, showTransformation)
+            menuWindowHeightPx(density, showTransformation, showDictionary)
         return if (aboveTop >= dpToPx(TOP_MARGIN_DP, density)) {
             aboveOffset
         } else {

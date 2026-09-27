@@ -11,6 +11,9 @@ data class EditableTextSnapshot(
     val hasText: Boolean
         get() = original.isNotBlank()
 
+    fun selectedText(): String? =
+        original.substring(safeStart, safeEnd).takeIf { it.isNotBlank() }
+
     fun compose(transcript: String): String =
         original.substring(0, safeStart) + transcript + original.substring(safeEnd)
 
