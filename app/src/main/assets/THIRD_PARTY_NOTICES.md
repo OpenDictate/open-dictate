@@ -1,5 +1,12 @@
 # Third-party notices
 
+## Google Material Icons — menu_book icon
+
+Source: https://github.com/google/material-design-icons/blob/master/src/maps/menu_book/materialicons/24px.svg
+
+Copyright Google LLC. Licensed under the Apache License, Version 2.0. The
+license text is included in `MATERIAL_ICONS_LICENSE.txt`.
+
 ## OpenAI Apps SDK UI — MicLgDictate icon
 
 Source: https://github.com/openai/apps-sdk-ui/blob/main/src/components/Icon/svg/MicLgDictate.tsx
