@@ -91,6 +91,13 @@
     <string name="dictionary_label">Vocabulary (optional)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
+    <string name="dictionary_add_action">Add to OpenDictate dictionary</string>
+    <string name="dictionary_added">Added to dictionary</string>
+    <string name="dictionary_no_selection">Select text to add</string>
+    <string name="dictionary_already_added">Already in dictionary</string>
+    <string name="dictionary_full">Dictionary is full</string>
+    <string name="dictionary_selection_action_title">Add selected text to dictionary</string>
+    <string name="dictionary_selection_action_subtitle">Show in the Android text selection menu</string>
     <string name="advanced_settings_title">Advanced settings</string>
     <string name="transcription_timeout_title">Transcription response time</string>
     <string name="transcription_timeout_subtitle">Maximum wait after you stop recording</string>
@@ -102,7 +109,7 @@
     <string name="transcription_timeout_range">1–600 seconds</string>
     <string name="test_field_label">Try it here</string>
     <string name="test_field_placeholder">Open the keyboard — the button will appear above it</string>
-    <string name="privacy_note">Your key, recordings, and text never pass through an OpenDictate server. The latest dictation audio and transcript history stay on this device. Audio, text you transform, and history you explicitly search with AI are sent directly to OpenAI.</string>
+    <string name="privacy_note">Your key, recordings, and text never pass through an OpenDictate server. The latest dictation audio and transcript history stay on this device. Audio and saved dictionary terms are sent directly to OpenAI during dictation. Text you transform and history you explicitly search with AI are also sent directly to OpenAI.</string>
 
     <string name="api_key_dialog_replace">Replace API key</string>
     <string name="api_key_dialog_connect">Connect OpenAI</string>

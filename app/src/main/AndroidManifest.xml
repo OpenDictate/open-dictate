@@ -36,6 +36,19 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.AddToDictionaryActivity"
+            android:exported="true"
+            android:label="@string/dictionary_add_action"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter android:label="@string/dictionary_add_action">
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".service.DictationForegroundService"
             android:exported="false"

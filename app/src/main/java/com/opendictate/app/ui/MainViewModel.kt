@@ -3,6 +3,7 @@ package com.opendictate.app.ui
 import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Application
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -45,6 +46,8 @@ data class MainUiState(
     val newModelCount: Int = 0,
     val transformationButtonEnabled: Boolean = true,
     val languages: Set<DictationLanguage> = emptySet(),
+    val prompt: String = "",
+    val selectionDictionaryActionEnabled: Boolean = true,
     val keepTrailingPeriod: Boolean = true,
     val transcriptionResponseTimeoutSeconds: Int? = TranscriptionResponseTimeout.DEFAULT_SECONDS,
     val excludedPackages: Set<String> = emptySet(),
@@ -81,6 +84,10 @@ data class HistoryUiState(
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val settings = SettingsStore(application)
+    private val selectionDictionaryComponent = ComponentName(
+        application,
+        AddToDictionaryActivity::class.java,
+    )
     private val apiKeyStore = SecureApiKeyStore(application)
     private val historyStore = (application as OpenDictateApplication).transcriptHistoryStore
     private val apiClient = OpenAiTranscriptionClient(application.resources)
@@ -96,9 +103,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         refreshModelCatalog()
     }
-    val prompt: String
-        get() = settings.prompt
-
     fun refreshPermissions() {
         mutableState.update {
             it.copy(
@@ -247,7 +251,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun savePrompt(prompt: String) {
         settings.prompt = prompt
+        mutableState.update { it.copy(prompt = settings.prompt) }
     }
+
+    fun refreshPrompt() {
+        mutableState.update { it.copy(prompt = settings.prompt) }
+    }
+
+    fun refreshSelectionDictionaryAction() {
+        mutableState.update {
+            it.copy(selectionDictionaryActionEnabled = isSelectionDictionaryActionEnabled())
+        }
+    }
+
+    fun setSelectionDictionaryActionEnabled(enabled: Boolean) {
+        getApplication<Application>().packageManager.setComponentEnabledSetting(
+            selectionDictionaryComponent,
+            if (enabled) PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+            else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP,
+        )
+        refreshSelectionDictionaryAction()
+    }
+
+    private fun isSelectionDictionaryActionEnabled(): Boolean =
+        when (getApplication<Application>().packageManager.getComponentEnabledSetting(
+            selectionDictionaryComponent,
+        )) {
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+            else -> false
+        }
 
     fun setKeepTrailingPeriod(enabled: Boolean) {
         settings.keepTrailingPeriod = enabled
@@ -371,6 +405,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         modelCatalog = settings.modelCatalog,
         transformationButtonEnabled = settings.transformationButtonEnabled,
         languages = settings.languages,
+        prompt = settings.prompt,
+        selectionDictionaryActionEnabled = isSelectionDictionaryActionEnabled(),
         keepTrailingPeriod = settings.keepTrailingPeriod,
         transcriptionResponseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
         excludedPackages = settings.excludedPackages,

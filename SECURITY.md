@@ -13,6 +13,8 @@ The app exclusion picker queries launchable apps only. Excluded package names
 stay in app-private preferences; the accessibility service checks them before
 showing the overlay or starting an action.
 Release signing material is expected to live only in GitHub Actions secrets.
+The text selection action stores only the selected text that the user explicitly
+adds to the dictionary. It does not log the selection or read surrounding text.
 
 Transcript history is stored only in the app-private SQLite database. Android
 backup remains disabled. History search results are kept in memory, and AI
