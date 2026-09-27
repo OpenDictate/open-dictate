@@ -25,6 +25,8 @@ download the latest APK from [GitHub Releases](https://github.com/OpenDictate/op
 - Completed text falls back to the system clipboard if the original input field
   is no longer available.
 - Russian and English speech recognition, or automatic language detection.
+- Add selected text to the transcription dictionary from Android's text
+  selection menu. The action can be turned off in OpenDictate settings.
 
 ## Installation
 

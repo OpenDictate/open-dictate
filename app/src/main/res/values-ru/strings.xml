@@ -88,6 +88,13 @@
     <string name="dictionary_label">Словарь (необязательно)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">Каждое имя, термин или редкое слово — с новой строки</string>
+    <string name="dictionary_add_action">Добавить в словарь OpenDictate</string>
+    <string name="dictionary_added">Добавлено в словарь</string>
+    <string name="dictionary_no_selection">Выделите текст для добавления</string>
+    <string name="dictionary_already_added">Уже есть в словаре</string>
+    <string name="dictionary_full">Словарь заполнен</string>
+    <string name="dictionary_selection_action_title">Добавление выделенного текста в словарь</string>
+    <string name="dictionary_selection_action_subtitle">Показывать пункт в меню выделения Android</string>
     <string name="advanced_settings_title">Дополнительные настройки</string>
     <string name="transcription_timeout_title">Ожидание транскрипции</string>
     <string name="transcription_timeout_subtitle">Максимум после остановки записи</string>
@@ -99,7 +106,7 @@
     <string name="transcription_timeout_range">От 1 до 600 секунд</string>
     <string name="test_field_label">Попробуйте здесь</string>
     <string name="test_field_placeholder">Откройте клавиатуру — кнопка появится над ней</string>
-    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenDictate. Аудио последней диктовки и история транскрипций хранятся на устройстве. Аудио, преобразуемый текст и история, в которой вы явно запускаете AI-поиск, отправляются напрямую в OpenAI.</string>
+    <string name="privacy_note">Ключ, записи и текст не проходят через сервер OpenDictate. Аудио последней диктовки и история транскрипций хранятся на устройстве. При диктовке аудио и сохранённые термины словаря отправляются напрямую в OpenAI. Преобразуемый текст и история, в которой вы явно запускаете AI-поиск, тоже отправляются напрямую в OpenAI.</string>
 
     <string name="api_key_dialog_replace">Заменить API key</string>
     <string name="api_key_dialog_connect">Подключить OpenAI</string>

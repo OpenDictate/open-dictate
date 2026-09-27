@@ -107,6 +107,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.os.LocaleListCompat
 import com.opendictate.app.R
+import com.opendictate.app.data.MAX_DICTIONARY_LENGTH
 import com.opendictate.app.data.normalizeDictionaryTerms
 import com.opendictate.app.model.AppLanguage
 import com.opendictate.app.model.DictationLanguage
@@ -157,6 +158,8 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshPermissions()
                 viewModel.refreshModelCatalog()
+                viewModel.refreshPrompt()
+                viewModel.refreshSelectionDictionaryAction()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -322,11 +325,13 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     Spacer(Modifier.height(10.dp))
                     PreferencesCard(
                         languages = state.languages,
-                        initialPrompt = viewModel.prompt,
+                        prompt = state.prompt,
+                        selectionDictionaryActionEnabled = state.selectionDictionaryActionEnabled,
                         keepTrailingPeriod = state.keepTrailingPeriod,
                         onToggleLanguage = viewModel::toggleLanguage,
                         onAutomaticLanguageDetection = viewModel::useAutomaticLanguageDetection,
                         onPrompt = viewModel::savePrompt,
+                        onSelectionDictionaryActionEnabledChange = viewModel::setSelectionDictionaryActionEnabled,
                         onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
                     )
                     Spacer(Modifier.height(10.dp))
@@ -698,15 +703,23 @@ private fun SetupCard(
 @Composable
 private fun PreferencesCard(
     languages: Set<DictationLanguage>,
-    initialPrompt: String,
+    prompt: String,
+    selectionDictionaryActionEnabled: Boolean,
     keepTrailingPeriod: Boolean,
     onToggleLanguage: (DictationLanguage) -> Unit,
     onAutomaticLanguageDetection: () -> Unit,
     onPrompt: (String) -> Unit,
+    onSelectionDictionaryActionEnabledChange: (Boolean) -> Unit,
     onKeepTrailingPeriod: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var promptText by rememberSaveable { mutableStateOf(initialPrompt) }
+    var promptText by rememberSaveable { mutableStateOf(prompt) }
+    val selectionActionTitle = stringResource(R.string.dictionary_selection_action_title)
+    LaunchedEffect(prompt) {
+        if (normalizeDictionaryTerms(promptText).trim() != prompt) {
+            promptText = prompt
+        }
+    }
     Card(
         colors = CardDefaults.cardColors(containerColor = Panel),
         shape = RoundedCornerShape(20.dp),
@@ -780,7 +793,7 @@ private fun PreferencesCard(
             OutlinedTextField(
                 value = promptText,
                 onValueChange = {
-                    promptText = normalizeDictionaryTerms(it).take(300)
+                    promptText = normalizeDictionaryTerms(it).take(MAX_DICTIONARY_LENGTH)
                     onPrompt(promptText)
                 },
                 modifier = Modifier
@@ -793,6 +806,28 @@ private fun PreferencesCard(
                 maxLines = 4,
                 shape = RoundedCornerShape(14.dp),
             )
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        selectionActionTitle,
+                        color = White,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        stringResource(R.string.dictionary_selection_action_subtitle),
+                        color = Fog,
+                        fontSize = 12.sp,
+                    )
+                }
+                Switch(
+                    checked = selectionDictionaryActionEnabled,
+                    onCheckedChange = onSelectionDictionaryActionEnabledChange,
+                    modifier = Modifier.semantics {
+                        contentDescription = selectionActionTitle
+                    },
+                )
+            }
         }
     }
 }

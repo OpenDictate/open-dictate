@@ -39,6 +39,9 @@ OpenDictate does not operate a backend and does not include analytics or ads.
   notification. OpenDictate does not persist that message; Android notification
   history is controlled by the device's system settings.
 - Android backup is disabled for the application.
+- When you choose Add to OpenDictate dictionary from Android's text selection
+  menu, the selected text is saved in app-private preferences. The dictionary
+  is sent directly to OpenAI as transcription context during later dictations.
 
 OpenAI processes API requests under its API data usage policies. Review those
 policies before using the application with sensitive information.
