@@ -1,8 +1,15 @@
 # OpenDictate
 
 Dictate into the app you're already using, on **Android and macOS**.
+This monorepo contains two native applications: an Android app with a floating
+keyboard overlay and a macOS menu bar app with global keyboard shortcuts.
+Both insert transcriptions into the currently focused text field.
+
 OpenDictate sends audio directly to OpenAI using your own API key. There is
 no backend, analytics or account to create.
+
+[Install on Android](#install-on-android) · [Install on macOS](#install-on-macos) ·
+[Build from source](#repository-and-builds)
 
 | | Android | macOS |
 |---|---|---|
@@ -10,7 +17,7 @@ no backend, analytics or account to create.
 | Voice editing | Long-press → Edit text | **Option + Shift + Space** |
 | Installation | Signed APK | Universal DMG, Apple Silicon + Intel |
 | Requires | Android 8+ | macOS 14+ |
-| Downloads | [Android releases](https://github.com/OpenDictate/open-dictate/releases/latest) | [macOS 0.1.0](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0) |
+| Downloads | [Android releases](https://github.com/OpenDictate/open-dictate/releases/latest) | [macOS releases](https://github.com/OpenDictate/open-dictate/releases?q=macos-v) |
 
 ## Features
 
@@ -25,12 +32,11 @@ no backend, analytics or account to create.
 
 ## Install on macOS
 
-The next minor release is available as [0.2.0-rc.3](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.2.0-rc.3),
-with a compact recording indicator. The stable download remains 0.1.0.
-
-1. Download the universal DMG from the [macOS release](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0).
+1. Choose a release from [macOS Releases](https://github.com/OpenDictate/open-dictate/releases?q=macos-v)
+   and download its universal DMG for Apple Silicon and Intel. Releases marked
+   **Pre-release** are release candidates.
 2. Open it, drag **OpenDictate** into **Applications**, and eject the disk image.
-3. Launch OpenDictate. This release is locally signed and **not notarized**.
+3. Launch OpenDictate. GitHub release builds are locally signed and **not notarized**.
    If macOS blocks launching it, choose **System Settings → Privacy & Security →
    Open Anyway** for OpenDictate, then launch it again.
 4. Save your own OpenAI API key and allow **Microphone** and **Accessibility**
@@ -40,7 +46,10 @@ with a compact recording indicator. The stable download remains 0.1.0.
 
 OpenDictate lives in the menu bar. Its menu provides Settings, mode selection,
 copy/paste of the latest transcript and adding selected text to the dictionary.
-Shortcuts, excluded apps and launch at login are configurable.
+Dictation and voice-editing shortcuts are configurable independently, including
+Globe/Fn and modifier-only taps. Excluded apps and launch at login are configurable.
+The compact recording indicator stays out of keyboard focus; its red finish
+button submits the recording, and a spinner shows processing.
 
 macOS recordings stay in memory and are discarded after use; there is no
 recording archive or audio retry. Completed transcripts remain available in
@@ -74,11 +83,13 @@ the system by default; macOS keeps its previous dark default.
 ## Repository and builds
 
 ```text
-apps/android/   Android application, Gradle wrapper and tests
-apps/macos/     Native SwiftUI/AppKit application, Swift package and tests
-docs/          Public website and platform documentation
+apps/android/   Kotlin/Jetpack Compose application, Gradle wrapper and tests
+apps/macos/     SwiftUI/AppKit menu bar application, Swift package and tests
+docs/          Public website
 .github/       Platform verification and release workflows
 ```
+
+### Android
 
 Android requires JDK 17+ and Android SDK 37. The root wrapper forwards to
 `apps/android` so existing commands keep working:
@@ -89,7 +100,11 @@ Android requires JDK 17+ and Android SDK 37. The root wrapper forwards to
 ```
 
 APKs are under `apps/android/app/build/outputs/apk/`.
-macOS requires Xcode 16+:
+Release signing requires the environment variables listed below.
+
+### macOS
+
+Build on macOS 14+ with Xcode 16+:
 
 ```bash
 swift test --package-path apps/macos
@@ -100,6 +115,8 @@ open dist/macos/OpenDictate.app
 The packaging script builds both architectures, creates and verifies a signed
 `.app`, and packages a DMG and SHA-256 checksum in `dist/macos/`.
 Build output is ignored by Git. No third-party Swift dependencies are needed.
+See the [macOS developer guide](apps/macos/README.md) for architecture,
+permission testing, native smoke checks, shortcut configuration and packaging.
 
 ## Releases
 
