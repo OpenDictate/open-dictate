@@ -10,7 +10,7 @@ no backend, analytics or account to create.
 | Voice editing | Long-press → Edit text | **Option + Shift + Space** |
 | Installation | Signed APK | Universal DMG, Apple Silicon + Intel |
 | Requires | Android 8+ | macOS 14+ |
-| Downloads | [Android releases](https://github.com/OpenDictate/open-dictate/releases/latest) | [macOS 1.0.0](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v1.0.0) |
+| Downloads | [Android releases](https://github.com/OpenDictate/open-dictate/releases/latest) | [macOS 0.1.0](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0) |
 
 ## Features
 
@@ -25,7 +25,7 @@ no backend, analytics or account to create.
 
 ## Install on macOS
 
-1. Download the universal DMG from the [macOS release](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v1.0.0).
+1. Download the universal DMG from the [macOS release](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0).
 2. Open it, drag **OpenDictate** into **Applications**, and eject the disk image.
 3. Launch OpenDictate. This release is locally signed and **not notarized**.
    If macOS blocks launching it, choose **System Settings → Privacy & Security →

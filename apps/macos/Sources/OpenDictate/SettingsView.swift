@@ -33,7 +33,7 @@ struct SettingsView: View {
                         .font(.caption).foregroundStyle(.secondary).lineSpacing(3)
                 }
                 Divider()
-                Text("macOS · \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0")")
+                Text("macOS · \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0")")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(20).frame(width: 190).background(Color(nsColor: .controlBackgroundColor))
             Divider()

@@ -1,4 +1,4 @@
-# macOS 1.0.0 verification
+# macOS 0.1.0 verification
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30. The deployment target is
 macOS 14; Intel is cross-compiled, not exercised on Intel hardware.
