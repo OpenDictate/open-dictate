@@ -1,6 +1,12 @@
-OpenDictate for macOS **0.2.0-rc.3** expands keyboard shortcut customization and
-includes the compact dictation indicator. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.4** fixes dictation startup feedback,
+indicator spacing and the insertion caret. Requires macOS 14+ on Apple Silicon or Intel.
 
+- The indicator is half as wide and half as tall: **44 × 22 pt**, with balanced
+  spacing around the microphone and red finish button.
+- The finish button appears as soon as the session starts, including preparation.
+  Clicking it during startup immediately shows processing and submits once ready.
+- Text insertion keeps the cursor at the end of the inserted text. Live partials
+  replace the previous transcript; cancellation restores the original selection.
 - Record arbitrary key combinations instead of choosing from a fixed list.
   Supports letters, symbols, navigation, numpad keys and **F1–F20**, with or
   without Control, Option, Shift and Command.
@@ -13,7 +19,7 @@ includes the compact dictation indicator. Requires macOS 14+ on Apple Silicon or
   Escape, or reset both shortcuts. Failed registrations preserve working bindings.
 - The compact recording indicator shows a microphone and red finish button.
   Click the button or press your dictation shortcut to finish and submit without
-  taking focus from the editor. Preparation and processing show a native spinner.
+  taking focus from the editor. Only processing shows the smaller native spinner (**22 × 22 pt**).
 - **Escape** still cancels and restores an unchanged field. Live, Accurate,
   voice editing, dictionary and history remain available.
 
@@ -27,7 +33,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.3-universal.dmg`, open it and drag OpenDictate
+Download `OpenDictate-macOS-0.2.0-rc.4-universal.dmg`, open it and drag OpenDictate
 to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks
