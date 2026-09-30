@@ -1,5 +1,31 @@
 # macOS verification
 
+## 0.2.0-rc.4 — indicator and insertion caret
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
+
+- All 41 Swift tests pass. New regression tests exercise cumulative selection
+  replacement, UTF-16 caret placement, cancellation, focus/cursor/edit guards,
+  and value-only editors that finish a text update after acknowledging AXValue.
+  The native NSTextView Accessibility setters verify real text/selection behavior;
+  mocked transport tests cover the deferred value/caret-reset sequence.
+- Production-view raster tests verify the red finish control during preparation,
+  the 44 × 22 pt capsule, 14 pt circle and 7 pt visible trailing inset.
+  Offscreen NSHostingView captures were visually inspected for preparation,
+  recording and the 22 × 22 pt processing spinner. No focus is taken by rendering.
+- Stable/RC version validation and universal arm64/x86_64 packaging pass;
+  bundle build is 5. Ad-hoc signature, DMG integrity and SHA-256 verification pass.
+  The release remains locally signed and is not notarized.
+
+The desktop automation did not reliably activate the disposable editor, and
+application screenshots were unavailable in this session. The debug bundle was
+built, but cross-process insertion, the startup finish-button interaction and
+physical hotkeys require a manual check. No API key or history was read by the
+smoke checks; no OpenAI request or audio capture was made. Existing secure-field,
+permission, third-party clipboard/editor, Spaces and hardware limitations below
+still apply. The startup stop path switches the HUD to processing immediately
+and waits for recorder setup before submitting once.
+
 ## 0.2.0-rc.3 — shortcut customization
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.

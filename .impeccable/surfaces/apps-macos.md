@@ -31,23 +31,24 @@ The selected row's tonal fill and the native keyboard focus ring are distinct.
 
 A menu bar microphone reports recording state, becoming a waveform while active
 and gaining an ellipsis while processing. The recording indicator is a
-nonactivating AppKit panel that cannot become key or main. During recording,
+nonactivating AppKit panel that cannot become key or main. During preparation and recording,
 its red finish control invokes `model.stop()` without taking keyboard focus;
-preparing and processing ignore mouse events. Escape cancels only during a
+only processing ignores mouse events. Escape cancels only during a
 session. Localized Edit commands use the AppKit responder chain for normal
 text-field and editor shortcuts.
 
 RECORDING INDICATOR: The pinned compact treatment shows only a microphone and
-red finish control during recording. Its dark capsule is 88 × 44pt; the SF
-`mic.fill` symbol is 18pt medium in a 20pt frame, with 12pt spacing before the
-28pt red circle. The centered white stop square is 9pt with a 2pt corner, inside
-a 32pt circular hit area. Preparing and processing show only a centered native
-circular `ProgressView` at small control size on a 44 × 44pt capsule; idle is
+red finish control from preparation through recording. Its dark capsule is
+44 × 22pt; the SF `mic.fill` symbol is 9pt medium in a 10pt frame, with 6pt
+spacing before the 14pt red circle and explicit 6pt horizontal content insets.
+The centered white stop square is 4.5pt with a 1pt corner, inside a 16pt circular
+hit area. Processing shows only a centered native circular `ProgressView` at
+mini control size on a 22 × 22pt capsule; idle is
 hidden. No visible text, timer, waveform, or shortcut hint belongs to this
 indicator. `windowBackgroundColor` and the dark scheme supply its background;
 the native panel shadow remains. Position it at the current screen's visible
 frame center, 28pt above the bottom edge. Localized finish label/help and
-preparing/processing accessibility labels carry the action and busy state.
+processing accessibility label carry the action and busy state.
 
 FORM: Direct native adaptation of the established Android settings surface;
 code-led within the established visual world, with no approved visual comp and
@@ -57,10 +58,11 @@ native implementation tokens.
 FINISH: Ship verdict after the material review findings were resolved. DESIGN.md
 and its sidecar record the built native adaptation. Native surfaces have no
 detector pass; the review uses implementation inspection and actual screenshots.
-The subsequent indicator refinement passed a fresh finish review with a ship
-verdict and no material fixes: retain its reviewed dimensions, red circle and
-white stop square, centered spinner, dark capsule, localized accessibility, and
-nonactivation. This was a code-led refinement in the existing world, with no
+The rc.1 indicator refinement passed a finish review; rc.4 halves both dimensions
+and makes its finish control available during preparation. Production-view
+raster tests and offscreen native captures verify the new dimensions and spacing.
+Retain the red circle, white stop square, dark capsule, localized accessibility,
+and nonactivation. This was a code-led refinement in the existing world, with no
 comp or direction roll.
 
 ## Implementation evidence
@@ -85,7 +87,9 @@ comp or direction roll.
   `.impeccable/review/macos-indicator-processing.png`: the reviewed compact
   recording and processing indicators.
 
-The indicator captures show recording and processing geometry; panel focus,
+The committed indicator captures document the earlier rc.1 geometry. The rc.4
+size and spacing are checked by production-view render tests and offscreen
+NSHostingView captures, with no change to panel nonactivation. Panel focus,
 mouse behavior and localized accessibility are grounded in the SwiftUI/AppKit
 implementation.
 

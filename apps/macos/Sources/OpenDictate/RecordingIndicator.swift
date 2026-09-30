@@ -73,9 +73,7 @@ struct RecordingStatusView: View {
             } else {
                 ProgressView().progressViewStyle(.circular).controlSize(.mini)
                     .frame(width: 22, height: 22)
-                    .accessibilityLabel(phase == .preparing
-                        ? (isRussian ? "Запуск диктовки" : "Starting dictation")
-                        : (isRussian ? "Распознавание" : "Transcribing"))
+                    .accessibilityLabel(isRussian ? "Распознавание" : "Transcribing")
             }
         }
         .background(Color(nsColor: .windowBackgroundColor), in: Capsule())

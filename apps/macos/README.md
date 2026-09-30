@@ -39,15 +39,16 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
 - `OpenAIClient` uses ephemeral HTTPS sessions. Voice edits and explicit AI
   history searches use structured Responses output with `store: false`.
 - `RecordingIndicator` owns a nonactivating panel that cannot become key/main.
-  During recording it shows a microphone and red finish button (88 × 44 pt);
-  preparing/processing shows only a native spinner (44 × 44 pt). Clicking the
+  From preparation through recording it shows a microphone and red finish button
+  (44 × 22 pt); processing shows only a native spinner (22 × 22 pt). Clicking the
   red button calls the same stop/submit path as the shortcut without moving focus.
 - The HUD never takes keyboard focus. Changing fields, typing, changing the
   caret, revoking Accessibility or sleeping detaches/stops a recording.
   Final results remain available to copy, without insertion into a new field.
 
 Supported editors expose an Accessibility string value and selected text range.
-Writable values receive live updates. Other accessible editors receive a final
+Writable values receive live updates through selected-text replacement when supported,
+with a verified whole-value fallback. The caret is placed after value readback. Other accessible editors receive a final
 paste using the clipboard. Editors without usable Accessibility metadata need
 manual Copy last transcript. Password fields are deliberately excluded.
 

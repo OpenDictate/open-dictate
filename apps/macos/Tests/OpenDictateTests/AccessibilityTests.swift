@@ -9,6 +9,7 @@ private final class Editor: TextAccessibility {
     var text: String
     var range: NSRange
     var focused = true
+    var losesFocusWhenSelecting = false
     var supportsSelectedText = true
     var resetsCaretOnValueRead = false
     var pendingValue: String?
@@ -31,7 +32,11 @@ private final class Editor: TextAccessibility {
         else { self.text = text; range = NSRange(location: 0, length: 0) }
         return true
     }
-    func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool { self.range = range; return true }
+    func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool {
+        self.range = range
+        if losesFocusWhenSelecting { focused = false }
+        return true
+    }
     func setSelectedText(_ text: String, in element: AXUIElement) -> Bool {
         guard supportsSelectedText else { return false }
         selectedTextWrites += 1
@@ -45,7 +50,41 @@ private final class Editor: TextAccessibility {
     }
 }
 
+@MainActor
+private final class NativeEditor: TextAccessibility {
+    let view = NSTextView()
+    func isFocused(_ element: AXUIElement, pid: pid_t) -> Bool { true }
+    func value(_ element: AXUIElement) -> String? { view.string }
+    func selection(_ element: AXUIElement) -> NSRange? { view.selectedRange() }
+    func setValue(_ text: String, in element: AXUIElement) -> Bool { view.setAccessibilityValue(text); return true }
+    func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool {
+        view.setAccessibilitySelectedTextRange(range); return true
+    }
+    func setSelectedText(_ text: String, in element: AXUIElement) -> Bool {
+        view.setAccessibilitySelectedText(text); return true
+    }
+}
+
 final class AccessibilityTests: XCTestCase {
+    func testNativeTextViewSelectionReplacementAndRollback() async {
+        await MainActor.run {
+            let editor = NativeEditor()
+            editor.view.string = "🙂 old after"
+            editor.view.setSelectedRange(NSRange(location: 3, length: 3))
+            let snapshot = EditableTextSnapshot(original: editor.view.string, selection: editor.view.selectedRange())
+            let target = TextTarget(element: AXUIElementCreateApplication(getpid()), application: .current,
+                                    snapshot: snapshot, writable: true, accessibility: editor)
+            target.preserveOriginal()
+            XCTAssertTrue(target.apply("Проверка"))
+            XCTAssertTrue(target.apply("Проверка 🎤"))
+            XCTAssertEqual(editor.view.string, "🙂 Проверка 🎤 after")
+            XCTAssertEqual(editor.view.selectedRange(), snapshot.cursor(after: "Проверка 🎤"))
+            target.restore()
+            XCTAssertEqual(editor.view.string, snapshot.original)
+            XCTAssertEqual(editor.view.selectedRange(), snapshot.selection)
+        }
+    }
+
     func testSelectionInsertionLeavesCaretAfterCumulativeUTF16TextAndRestoresOriginal() async {
         await MainActor.run {
             let snapshot = EditableTextSnapshot(original: "🙂 old after", selection: NSRange(location: 3, length: 3))
@@ -74,6 +113,17 @@ final class AccessibilityTests: XCTestCase {
             target.restore()
             XCTAssertEqual(editor.text, snapshot.original)
             XCTAssertEqual(editor.range, snapshot.selection)
+        }
+    }
+
+    func testFocusChangeDuringSelectionPreventsTextWrite() async {
+        await MainActor.run {
+            let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
+            let editor = Editor(snapshot); editor.losesFocusWhenSelecting = true
+            XCTAssertFalse(editor.target(snapshot).apply("new"))
+            XCTAssertEqual(editor.text, "old")
+            XCTAssertEqual(editor.valueWrites, 0)
+            XCTAssertEqual(editor.selectedTextWrites, 0)
         }
     }
 
