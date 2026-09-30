@@ -1,0 +1,30 @@
+OpenDictate for macOS 14 or later · Apple Silicon and Intel
+
+1. Drag OpenDictate.app to Applications. Eject this disk image.
+2. Open OpenDictate from Applications.
+3. This release is locally signed and is not notarized by Apple.
+   If macOS blocks opening it, open System Settings → Privacy & Security,
+   find the OpenDictate message and choose Open Anyway. Then launch it again.
+4. Save your own OpenAI API key. Allow Microphone and Accessibility access
+   using the buttons in OpenDictate. macOS may require quitting and reopening
+   the app after granting Accessibility access.
+5. Focus a text field in another app. Press Option + Space to start speaking;
+   press it again to finish. Escape cancels. Option + Shift + Space records
+   a voice instruction to edit selected text, or the entire field without a selection.
+
+OpenDictate lives in the menu bar. Click its microphone to open Settings or Quit.
+Recordings remain in memory and are discarded after use. Your API key stays
+in Keychain. History is stored locally and can be disabled or deleted.
+API usage is billed by OpenAI separately from a ChatGPT subscription.
+
+Установка
+
+Перетащите OpenDictate.app в Программы и извлеките образ диска.
+Если macOS блокирует запуск, откройте Системные настройки → Конфиденциальность
+и безопасность и нажмите «Всё равно открыть» для OpenDictate.
+Сохраните свой ключ API OpenAI и разрешите доступ к микрофону и Универсальному
+доступу. Приложение работает из строки меню.
+Option + Space — начать / завершить диктовку; Escape — отменить;
+Option + Shift + Space — изменить выделенный текст голосом.
+
+https://github.com/OpenDictate/open-dictate

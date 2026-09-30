@@ -2,6 +2,45 @@
 
 OpenDictate does not operate a backend and does not include analytics or ads.
 
+## macOS
+
+- Your OpenAI API key is stored in a non-synchronizing, device-only Keychain
+  item, available while your login keychain is unlocked. It is never saved in
+  preferences, the app bundle, logs or release artifacts.
+- Dictation sends microphone audio directly to OpenAI. Live streams 24 kHz
+  PCM in memory; Accurate uploads a WAV constructed in memory. Audio is
+  discarded after completion, failure or cancellation and is never written to disk.
+- Microphone access is used only for a session you start. Accessibility reads
+  the focused editable control and its selection, and inserts transcription
+  there. Secure text fields are excluded; unrelated screen contents are not collected.
+- Global shortcuts use registered hotkeys, without logging keystrokes or
+  requiring Input Monitoring permission. Changing focus or editing the target
+  prevents further automatic insertion. A completed result remains available
+  to copy explicitly from the menu.
+- Some editors require a final clipboard paste. In that case, only the
+  transcript is placed on the clipboard; the previous clipboard contents are
+  restored after insertion if no other app or user action changed them.
+  Explicit copy keeps the transcript on the system clipboard. Other software
+  on the Mac can access clipboard data.
+- Voice editing sends only the selected text (or the whole focused field when
+  nothing is selected) and your spoken instruction to OpenAI. Text Responses
+  requests set `store: false`.
+- The last 500 completed transcripts are stored locally in
+  `~/Library/Application Support/OpenDictate/history.json`. You can disable
+  saving future history and delete existing items or all history separately.
+  The directory and file are owner-only. macOS backup software may include
+  this folder according to your own backup configuration.
+- Ordinary history search runs on-device. Only explicit AI search sends its
+  query and saved transcript text directly to OpenAI. Search results are
+  held in memory, and Responses requests set `store: false`.
+- Dictionary terms, excluded app bundle identifiers and preferences stay in
+  UserDefaults locally. Dictionary terms are sent to OpenAI as transcription
+  hints only when you start a session. Exclusions are checked before capture.
+- Launch at login is optional and uses macOS Login Items. OpenDictate does
+  not install a background daemon or a network service.
+
+## Android
+
 - Your OpenAI API key is encrypted locally with Android Keystore.
 - When the settings screen opens, OpenDictate may use that key to fetch the
   available model IDs directly from OpenAI. It caches only model IDs locally

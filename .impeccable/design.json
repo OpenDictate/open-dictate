@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-24T19:21:01+04:00",
+  "generatedAt": "2026-09-30T17:33:53Z",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
@@ -23,7 +23,10 @@
       "title": { "displayName": "Title", "purpose": "Compact component and rail headings." },
       "body": { "displayName": "Body", "purpose": "Explanations and supporting prose." },
       "label": { "displayName": "Instrument Label", "purpose": "Navigation, modes, models, metadata, and route annotations." },
-      "button": { "displayName": "Button", "purpose": "Confident primary and secondary action labels." }
+      "button": { "displayName": "Button", "purpose": "Confident primary and secondary action labels." },
+      "macos-heading": { "displayName": "macOS Heading", "purpose": "Native settings page headings in both languages.", "nativeStyle": "SwiftUI system, semibold", "units": "points" },
+      "macos-navigation": { "displayName": "macOS Navigation", "purpose": "Native sidebar labels; selection uses medium weight.", "nativeStyle": "SwiftUI system, regular; selected medium", "units": "points" },
+      "macos-brand": { "displayName": "macOS Brand", "purpose": "Compact sidebar wordmark beside the microphone.", "nativeStyle": "SwiftUI system, semibold", "units": "points" }
     },
     "shadows": [],
     "motion": [
@@ -37,7 +40,53 @@
     "breakpoints": [
       { "name": "stack", "value": "1040px" },
       { "name": "mobile", "value": "700px" }
-    ]
+    ],
+    "nativeSurfaces": {
+      "macos": {
+        "platform": "macOS 14+",
+        "technology": "SwiftUI/AppKit; no third-party UI dependency",
+        "surfaceBrief": ".impeccable/surfaces/apps-macos.md",
+        "colorScheme": "dark",
+        "colorRoles": [
+          { "nativeValue": "Color(nsColor: .windowBackgroundColor)", "purpose": "Settings body and recording HUD." },
+          { "nativeValue": "Color(nsColor: .controlBackgroundColor)", "purpose": "Sidebar and message footer." },
+          { "nativeValue": "Color(nsColor: .textBackgroundColor)", "purpose": "Dictionary editor." },
+          { "nativeValue": "foregroundStyle(.primary / .secondary)", "purpose": "Native text hierarchy." },
+          { "nativeValue": "Color.white.opacity(0.09)", "purpose": "Selected sidebar row; independent of keyboard focus." },
+          { "nativeValue": "System accent color", "purpose": "Selected segments, enabled switches and native keyboard focus; captured as blue, not a brand token." }
+        ],
+        "typographyRendering": "Frontmatter's macos-* tokens describe native points and system type. SwiftUI semantic body/callout/caption styles and monospaced shortcut/digit variants remain native; no web display font is loaded.",
+        "elevation": "Settings content stays flat. AppKit window chrome and the floating recording panel retain native shadows.",
+        "motion": "No decorative motion or web hover lift; microphone-level updates communicate recording state.",
+        "components": [
+          { "name": "Sidebar Navigation", "implementation": "SettingsView.navigation(_:_:_:)", "description": "SF Symbol plus sentence-case label; tonal selection, selected medium weight and separate native keyboard focus." },
+          { "name": "Setup and Preferences Controls", "implementation": "SettingsView", "description": "Native secure/search fields, buttons, segmented mode picker, pop-up pickers, switches and confirmation alerts." },
+          { "name": "Dictionary Editor", "implementation": "SettingsView.dictionaryPage", "description": "Native text editor with automatic saving, term count and clean-up action." },
+          { "name": "History", "implementation": "SettingsView.historyPage", "description": "Native empty-state view or ruled transcript rows with copy/delete actions, local search and explicit AI search." },
+          { "name": "Recording HUD", "implementation": "RecordingStatusView and AppDelegate.updateState()", "description": "Passive state, elapsed time, twenty-segment microphone level and shortcut hint in a nonactivating panel that ignores mouse events." },
+          { "name": "Native Edit Commands", "implementation": "AppDelegate.updateState()", "description": "Localized Undo, Redo, Cut, Copy, Paste and Select All use the AppKit responder chain." }
+        ],
+        "componentPreviewPolicy": "Native components are documented from SwiftUI/AppKit and screenshots rather than fabricated as browser HTML/CSS; existing web/Android previews remain unchanged.",
+        "assetProvenance": {
+          "source": "apps/macos/scripts/generate-icon.swift",
+          "origin": "Native code adaptation of docs/mark.svg and the existing white microphone on black identity.",
+          "output": "Icon rasters and .icns are packaging build output; no generated shipping raster is committed."
+        },
+        "review": {
+          "verdict": "ship",
+          "basis": "Code-led adaptation in the established visual world; implementation inspection and actual captures, with no approved comp or native detector.",
+          "screenshots": [
+            ".impeccable/review/macos-dictation-en.png",
+            ".impeccable/review/macos-dictation-ru.png",
+            ".impeccable/review/macos-dictation-ru-min.png",
+            ".impeccable/review/macos-settings-en.png",
+            ".impeccable/review/macos-dictionary-en.png",
+            ".impeccable/review/macos-history-en.png"
+          ],
+          "captureScope": "Settings pages in English/Russian and at minimum content size. Recording HUD behavior is grounded in native source rather than these captures."
+        }
+      }
+    }
   },
   "components": [
     {
@@ -97,36 +146,75 @@
   ],
   "narrative": {
     "northStar": "The Live Dictation Instrument",
-    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nThis file is the repository-wide authority for the Android app and public web surface. Both use black, white, and graphite, while Android retains Material 3 controls, insets, motion, and 48 dp touch targets. Do not mechanically transplant web pixels or fonts into Android.",
+    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nThis file is the repository-wide authority for the Android app, public web surface, and native macOS utility. Web and Android use black, white, and graphite, while Android retains Material 3 controls, insets, motion, and 48 dp touch targets. Do not mechanically transplant web pixels or fonts into Android.\n\nmacOS adapts the same white microphone and graphite identity through SwiftUI/AppKit system colors, system typography, SF Symbols, and native controls. Its dark settings surface is compact and direct; selected controls and keyboard focus retain the macOS accent. Native measurements use points, and the web's display fonts, control dimensions, and hover motion do not apply to this surface.",
     "keyCharacteristics": [
       "Black work surfaces with no light-theme inversion.",
       "White microphone mark, white primary actions, and a white live caret.",
       "Restrained silver reserved for alternate modes and state contrast.",
       "Unbounded display statements in the Android app; the GitHub Pages site pairs Literata headings with Golos body copy.",
       "Hairline ledgers and routes instead of floating marketing cards.",
-      "Direct, literal diagrams and interactions instead of decorative product mockups."
+      "Direct, literal diagrams and interactions instead of decorative product mockups.",
+      "System typography and native controls on macOS, with English/Russian copy and visible keyboard focus."
     ],
     "rules": [
-      { "name": "The Contrast Rule", "body": "White marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.", "section": "colors" },
-      { "name": "The Dark-Only Rule", "body": "Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.", "section": "colors" },
-      { "name": "The Three-Voice Rule", "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic; the Android app retains Unbounded.", "section": "typography" },
-      { "name": "The Working-Surface Rule", "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.", "section": "layout" },
-      { "name": "The Flat-by-Default Rule", "body": "A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.", "section": "elevation" },
-      { "name": "The Shape-Hierarchy Rule", "body": "Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.", "section": "shapes" }
+      {
+        "name": "The Contrast Rule",
+        "body": "On web and Android, white marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark-Only Rule",
+        "body": "Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.",
+        "section": "colors"
+      },
+      {
+        "name": "The Native Controls Rule",
+        "body": "On macOS, keep semantic system colors and native accent/focus states. Do not force white brand fills onto platform controls.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-Voice Rule",
+        "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic; the Android app retains Unbounded.",
+        "section": "typography"
+      },
+      {
+        "name": "The Native Type Rule",
+        "body": "Keep macOS in system typography. The web and Android display/body pairing is specific to those surfaces.",
+        "section": "typography"
+      },
+      {
+        "name": "The Working-Surface Rule",
+        "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-by-Default Rule",
+        "body": "A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Shape-Hierarchy Rule",
+        "body": "Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do make the waveform, caret, route lines, and state labels explain how speech reaches text.",
       "Do use hairline structure and tonal layers to organize dense information.",
       "Do preserve the bilingual Latin/Cyrillic font setup and responsive English/Russian copy behavior.",
       "Do keep every web control keyboard-visible and honor `prefers-reduced-motion`.",
-      "Do theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets."
+      "Do theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets.",
+      "Do retain macOS system type, semantic colors, native controls, and localized responder-chain text commands.",
+      "Do keep the macOS recording HUD passive and nonactivating so dictation stays in the user's focused app."
     ],
     "donts": [
       "Don't introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.",
       "Don't use secondary as routine decoration or let it compete with signal for the primary action.",
-      "Don't use display faces for paragraphs or replace the chosen display face with a default system sans.",
+      "Don't use display faces for paragraphs or replace the chosen web/Android display face with a default system sans.",
       "Don't flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.",
-      "Don't copy web pixel values, web fonts, or hover-only affordances directly into native Android UI."
+      "Don't copy web pixel values, web fonts, or hover-only affordances directly into native Android UI.",
+      "Don't transplant web/Android fonts, control sizes, or decorative motion into the native macOS surface.",
+      "Don't commit generated macOS icon rasters or `.icns`; keep the source generator as the brand asset's provenance."
     ]
   }
 }

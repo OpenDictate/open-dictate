@@ -4,15 +4,15 @@
 
 ## Platform
 
-android
+android and macos
 
 ## Users
 
-Android users who want to dictate or transform text directly inside the app they are already using. The primary job is fast, system-wide text entry without copying a recording into a separate transcription tool. This audience description is inferred from the current product behavior and documentation.
+Android and macOS users who want to dictate or transform text directly inside the app they are already using. The primary job is fast, system-wide text entry without copying a recording into a separate transcription tool. This audience description is inferred from the current product behavior and documentation.
 
 ## Product Purpose
 
-OpenDictate turns speech into text in the currently focused Android field. Success means the overlay appears only when it is useful, begins listening with one tap, returns text quickly, and never sends unrelated screen contents or stored recordings anywhere.
+OpenDictate turns speech into text in the currently focused field on Android or macOS. Success means the overlay appears only when it is useful, begins listening with one tap, returns text quickly, and never sends unrelated screen contents or stored recordings anywhere.
 
 ## Positioning
 
@@ -31,16 +31,22 @@ The app is used while an Android keyboard and editable field are visible. A fore
 - The app targets Android 36, compiles with SDK 37, and requires Android 8.0 or later.
 - The package ID is `com.opendictate.app`; this clean rebrand is a new Android app identity and cannot update an installation that used the previous package ID.
 
+macOS uses a global shortcut and menu bar utility instead of a keyboard overlay.
+Its native SwiftUI/AppKit settings are clean, compact and fast, with advanced
+features on separate screens. Keys stay in Keychain; audio stays in memory.
+The app requires macOS 14+, ships a universal DMG for Apple Silicon and Intel,
+and uses independent `macos-v*` releases.
+
 ## Brand Commitments
 
 The product name is OpenDictate. Its established interface uses a black canvas, white microphone mark, restrained silver state accents, plain language, and compact monospaced utility labels. The GitHub presence and public documentation must use only the OpenDictate identity.
 
 ## Evidence on Hand
 
-- Working Android source and JVM tests in `app/`.
+- Working Android source and JVM tests in `apps/android/app/`.
 - Privacy and security disclosures in `PRIVACY.md` and `SECURITY.md`.
 - Signed APK release automation in `.github/workflows/`.
-- Existing launcher waveform asset in `app/src/main/res/drawable/ic_launcher_foreground.xml`.
+- Existing launcher waveform asset in `apps/android/app/src/main/res/drawable/ic_launcher_foreground.xml`.
 - No testimonials, customer logos, usage metrics, or independent benchmarks are available; future surfaces must not invent them.
 
 ## Product Principles
