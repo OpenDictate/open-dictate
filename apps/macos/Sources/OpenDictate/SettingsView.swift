@@ -331,7 +331,7 @@ struct SettingsView: View {
             Text(label)
             Spacer()
             ShortcutRecorder(shortcut: shortcut, title: label,
-                             prompt: t("Press keys…", "Нажмите клавиши…"), enabled: !model.isActive,
+                             prompt: t("Press and release…", "Нажмите и отпустите…"), enabled: !model.isActive,
                              onRecording: model.recordShortcut, onSave: save)
                 .frame(width: 175, height: 28)
             Menu {

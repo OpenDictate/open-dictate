@@ -117,8 +117,6 @@ final class HotKeys {
                                   OptionBits(kEventHotKeyExclusive), &reference) == noErr,
               let reference else { throw DictationError.shortcut }
         registrations[action] = reference
-        // Recording a currently held key must not trigger dictation through autorepeat.
-        if CGEventSource.keyState(.combinedSessionState, key: CGKeyCode(code)) { pressed.insert(action) }
     }
     private func unregister(_ action: Action) {
         pressed.remove(action)

@@ -35,6 +35,7 @@ final class ShortcutRecorderButton: NSButton {
     private var monitor: Any?
     private var windowObserver: NSObjectProtocol?
     private var modifierCandidate: NSEvent.ModifierFlags = []
+    private var pendingShortcut: KeyboardShortcut?
     override var acceptsFirstResponder: Bool { true }
 
     func refreshTitle() { title = recording ? prompt : shortcutLabel }
@@ -42,11 +43,11 @@ final class ShortcutRecorderButton: NSButton {
     @objc func toggleRecording() {
         if recording { finish(); return }
         guard window?.makeFirstResponder(self) == true else { return }
-        modifierCandidate = []
+        modifierCandidate = []; pendingShortcut = nil
         recording = true; onRecording?(true); refreshTitle()
         // Local and temporary: captures menu equivalents (e.g. Command+Q) only
         // while this control is focused. The rest of the app keeps native editing.
-        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { [weak self] event in
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
             let consumed = MainActor.assumeIsolated {
                 guard let self, self.recording, self.window?.isKeyWindow == true else { return false }
                 self.capture(event)
@@ -66,9 +67,15 @@ final class ShortcutRecorderButton: NSButton {
             if event.keyCode == 53 && event.modifierFlags.intersection(KeyboardShortcut.modifierMask).isEmpty {
                 finish(); return
             }
-            let shortcut = KeyboardShortcut.recorded(event)
-            finish(); onSave?(shortcut)
+            if pendingShortcut == nil { pendingShortcut = KeyboardShortcut.recorded(event) }
+        } else if event.type == .keyUp {
+            if let shortcut = pendingShortcut, shortcut.keyCode == event.keyCode {
+                // Register only after release: no held key/autorepeat can activate
+                // the new shortcut, and Carbon starts with a clean press state.
+                finish(); onSave?(shortcut)
+            }
         } else {
+            guard pendingShortcut == nil else { return }
             let flags = event.modifierFlags.intersection(KeyboardShortcut.modifierMask)
             if !modifierCandidate.isEmpty && flags.isSubset(of: modifierCandidate) && flags != modifierCandidate {
                 let shortcut = KeyboardShortcut(keyCode: nil, flags: modifierCandidate)
@@ -82,7 +89,7 @@ final class ShortcutRecorderButton: NSButton {
         recording = false
         if let monitor { NSEvent.removeMonitor(monitor) }; monitor = nil
         if let windowObserver { NotificationCenter.default.removeObserver(windowObserver) }; windowObserver = nil
-        modifierCandidate = []; refreshTitle(); onRecording?(false)
+        modifierCandidate = []; pendingShortcut = nil; refreshTitle(); onRecording?(false)
     }
     override func resignFirstResponder() -> Bool { finish(); return super.resignFirstResponder() }
     override func viewWillMove(toWindow newWindow: NSWindow?) {
