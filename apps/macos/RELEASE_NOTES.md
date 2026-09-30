@@ -11,7 +11,7 @@ OpenDictate is now available for macOS 14 and later, on Apple Silicon and Intel.
 
 ### Install
 
-Download `OpenDictate-macOS-1.0.0-universal.dmg`, open it and drag OpenDictate
+Download `OpenDictate-macOS-0.1.0-universal.dmg`, open it and drag OpenDictate
 to Applications. Launch it, save your own OpenAI API key, and allow Microphone
 and Accessibility in the app's setup screen.
 
