@@ -2,8 +2,8 @@
 
 ## Product contract
 
-OpenDictate is a single-module Android app that inserts OpenAI speech
-transcriptions into the currently focused text field. An accessibility overlay
+OpenDictate is an Android/macOS monorepo. Both apps insert OpenAI speech
+transcriptions into the currently focused text field. On Android, an accessibility overlay
 appears only while an IME window and an editable node are both present. A tap
 starts dictation; a second tap stops it.
 
@@ -15,12 +15,16 @@ The user chooses between two paths:
   `/v1/audio/transcriptions` with `gpt-transcribe` after recording stops.
 
 There is no backend. Audio goes directly from the device to OpenAI. The user
-supplies the API key, which is encrypted with Android Keystore. Preserve this
+supplies the API key, secured with Android Keystore or macOS Keychain. Preserve this
 privacy boundary: never log keys, audio, transcripts, focused-field contents,
 or raw OpenAI payloads; never add analytics or persistent audio storage without
 an explicit product decision.
 
-## Runtime flow and ownership
+On macOS, the app lives in the menu bar. A global shortcut toggles dictation;
+Shift plus the same shortcut starts voice editing. A nonactivating status HUD
+never takes keyboard focus. Secure fields and excluded apps are rejected.
+
+## Android runtime flow and ownership
 
 1. `OpenDictateAccessibilityService` detects the keyboard and focused editable
    node, owns `DictationOverlayView`, snapshots the original text and selection,
@@ -59,14 +63,14 @@ product.
 
 ## Project map
 
-- `app/src/main/java/com/opendictate/app/service/`: accessibility integration,
+- `apps/android/app/src/main/java/com/opendictate/app/service/`: accessibility integration,
   foreground dictation lifecycle, text composition, and session state.
-- `app/src/main/java/com/opendictate/app/network/`: OpenAI HTTP/WebSocket client.
-- `app/src/main/java/com/opendictate/app/audio/`: PCM capture and WAV encoding.
-- `app/src/main/java/com/opendictate/app/data/`: encrypted credentials and local
+- `apps/android/app/src/main/java/com/opendictate/app/network/`: OpenAI HTTP/WebSocket client.
+- `apps/android/app/src/main/java/com/opendictate/app/audio/`: PCM capture and WAV encoding.
+- `apps/android/app/src/main/java/com/opendictate/app/data/`: encrypted credentials and local
   preferences.
-- `app/src/main/java/com/opendictate/app/ui/`: Compose setup screen and state.
-- `app/src/test/`: JVM tests for pure text and WAV logic.
+- `apps/android/app/src/main/java/com/opendictate/app/ui/`: Compose setup screen and state.
+- `apps/android/app/src/test/`: JVM tests for pure text and WAV logic.
 - `.github/workflows/build.yml`: main/PR verification and debug APK artifact.
 - `.github/workflows/release.yml`: signed APK publication for `v*` tags.
 
@@ -74,6 +78,30 @@ The build uses AGP 9 built-in Kotlin. Keep the Compose compiler plugin, but do
 not re-add `org.jetbrains.kotlin.android`. `compileSdk` is 37 while `targetSdk`
 remains 36; changing the target opts the app into new runtime behavior and must
 be reviewed separately.
+
+- `apps/macos/Sources/OpenDictate/`: native UI, hotkeys, Keychain, Accessibility,
+  audio capture and session ownership.
+- `apps/macos/Sources/OpenDictateCore/`: pure text, WAV and OpenAI protocol logic.
+- `apps/macos/Tests/`: pure logic and mock transport tests.
+- `apps/macos/scripts/package.sh`: universal app, signature and DMG verification.
+- `.github/workflows/macos-build.yml` and `macos-release.yml`: macOS verification
+  and publication on `macos-v*` tags.
+
+## macOS runtime
+
+`AppModel` owns one session UUID and immutable settings; `AudioRecorder` owns
+a serial audio worker; `LiveTranscriptionSession` serializes socket sends.
+`TextTarget` rechecks process, exact focused element, value and UTF-16 selection
+before every insertion. Cumulative partials replace the original selection.
+Cancellation restores only an unchanged target. Focus changes detach delivery
+and stop recording; final results remain available to copy. The status HUD
+never activates. Use registered hotkeys, without Input Monitoring.
+
+macOS audio remains in memory for both paths and is discarded on all exits.
+Keep audio and request encoding off the main actor. History is an existing
+product capability, stored locally with explicit deletion and an off switch.
+Read `apps/macos/README.md` for protocol references, native smoke checks and
+packaging before changing capture, delivery, permissions or release behavior.
 
 ## Change workflow
 
@@ -90,7 +118,12 @@ Run the smallest relevant tests while iterating, then finish with:
 ./gradlew lintRelease assembleRelease
 ```
 
-The work is complete when both commands pass, no generated build output is
+For macOS changes, also run `swift test --package-path apps/macos` and
+`apps/macos/scripts/package.sh`. Exercise hotkeys, secure fields, cursor edits,
+focus changes, cancellation, microphone permissions and insertion on macOS.
+Mock tests cannot verify TCC, Accessibility or actual OpenAI model access.
+
+The work is complete when required commands pass, no generated build output is
 committed, and behavior-specific coverage exists for pure logic. Exercise
 overlay visibility, focus changes, cancellation, and transcript insertion on a
 real device or emulator for Accessibility changes; JVM tests cannot validate
@@ -104,7 +137,13 @@ Never commit a keystore, decoded signing material, API key, or local properties.
 Tags matching `v*` trigger the release workflow; confirm its green run and the
 signed APK attachment before declaring a release complete.
 
-Temporary WAV files must remain cache-only and be deleted in `finally`. Keep
+macOS releases use independent versions and `macos-v*` tags. Verify the green
+release workflow, universal DMG and checksum attachment before completion.
+Ad-hoc releases must disclose that they are not notarized; keep Developer ID
+and notary credentials outside Git. The root Gradle wrappers forward to
+`apps/android`, preserving existing Android build commands.
+
+Android temporary WAV files must remain cache-only and be deleted in `finally`. Keep
 `android:allowBackup="false"`, cleartext traffic disabled, and accessibility
 scope limited to keyboard detection and focused-field insertion. Review
 `PRIVACY.md` and `SECURITY.md` whenever data handling, permissions, networking,

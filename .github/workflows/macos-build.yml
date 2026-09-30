@@ -1,0 +1,31 @@
+name: macOS build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test
+        run: swift test --package-path apps/macos
+      - name: Build universal application and DMG
+        run: apps/macos/scripts/package.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: opendictate-macos-${{ github.sha }}
+          path: |
+            dist/macos/*.dmg
+            dist/macos/*.sha256
+          if-no-files-found: error

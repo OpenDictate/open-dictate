@@ -1,0 +1,1 @@
+"NSMicrophoneUsageDescription" = "OpenDictate records your voice only when you start dictation. Audio is sent directly to OpenAI for transcription.";
