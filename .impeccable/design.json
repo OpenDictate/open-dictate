@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-24T19:21:01+04:00",
+  "generatedAt": "2026-09-30T22:00:29+04:00",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
@@ -37,7 +37,84 @@
     "breakpoints": [
       { "name": "stack", "value": "1040px" },
       { "name": "mobile", "value": "700px" }
-    ]
+    ],
+    "androidSettings": {
+      "scope": "Android settings; website tokens remain separate",
+      "source": [
+        "app/src/main/java/com/opendictate/app/ui/SettingsTheme.kt",
+        "app/src/main/java/com/opendictate/app/ui/SettingsScreen.kt"
+      ],
+      "appearance": "Android system light/dark; static neutral Material 3 schemes",
+      "themes": {
+        "light": {
+          "primary": "#22252B",
+          "primaryContainer": "#E8EBEF",
+          "onPrimaryContainer": "#22252B",
+          "secondary": "#454B56",
+          "secondaryContainer": "#E8EBEF",
+          "onSecondaryContainer": "#22252B",
+          "background": "#F3F4F6",
+          "onBackground": "#202329",
+          "onSurface": "#202329",
+          "surfaceVariant": "#EEF0F3",
+          "onSurfaceVariant": "#626975",
+          "surfaceContainerLow": "#F8F9FA",
+          "surfaceContainerHigh": "#EEF0F3",
+          "surfaceContainerHighest": "#E6E9EE",
+          "outline": "#848B96",
+          "outlineVariant": "#E4E7EC",
+          "onPrimary": "#FFFFFF",
+          "onSecondary": "#FFFFFF",
+          "surface": "#FFFFFF",
+          "surfaceContainer": "#FFFFFF",
+          "surfaceTint": "transparent"
+        },
+        "dark": {
+          "primary": "#F2F3F5",
+          "onPrimary": "#16181C",
+          "primaryContainer": "#30343C",
+          "onPrimaryContainer": "#F2F3F5",
+          "secondary": "#D0D4DC",
+          "onSecondary": "#16181C",
+          "secondaryContainer": "#30343C",
+          "onSecondaryContainer": "#F2F3F5",
+          "background": "#101114",
+          "onBackground": "#F2F3F5",
+          "surface": "#1B1D22",
+          "onSurface": "#F2F3F5",
+          "surfaceVariant": "#282B32",
+          "onSurfaceVariant": "#A9B0BC",
+          "surfaceContainer": "#1B1D22",
+          "surfaceContainerLow": "#16181C",
+          "surfaceContainerHigh": "#282B32",
+          "surfaceContainerHighest": "#32363E",
+          "outline": "#757D89",
+          "outlineVariant": "#30343C",
+          "surfaceTint": "transparent"
+        }
+      },
+      "typography": {
+        "ui": "Material 3 system sans-serif roles",
+        "modelIds": "FontFamily.Monospace"
+      },
+      "layout": {
+        "maxWidth": "680dp",
+        "contentGutters": "20dp",
+        "groupRadius": "16dp",
+        "rowPadding": "16dp",
+        "dividerThickness": "0.5dp",
+        "minimumTarget": "48dp",
+        "actionRowMinimumHeight": "76dp",
+        "toggleRowMinimumHeight": "80dp"
+      },
+      "interaction": [
+        "Readiness disclosure for API key, microphone, and Accessibility setup",
+        "Full-row switches with one semantic target",
+        "Native language and dictionary sheets, model menus, and timeout dialog",
+        "Status/navigation/IME insets and scrollable content"
+      ],
+      "surfaceBrief": ".impeccable/surfaces/android-settings.md"
+    }
   },
   "components": [
     {
@@ -97,19 +174,19 @@
   ],
   "narrative": {
     "northStar": "The Live Dictation Instrument",
-    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nThis file is the repository-wide authority for the Android app and public web surface. Both use black, white, and graphite, while Android retains Material 3 controls, insets, motion, and 48 dp touch targets. Do not mechanically transplant web pixels or fonts into Android.",
+    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nWebsite tokens and instrument rules describe the public website. Android settings use the separate androidSettings extension: native system type and neutral Material 3 themes following Android light/dark appearance. Do not mechanically transplant web pixels or fonts into Android.",
     "keyCharacteristics": [
-      "Black work surfaces with no light-theme inversion.",
+      "Black website work surfaces with no light-theme inversion.",
       "White microphone mark, white primary actions, and a white live caret.",
       "Restrained silver reserved for alternate modes and state contrast.",
-      "Unbounded display statements in the Android app; the GitHub Pages site pairs Literata headings with Golos body copy.",
+      "The GitHub Pages site pairs Literata headings with Golos body copy; Android settings use system sans-serif roles.",
       "Hairline ledgers and routes instead of floating marketing cards.",
       "Direct, literal diagrams and interactions instead of decorative product mockups."
     ],
     "rules": [
       { "name": "The Contrast Rule", "body": "White marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.", "section": "colors" },
-      { "name": "The Dark-Only Rule", "body": "Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.", "section": "colors" },
-      { "name": "The Three-Voice Rule", "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic; the Android app retains Unbounded.", "section": "typography" },
+      { "name": "The Dark-Only Rule", "body": "The public website is authored as a true dark scheme; Android settings follow the system light/dark appearance.", "section": "colors" },
+      { "name": "The Three-Voice Rule", "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic. Android settings do not use this three-font system.", "section": "typography" },
       { "name": "The Working-Surface Rule", "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.", "section": "layout" },
       { "name": "The Flat-by-Default Rule", "body": "A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.", "section": "elevation" },
       { "name": "The Shape-Hierarchy Rule", "body": "Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.", "section": "shapes" }
@@ -119,12 +196,12 @@
       "Do use hairline structure and tonal layers to organize dense information.",
       "Do preserve the bilingual Latin/Cyrillic font setup and responsive English/Russian copy behavior.",
       "Do keep every web control keyboard-visible and honor `prefers-reduced-motion`.",
-      "Do theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets."
+      "Do follow the Android settings override for system light/dark themes, native typography, and 48 dp minimum targets."
     ],
     "donts": [
       "Don't introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.",
       "Don't use secondary as routine decoration or let it compete with signal for the primary action.",
-      "Don't use display faces for paragraphs or replace the chosen display face with a default system sans.",
+      "Don't use display faces for website paragraphs or replace the chosen website display face with a default system sans.",
       "Don't flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.",
       "Don't copy web pixel values, web fonts, or hover-only affordances directly into native Android UI."
     ]
