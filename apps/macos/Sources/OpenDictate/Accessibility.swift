@@ -3,6 +3,16 @@ import ApplicationServices
 import OpenDictateCore
 
 @MainActor
+protocol TextAccessibility {
+    func isFocused(_ element: AXUIElement, pid: pid_t) -> Bool
+    func value(_ element: AXUIElement) -> String?
+    func selection(_ element: AXUIElement) -> NSRange?
+    func setValue(_ text: String, in element: AXUIElement) -> Bool
+    func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool
+    func setSelectedText(_ text: String, in element: AXUIElement) -> Bool
+}
+
+@MainActor
 final class TextTarget {
     let element: AXUIElement
     let pid: pid_t
@@ -12,8 +22,11 @@ final class TextTarget {
     private(set) var didInsert = false
     let writable: Bool
     private let capturedSnapshot: EditableTextSnapshot
+    private let accessibility: any TextAccessibility
 
-    private init(element: AXUIElement, application: NSRunningApplication, snapshot: EditableTextSnapshot, writable: Bool) {
+    init(element: AXUIElement, application: NSRunningApplication, snapshot: EditableTextSnapshot, writable: Bool,
+         accessibility: (any TextAccessibility)? = nil) {
+        self.accessibility = accessibility ?? SystemAccessibility()
         self.element = element; pid = application.processIdentifier
         applicationName = application.localizedName ?? "App"
         bundleID = application.bundleIdentifier ?? ""
@@ -55,32 +68,51 @@ final class TextTarget {
     var snapshot: EditableTextSnapshot { replacementSnapshot ?? capturedSnapshot }
 
     var isCurrent: Bool {
-        guard AXIsProcessTrusted(), NSWorkspace.shared.frontmostApplication?.processIdentifier == pid,
-              let current = Self.focused(in: pid), CFEqual(current, element),
-              Self.string(current, kAXSubroleAttribute) != kAXSecureTextFieldSubrole,
-              let text = Self.value(current), let selection = Self.range(current) else { return false }
+        guard accessibility.isFocused(element, pid: pid),
+              let text = accessibility.value(element), let selection = accessibility.selection(element) else { return false }
         return delivery.accepts(text: text, selection: selection)
     }
+
+    private var insertedRange: NSRange?
 
     /// Cumulative partials replace exactly the original selection; never append previous partials.
     func apply(_ transcript: String) -> Bool {
         guard writable, isCurrent else { return false }
-        let composed = snapshot.compose(transcript)
-        guard AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, composed as CFString) == .success else { return false }
         let cursor = snapshot.cursor(after: transcript)
-        setSelection(cursor)
-        didInsert = true
-        // Do not continue overwriting an editor that silently rejected or reformatted our update.
-        guard Self.value(element) == composed, Self.range(element) == cursor else { return false }
-        delivery = TextDeliveryGuard(snapshot: EditableTextSnapshot(original: composed, selection: cursor))
+        guard replace(transcript, range: insertedRange ?? snapshot.selection,
+                      composed: snapshot.compose(transcript), selection: cursor) else { return false }
+        insertedRange = NSRange(location: snapshot.selection.location, length: (transcript as NSString).length)
         return true
     }
 
     func restore() {
-        guard didInsert, isCurrent else { return }
-        if AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, deliveryOriginal.original as CFString) == .success {
-            setSelection(deliveryOriginal.selection)
+        guard didInsert, isCurrent, let insertedRange else { return }
+        if replace(snapshot.selectedText, range: insertedRange,
+                   composed: deliveryOriginal.original, selection: deliveryOriginal.selection) {
+            didInsert = false; self.insertedRange = nil
         }
+    }
+
+    private func replace(_ text: String, range: NSRange, composed: String, selection: NSRange) -> Bool {
+        // Native selection replacement preserves the editor's caret/formatting instead of resetting AXValue.
+        guard setSelection(range), accessibility.isFocused(element, pid: pid),
+              accessibility.value(element) == delivery.expectedText,
+              accessibility.selection(element) == range else { return false }
+        if !accessibility.setSelectedText(text, in: element) {
+            // Value-only editors can acknowledge a write before their text/caret update has completed.
+            guard accessibility.isFocused(element, pid: pid),
+                  accessibility.value(element) == delivery.expectedText,
+                  accessibility.selection(element) == range,
+                  accessibility.setValue(composed, in: element) else { return false }
+        }
+        didInsert = true
+        // Read back the changed value BEFORE placing the caret, then verify both and the exact focus.
+        guard accessibility.value(element) == composed, accessibility.isFocused(element, pid: pid),
+              setSelection(selection), accessibility.value(element) == composed,
+              accessibility.selection(element) == selection,
+              accessibility.isFocused(element, pid: pid) else { return false }
+        delivery = TextDeliveryGuard(snapshot: EditableTextSnapshot(original: composed, selection: selection))
+        return true
     }
 
     private var deliveryOriginal: EditableTextSnapshot { originalSnapshot ?? snapshot }
@@ -126,10 +158,28 @@ final class TextTarget {
         if !backup.isEmpty { clipboard.writeObjects(backup) }
     }
 
-    private func setSelection(_ range: NSRange) {
-        var range = CFRange(location: range.location, length: range.length)
-        if let value = AXValueCreate(.cfRange, &range) {
-            AXUIElementSetAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, value)
+    @discardableResult private func setSelection(_ range: NSRange) -> Bool {
+        accessibility.setSelection(range, in: element)
+    }
+
+    struct SystemAccessibility: TextAccessibility {
+        func isFocused(_ element: AXUIElement, pid: pid_t) -> Bool {
+            AXIsProcessTrusted() && NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
+                && TextTarget.focused(in: pid).map { CFEqual($0, element) } == true
+                && TextTarget.string(element, kAXSubroleAttribute) != kAXSecureTextFieldSubrole
+        }
+        func value(_ element: AXUIElement) -> String? { TextTarget.value(element) }
+        func selection(_ element: AXUIElement) -> NSRange? { TextTarget.range(element) }
+        func setValue(_ text: String, in element: AXUIElement) -> Bool {
+            AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, text as CFString) == .success
+        }
+        func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool {
+            var range = CFRange(location: range.location, length: range.length)
+            guard let value = AXValueCreate(.cfRange, &range) else { return false }
+            return AXUIElementSetAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, value) == .success
+        }
+        func setSelectedText(_ text: String, in element: AXUIElement) -> Bool {
+            AXUIElementSetAttributeValue(element, kAXSelectedTextAttribute as CFString, text as CFString) == .success
         }
     }
 

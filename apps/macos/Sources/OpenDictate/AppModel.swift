@@ -6,7 +6,10 @@ import OpenDictateCore
 
 @MainActor
 final class AppModel: ObservableObject {
-    enum Phase { case idle, preparing, recording, processing }
+    enum Phase {
+        case idle, preparing, recording, processing
+        var showsFinishControl: Bool { self == .preparing || self == .recording }
+    }
     @Published private(set) var phase = Phase.idle
     @Published private(set) var level: Float = 0
     @Published private(set) var elapsed = 0
@@ -146,7 +149,7 @@ final class AppModel: ObservableObject {
 
     func toggle(transform: Bool) {
         guard !localOnly else { return }
-        if phase == .preparing { current?.stopRequested = true; return }
+        if phase == .preparing { stop(); return }
         if phase == .recording { stop(); return }
         guard phase == .idle else { return }
         do {
@@ -193,15 +196,23 @@ final class AppModel: ObservableObject {
             })
             try Task.checkCancellation()
             guard current?.id == id else { return }
-            phase = .recording; onStateChange?()
-            if session.stopRequested { stop() }
+            if session.stopRequested { beginCompletion(session) }
+            else { phase = .recording; onStateChange?() }
         } catch { if current?.id == id { fail(error, session: session) } }
     }
 
     func stop() {
         guard let session = current else { return }
-        if phase == .preparing { session.stopRequested = true; return }
+        if phase == .preparing {
+            session.stopRequested = true
+            phase = .processing; onStateChange?()
+            return
+        }
         guard phase == .recording else { return }
+        beginCompletion(session)
+    }
+
+    private func beginCompletion(_ session: Session) {
         phase = .processing; level = 0; onStateChange?()
         session.completion = Task { await complete(session) }
     }
@@ -286,7 +297,7 @@ final class AppModel: ObservableObject {
             if !session.detached && !session.target.isCurrent {
                 session.detached = true
                 if phase == .recording { stop() }
-                else if phase == .preparing { session.stopRequested = true }
+                else if phase == .preparing { stop() }
             }
         }
         let allowed = AXIsProcessTrusted()
