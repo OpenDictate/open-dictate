@@ -13,6 +13,8 @@ Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
   the 44 × 22 pt capsule, 14 pt circle and 7 pt visible trailing inset.
   Offscreen NSHostingView captures were visually inspected for preparation,
   recording and the 22 × 22 pt processing spinner. No focus is taken by rendering.
+- Android debug tests/lint/assembly and release lint/assembly pass on the merged
+  main-branch code.
 - Stable/RC version validation and universal arm64/x86_64 packaging pass;
   bundle build is 5. Ad-hoc signature, DMG integrity and SHA-256 verification pass.
   The release remains locally signed and is not notarized.
