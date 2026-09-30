@@ -125,22 +125,42 @@
         "surfaceBrief": ".impeccable/surfaces/apps-macos.md",
         "colorScheme": "dark",
         "colorRoles": [
-          { "nativeValue": "Color(nsColor: .windowBackgroundColor)", "purpose": "Settings body and recording HUD." },
+          { "nativeValue": "Color(nsColor: .windowBackgroundColor)", "purpose": "Settings body and recording indicator." },
           { "nativeValue": "Color(nsColor: .controlBackgroundColor)", "purpose": "Sidebar and message footer." },
           { "nativeValue": "Color(nsColor: .textBackgroundColor)", "purpose": "Dictionary editor." },
           { "nativeValue": "foregroundStyle(.primary / .secondary)", "purpose": "Native text hierarchy." },
           { "nativeValue": "Color.white.opacity(0.09)", "purpose": "Selected sidebar row; independent of keyboard focus." },
-          { "nativeValue": "System accent color", "purpose": "Selected segments, enabled switches and native keyboard focus; captured as blue, not a brand token." }
+          { "nativeValue": "System accent color", "purpose": "Selected segments, enabled switches and native keyboard focus; captured as blue, not a brand token." },
+          { "nativeValue": "Color.red", "purpose": "Recording indicator finish circle only." },
+          { "nativeValue": "Color.white", "purpose": "Recording indicator stop glyph." }
         ],
-        "typographyRendering": "Frontmatter's macos-* tokens describe native points and system type. SwiftUI semantic body/callout/caption styles and monospaced shortcut/digit variants remain native; no web display font is loaded.",
+        "typographyRendering": "Frontmatter's macos-* tokens describe native points and system type. SwiftUI semantic body/callout/caption styles and monospaced shortcut variants remain native; no web display font is loaded.",
         "elevation": "Settings content stays flat. AppKit window chrome and the floating recording panel retain native shadows.",
-        "motion": "No decorative motion or web hover lift; microphone-level updates communicate recording state.",
+        "motion": "No decorative motion or web hover lift; a native small spinner communicates preparing and processing state.",
         "components": [
           { "name": "Sidebar Navigation", "implementation": "SettingsView.navigation(_:_:_:)", "description": "SF Symbol plus sentence-case label; tonal selection, selected medium weight and separate native keyboard focus." },
           { "name": "Setup and Preferences Controls", "implementation": "SettingsView", "description": "Native secure/search fields, buttons, segmented mode picker, pop-up pickers, switches and confirmation alerts." },
           { "name": "Dictionary Editor", "implementation": "SettingsView.dictionaryPage", "description": "Native text editor with automatic saving, term count and clean-up action." },
           { "name": "History", "implementation": "SettingsView.historyPage", "description": "Native empty-state view or ruled transcript rows with copy/delete actions, local search and explicit AI search." },
-          { "name": "Recording HUD", "implementation": "RecordingStatusView and AppDelegate.updateState()", "description": "Passive state, elapsed time, twenty-segment microphone level and shortcut hint in a nonactivating panel that ignores mouse events." },
+          {
+            "name": "Recording Indicator",
+            "implementation": "RecordingIndicator, RecordingStatusView and AppDelegate.updateState()",
+            "description": "Recording shows only a microphone and interactive red finish circle with a white stop square; preparing and processing show only a centered native small spinner. Idle is hidden. No visible text, timer, waveform or shortcut hint.",
+            "geometry": {
+              "units": "points",
+              "recordingSize": "88 × 44",
+              "busySize": "44 × 44",
+              "microphone": "SF mic.fill, 18pt medium, 20pt frame",
+              "finishCircle": "28pt",
+              "stopGlyph": "9pt white square, 2pt corner",
+              "finishHitArea": "32pt circle",
+              "contentSpacing": "12pt",
+              "background": "windowBackgroundColor in Capsule, dark color scheme",
+              "placement": "Centered on the current screen's visible frame, 28pt above its bottom edge"
+            },
+            "interaction": "The finish control invokes model.stop(). The borderless nonactivating panel cannot become key or main; preparing and processing ignore mouse events.",
+            "accessibility": "Localized finish label/help and preparing/processing labels; decorative microphone is hidden from accessibility."
+          },
           { "name": "Native Edit Commands", "implementation": "AppDelegate.updateState()", "description": "Localized Undo, Redo, Cut, Copy, Paste and Select All use the AppKit responder chain." }
         ],
         "componentPreviewPolicy": "Native components are documented from SwiftUI/AppKit and screenshots rather than fabricated as browser HTML/CSS; existing web/Android previews remain unchanged.",
@@ -160,7 +180,16 @@
             ".impeccable/review/macos-dictionary-en.png",
             ".impeccable/review/macos-history-en.png"
           ],
-          "captureScope": "Settings pages in English/Russian and at minimum content size. Recording HUD behavior is grounded in native source rather than these captures."
+          "captureScope": "Settings pages in English/Russian and at minimum content size. The scoped recording-indicator review below adds recording and processing captures.",
+          "recordingIndicator": {
+            "verdict": "ship",
+            "basis": "Fresh finish review of a narrow code-led refinement in the established visual world; implementation inspection and actual captures, with no comp, direction roll or native detector.",
+            "screenshots": [
+              ".impeccable/review/macos-indicator-recording.png",
+              ".impeccable/review/macos-indicator-processing.png"
+            ],
+            "findings": "No material fixes. Keep the reviewed dimensions, red circle with white stop square, centered spinner, dark capsule, localized accessibility and nonactivation."
+          }
         }
       }
     }
@@ -250,7 +279,7 @@
       "Do keep every web control keyboard-visible and honor `prefers-reduced-motion`.",
       "Do follow the Android settings override for system light/dark themes, native typography, and 48 dp minimum targets.",
       "Do retain macOS system type, semantic colors, native controls, and localized responder-chain text commands.",
-      "Do keep the macOS recording HUD passive and nonactivating so dictation stays in the user's focused app."
+      "Do keep the macOS recording indicator compact and nonactivating; its finish control must preserve keyboard focus in the user's app."
     ],
     "donts": [
       "Don't introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.",

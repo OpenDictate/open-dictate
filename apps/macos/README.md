@@ -103,7 +103,9 @@ completion. macOS and Android versions are independent.
 
 Release candidates use `X.Y.Z-rc.N` in `VERSION`, the displayed app version,
 DMG filename and `macos-v*` tag. The Apple bundle short version contains only
-`X.Y.Z`; increment the numeric bundle build for each distribution. Release CI
+`X.Y.Z`, per Apple's
+[bundle version format](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring);
+increment the numeric bundle build for each distribution. Release CI
 marks RC tags as GitHub prereleases and leaves the stable download unchanged.
 `scripts/test-release-version.sh` verifies accepted/rejected version strings.
 
