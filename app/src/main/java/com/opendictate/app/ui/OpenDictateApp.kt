@@ -21,6 +21,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.SettingsAccessibility
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.AlertDialog
@@ -56,10 +58,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -217,17 +221,45 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     Header(onHistoryClick = { showHistory = true })
                     Hero(dictation.phase)
                     Spacer(Modifier.height(26.dp))
-                    SectionLabel(stringResource(R.string.section_mode))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        SectionLabel(stringResource(R.string.section_mode))
+                        IconButton(
+                            onClick = { viewModel.refreshModelCatalog(force = true) },
+                            enabled = state.hasApiKey && !state.modelsLoading,
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Panel,
+                                disabledContainerColor = Panel,
+                            ),
+                        ) {
+                            if (state.modelsLoading) {
+                                val loadingDescription = stringResource(R.string.models_loading)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp).semantics {
+                                        contentDescription = loadingDescription
+                                    },
+                                    color = Fog,
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Refresh,
+                                    contentDescription = stringResource(R.string.models_refresh),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(10.dp))
                     ModelDeck(
                         state, viewModel::selectModel,
                         viewModel::selectAccurateModel, viewModel::selectLiveModel,
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(
-                            onClick = { viewModel.refreshModelCatalog(force = true) },
-                            enabled = state.hasApiKey && !state.modelsLoading,
-                        ) { Text(stringResource(R.string.models_refresh)) }
+                    if (state.modelsLoading || state.modelsError || state.newModelCount > 0) {
+                        Spacer(Modifier.height(10.dp))
                         if (state.modelsLoading) {
                             Text(stringResource(R.string.models_loading), color = Fog, fontSize = 12.sp)
                         } else if (state.modelsError) {
@@ -323,7 +355,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                     Spacer(Modifier.height(26.dp))
                     SectionLabel(stringResource(R.string.section_accuracy))
                     Spacer(Modifier.height(10.dp))
-                    PreferencesCard(
+                    AccuracySettings(
                         languages = state.languages,
                         prompt = state.prompt,
                         selectionDictionaryActionEnabled = state.selectionDictionaryActionEnabled,
@@ -520,12 +552,10 @@ private fun ModelDeck(
             description = stringResource(R.string.model_accurate_description),
             badge = stringResource(R.string.model_accurate_badge),
             onClick = { onSelect(TranscriptionModel.ACCURATE) },
-        )
-        ModelIdPicker(
-            selected = state.accurateModelId,
-            options = modelOptions(state.modelCatalog.accurate,
+            modelId = state.accurateModelId,
+            modelOptions = modelOptions(state.modelCatalog.accurate,
                 com.opendictate.app.model.ModelCatalog.DEFAULT.accurate),
-            onSelect = onAccurateModel,
+            onModelSelect = onAccurateModel,
         )
         ModelOption(
             selected = state.model == TranscriptionModel.LIVE,
@@ -534,12 +564,10 @@ private fun ModelDeck(
             description = stringResource(R.string.model_live_description),
             badge = stringResource(R.string.model_live_badge),
             onClick = { onSelect(TranscriptionModel.LIVE) },
-        )
-        ModelIdPicker(
-            selected = state.liveModelId,
-            options = modelOptions(state.modelCatalog.live,
+            modelId = state.liveModelId,
+            modelOptions = modelOptions(state.modelCatalog.live,
                 com.opendictate.app.model.ModelCatalog.DEFAULT.live),
-            onSelect = onLiveModel,
+            onModelSelect = onLiveModel,
         )
     }
 }
@@ -607,17 +635,22 @@ private fun ModelOption(
     description: String,
     badge: String,
     onClick: () -> Unit,
+    modelId: String,
+    modelOptions: List<String>,
+    onModelSelect: (String) -> Unit,
 ) {
     val border by animateColorAsState(if (selected) White else Color.Transparent, label = "model-border")
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, border, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
+            .border(1.dp, border, RoundedCornerShape(20.dp)),
         colors = CardDefaults.cardColors(containerColor = if (selected) PanelLight else Panel),
         shape = RoundedCornerShape(20.dp),
     ) {
-        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onClick).padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(
                 Modifier
                     .size(42.dp)
@@ -653,6 +686,9 @@ private fun ModelOption(
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
             )
+        }
+        Box(Modifier.padding(start = 18.dp, end = 18.dp, bottom = 18.dp)) {
+            ModelIdPicker(modelId, modelOptions, onModelSelect)
         }
     }
 }
@@ -701,7 +737,7 @@ private fun SetupCard(
 }
 
 @Composable
-private fun PreferencesCard(
+private fun AccuracySettings(
     languages: Set<DictationLanguage>,
     prompt: String,
     selectionDictionaryActionEnabled: Boolean,
@@ -720,11 +756,8 @@ private fun PreferencesCard(
             promptText = prompt
         }
     }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Panel),
-        shape = RoundedCornerShape(20.dp),
-    ) {
-        Column(Modifier.padding(18.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PreferenceCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -770,7 +803,8 @@ private fun PreferencesCard(
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
+        }
+        PreferenceCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -789,7 +823,8 @@ private fun PreferencesCard(
                     onCheckedChange = onKeepTrailingPeriod,
                 )
             }
-            Spacer(Modifier.height(8.dp))
+        }
+        PreferenceCard {
             OutlinedTextField(
                 value = promptText,
                 onValueChange = {
@@ -806,7 +841,8 @@ private fun PreferencesCard(
                 maxLines = 4,
                 shape = RoundedCornerShape(14.dp),
             )
-            Spacer(Modifier.height(14.dp))
+        }
+        PreferenceCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -829,6 +865,17 @@ private fun PreferencesCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PreferenceCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Panel),
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Column(Modifier.padding(18.dp), content = content)
     }
 }
 
