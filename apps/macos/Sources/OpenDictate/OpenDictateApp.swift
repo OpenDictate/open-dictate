@@ -122,7 +122,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         applicationMenu.addItem(.separator())
         let quit = NSMenuItem(title: model.preferences.t("Quit OpenDictate", "Завершить OpenDictate"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self; applicationMenu.addItem(quit)
-        applicationItem.submenu = applicationMenu; NSApp.mainMenu = main
+        applicationItem.submenu = applicationMenu
+        let editItem = NSMenuItem(), editMenu = NSMenu(title: model.preferences.t("Edit", "Правка"))
+        main.addItem(editItem); editItem.submenu = editMenu
+        editMenu.addItem(NSMenuItem(title: model.preferences.t("Undo", "Отменить"), action: NSSelectorFromString("undo:"), keyEquivalent: "z"))
+        let redo = NSMenuItem(title: model.preferences.t("Redo", "Повторить"), action: NSSelectorFromString("redo:"), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]; editMenu.addItem(redo)
+        editMenu.addItem(.separator())
+        editMenu.addItem(NSMenuItem(title: model.preferences.t("Cut", "Вырезать"), action: #selector(NSText.cut(_:)), keyEquivalent: "x"))
+        editMenu.addItem(NSMenuItem(title: model.preferences.t("Copy", "Скопировать"), action: #selector(NSText.copy(_:)), keyEquivalent: "c"))
+        editMenu.addItem(NSMenuItem(title: model.preferences.t("Paste", "Вставить"), action: #selector(NSText.paste(_:)), keyEquivalent: "v"))
+        editMenu.addItem(NSMenuItem(title: model.preferences.t("Select All", "Выбрать всё"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"))
+        NSApp.mainMenu = main
         statusItem.button?.image = NSImage(systemSymbolName: model.isActive ? "waveform" : "mic", accessibilityDescription: "OpenDictate")
         statusItem.button?.title = model.phase == .processing ? " …" : ""
         statusItem.button?.toolTip = "OpenDictate · \(model.stateLabel) · \(model.preferences.shortcutLabel)"
@@ -147,7 +158,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func openSettings() {
         model.refreshPermissions()
         if settingsWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 790, height: 650),
+            #if DEBUG
+            let compact = localChecks != nil && CommandLine.arguments.contains("--compact-ui-check")
+            #else
+            let compact = false
+            #endif
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: compact ? 740 : 790, height: compact ? 590 : 650),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.title = "OpenDictate"; window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: SettingsView(model: model, preferences: model.preferences, history: model.history))

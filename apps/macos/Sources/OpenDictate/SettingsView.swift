@@ -35,7 +35,7 @@ struct SettingsView: View {
                 Divider()
                 Text("macOS · \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0")")
                     .font(.caption).foregroundStyle(.secondary)
-            }.padding(20).frame(width: 170).background(Color(nsColor: .controlBackgroundColor))
+            }.padding(20).frame(width: 190).background(Color(nsColor: .controlBackgroundColor))
             Divider()
             VStack(alignment: .leading, spacing: 0) {
                 ScrollView {
@@ -75,7 +75,7 @@ struct SettingsView: View {
         Button { selection = id } label: {
             HStack(spacing: 10) {
                 Image(systemName: symbol).frame(width: 18)
-                Text(title)
+                Text(title).lineLimit(1)
                 Spacer(minLength: 0)
             }.font(.system(size: 13, weight: selection == id ? .medium : .regular))
                 .padding(.horizontal, 12).padding(.vertical, 10)
