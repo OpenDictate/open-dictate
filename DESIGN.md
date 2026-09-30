@@ -76,7 +76,6 @@ rounded:
   full: "999px"
   macos-navigation: "7pt"
   macos-editor: "8pt"
-  macos-hud: "12pt"
 spacing:
   control-inset: "4px"
   compact: "8px"
@@ -88,7 +87,6 @@ spacing:
   section-desktop: "130px"
   macos-rail: "20pt"
   macos-body: "28pt"
-  macos-hud: "18pt"
 components:
   button-primary:
     backgroundColor: "{colors.signal}"
@@ -187,7 +185,9 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 
 ### Native macOS
 
-The native surface fixes `preferredColorScheme(.dark)` and uses semantic system roles rather than hard-coded copies of the web palette. `windowBackgroundColor` supplies the graphite body and recording HUD; `controlBackgroundColor` supplies the sidebar and message footer; `textBackgroundColor` supplies the dictionary editor. Primary and secondary text use SwiftUI's corresponding foreground styles. Sidebar selection is a white overlay at 9% opacity.
+The native surface fixes `preferredColorScheme(.dark)` and uses semantic system roles rather than hard-coded copies of the web palette. `windowBackgroundColor` supplies the graphite body and recording indicator; `controlBackgroundColor` supplies the sidebar and message footer; `textBackgroundColor` supplies the dictionary editor. Primary and secondary text use SwiftUI's corresponding foreground styles. Sidebar selection is a white overlay at 9% opacity.
+
+The recording indicator uses `Color.red` for its finish control and `Color.white` for the stop glyph. These roles are scoped to the recording indicator.
 
 System accent color remains on selected segmented controls, enabled switches, picker focus, and keyboard focus rings. The review screenshots show the standard blue accent; its value belongs to macOS rather than a new OpenDictate brand color.
 
@@ -220,7 +220,7 @@ System accent color remains on selected segmented controls, enabled switches, pi
 
 ### Native macOS
 
-SwiftUI system type carries all interface copy. The native hierarchy uses the scoped heading, navigation, and brand tokens above; selected navigation changes to medium weight. Body, callout, and caption text retain their native semantic styles. Shortcut labels use the system monospaced design, and elapsed time uses monospaced digits. English and Russian share the same hierarchy and wrap supporting copy vertically.
+SwiftUI system type carries all interface copy. The native hierarchy uses the scoped heading, navigation, and brand tokens above; selected navigation changes to medium weight. Body, callout, and caption text retain their native semantic styles. Shortcut labels use the system monospaced design. English and Russian share the same hierarchy and wrap supporting copy vertically.
 
 **The Native Type Rule.** Keep macOS in system typography. The website display/body pairing is specific to that surface.
 
@@ -242,7 +242,7 @@ The web system uses no box shadows. Depth comes from dark tonal layers, 1px hair
 
 **The Flat-by-Default Rule.** A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.
 
-macOS settings content follows the same flat structure through system graphite layers and dividers. Native window chrome retains the operating system's elevation. The recording HUD is an AppKit panel with its native shadow enabled; this is floating status feedback, not card elevation within the settings content.
+macOS settings content follows the same flat structure through system graphite layers and dividers. Native window chrome retains the operating system's elevation. The recording indicator is an AppKit panel with its native shadow enabled; this is floating status feedback, not card elevation within the settings content.
 
 ## Shapes
 
@@ -250,7 +250,7 @@ The form language mixes gently rounded rectangular controls with a perfect circu
 
 **The Shape-Hierarchy Rule.** Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.
 
-macOS keeps native rounded fields, switches, buttons, and segmented controls. Only the sidebar selection, dictionary editor, and recording HUD use the scoped custom corner tokens above. SF Symbols provide the navigation and status geometry. The packaged app icon is a code-drawn white microphone on a near-black rounded square, adapted from the existing mark by `apps/macos/scripts/generate-icon.swift`; its raster sizes and `.icns` are build output.
+macOS keeps native rounded fields, switches, buttons, and segmented controls. Only the sidebar selection and dictionary editor use the scoped custom corner tokens above. The recording indicator uses a `Capsule` background and a circular finish control. SF Symbols provide the navigation and status geometry. The packaged app icon is a code-drawn white microphone on a near-black rounded square, adapted from the existing mark by `apps/macos/scripts/generate-icon.swift`; its raster sizes and `.icns` are build output.
 
 ## Components
 
@@ -304,9 +304,13 @@ Use native Material 3 sans-serif typography for headings, labels, and body copy;
 
 The signature component is a compact readiness disclosure above the settings groups: it exposes API key, microphone, and Accessibility setup on demand and reports active dictation state. Dictation groups mode, recognition model, languages, punctuation, and dictionary. Keyboard controls group transformation, selected-text dictionary actions, and app exclusions. Advanced contains timeout and model refresh; a test field and privacy note finish the page. Languages and dictionary open native modal sheets; model choices use native menus and timeout uses a dialog. Toggle the whole row with one switch semantic target; preserve selected-state checks, disabled/loading/error feedback, and keyboard-safe editing. See the surface brief for interaction details and the sidecar’s `extensions.androidSettings` for native theme roles.
 
-### Native Recording HUD
+### Native Recording Indicator
 
-The macOS HUD shows a microphone or processing ellipsis, state label, elapsed time, a twenty-segment microphone level, and the finish/cancel shortcut hint. It uses the scoped HUD padding and corner inside a nonactivating panel, with no buttons or input targets. The panel ignores mouse events, appears above the current app without taking keyboard focus, and carries status rather than a transcript. The menu bar uses a microphone at rest, waveform during an active session, and an ellipsis while processing.
+During recording, the macOS indicator is a dark capsule (88 × 44pt) containing only an SF `mic.fill` symbol (18pt) and a red circular finish control (28pt). A centered white stop square (9pt) sits inside its circular hit area (32pt); the microphone and control are separated by 12pt. Preparing and processing show only a centered native circular `ProgressView` at small control size on a dark capsule (44 × 44pt). Idle is hidden. There is no visible text, timer, waveform, or shortcut hint in the indicator.
+
+The borderless, nonactivating AppKit panel retains its native shadow and sits centered on the current screen's visible frame, 28pt above its bottom edge. It cannot become key or main. The recording finish control invokes `model.stop()` without taking keyboard focus; preparing and processing ignore mouse events. The finish control has localized accessibility label and help, while the spinner has a localized preparing or processing label. The menu bar retains a microphone at rest, waveform during an active session, and an ellipsis while processing.
+
+The scoped refinement received a ship verdict with no material fixes after implementation inspection and the recording/processing captures at `.impeccable/review/macos-indicator-recording.png` and `.impeccable/review/macos-indicator-processing.png`. The built SwiftUI/AppKit indicator is the visual authority; no comp, new direction, or native detector pass was used.
 
 ## Do's and Don'ts
 
@@ -318,7 +322,7 @@ The macOS HUD shows a microphone or processing ellipsis, state label, elapsed ti
 - **Do** keep every web control keyboard-visible and honor `prefers-reduced-motion`.
 - **Do** follow the Android settings override for system light/dark themes, native typography, and 48 dp minimum targets.
 - **Do** retain macOS system type, semantic colors, native controls, and localized responder-chain text commands.
-- **Do** keep the macOS recording HUD passive and nonactivating so dictation stays in the user's focused app.
+- **Do** keep the macOS recording indicator compact and nonactivating; its finish control must preserve keyboard focus in the user's app.
 
 ### Don't:
 

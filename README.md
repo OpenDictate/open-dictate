@@ -25,6 +25,9 @@ no backend, analytics or account to create.
 
 ## Install on macOS
 
+The next minor release is available as [0.2.0-rc.3](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.2.0-rc.3),
+with a compact recording indicator. The stable download remains 0.1.0.
+
 1. Download the universal DMG from the [macOS release](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0).
 2. Open it, drag **OpenDictate** into **Applications**, and eject the disk image.
 3. Launch OpenDictate. This release is locally signed and **not notarized**.

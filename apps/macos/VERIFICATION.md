@@ -1,8 +1,11 @@
-# macOS 0.1.1 verification
+# macOS verification
+
+## 0.2.0-rc.3 — shortcut customization
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
 
-- All 34 Swift tests pass. The 11 new shortcut tests cover F1–F20, navigation
+- All 34 Swift tests pass, including after merging the compact indicator.
+  Stable/RC release-version validation also passes. The 11 new shortcut tests cover F1–F20, navigation
   and arbitrary key combinations, synthetic Fn-flag normalization, legacy
   preference migration, independent shortcut persistence, duplicate detection,
   Fn/modifier-tap release and chord guards, autorepeat, and real Carbon
@@ -18,7 +21,8 @@ Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
   OpenAI request made, or audio persisted. The installed app was reopened afterward.
 - Android debug tests/lint/assembly and release lint/assembly pass.
 - Universal arm64/x86_64 packaging, ad-hoc signature and DMG integrity pass;
-  the installer has a SHA-256 attachment. This release is not notarized.
+  the installer has a SHA-256 attachment. The full release version is
+  0.2.0-rc.3; the numeric bundle version is 0.2.0, build 4. This release is not notarized.
 
 Automation delivers keys to an app, so it cannot validate physical global Carbon
 hotkeys or synthesize the Globe/Fn key. Fn tap/chord behavior has deterministic
@@ -27,7 +31,30 @@ permission denial/revocation, Spaces, full-screen apps and Intel/macOS 14 remain
 manual compatibility checks. The existing focus/cursor/secure-field guard tests
 remain green; provider model access and transcription accuracy are not tested.
 
-# macOS 0.1.0 verification
+
+## 0.2.0-rc.1
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
+
+- Native captures verify the 88 × 44 pt recording capsule with only a
+  microphone and red finish button, and the 44 × 44 pt processing indicator
+  with only a spinner. Preparation uses the same spinner layout; idle hides
+  the panel.
+- A local debug preview uses the production panel and view without recording
+  or networking. Clicking its finish button replaced the accessible button
+  with a busy indicator. The disposable editor retained its focused text field
+  before and after the click.
+- 23 Swift tests and the stable/RC release-version validation checks pass.
+  Android debug tests/lint/assembly and release lint/assembly pass.
+- Universal release packaging verifies arm64/x86_64, the ad-hoc signature and
+  DMG integrity. The full RC version appears in the app and installer name;
+  the bundle short version remains numeric, with build number 2.
+
+The preview validates the HUD interaction and state transition. Actual OpenAI
+submission is not exercised; the finish action uses the existing session stop
+path. The compatibility limitations below still apply.
+
+## 0.1.0
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30. The deployment target is
 macOS 14; Intel is cross-compiled, not exercised on Intel hardware.
