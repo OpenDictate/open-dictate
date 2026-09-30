@@ -123,7 +123,7 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    OpenDictateTheme {
+    OpenDictateTheme(theme = state.theme) {
         Scaffold(
             containerColor = SettingsCanvas,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),

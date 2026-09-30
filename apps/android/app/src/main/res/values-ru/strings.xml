@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="language_switcher_description">Изменить язык приложения</string>
+    <string name="theme_switcher_description">Изменить тему приложения</string>
+    <string name="theme_system">Системная тема</string>
+    <string name="theme_light">Светлая тема</string>
+    <string name="theme_dark">Тёмная тема</string>
     <string name="language_system">Язык системы</string>
     <string name="language_system_short">АВТО</string>
     <string name="language_russian">Русский</string>

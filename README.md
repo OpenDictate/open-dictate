@@ -67,6 +67,10 @@ for retry; the next dictation replaces it.
 Preview APKs install separately as `com.opendictate.app.preview`. Disable the
 stable accessibility service before enabling the preview service.
 
+Use the theme button at the top right of Settings on either platform to choose
+System, Light or Dark appearance. The choice is saved locally. Android follows
+the system by default; macOS keeps its previous dark default.
+
 ## Repository and builds
 
 ```text

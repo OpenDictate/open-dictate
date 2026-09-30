@@ -39,7 +39,7 @@ and uses independent `macos-v*` releases.
 
 ## Brand Commitments
 
-The product name is OpenDictate. Android settings use a modern, minimalist, functional interface with neutral Material 3 surfaces, system sans-serif type, and light or dark appearance following Android’s system setting. Setup readiness and readable grouped controls take priority. The launcher mark and public website retain their established black, white, and restrained silver identity. The GitHub presence and public documentation must use only the OpenDictate identity.
+The product name is OpenDictate. Android settings use a modern, minimalist, functional interface with neutral Material 3 surfaces, system sans-serif type, and light or dark appearance with a saved System/Light/Dark choice (System by default). Setup readiness and readable grouped controls take priority. The launcher mark and public website retain their established black, white, and restrained silver identity. The GitHub presence and public documentation must use only the OpenDictate identity.
 
 ## Evidence on Hand
 

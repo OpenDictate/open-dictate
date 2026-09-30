@@ -38,6 +38,10 @@ struct SettingsView: View {
             }.padding(20).frame(width: 190).background(Color(nsColor: .controlBackgroundColor))
             Divider()
             VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Spacer()
+                    themeSwitcher
+                }.padding(.horizontal, 28).padding(.top, 16)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         switch selection {
@@ -59,7 +63,7 @@ struct SettingsView: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(nsColor: .windowBackgroundColor))
         }
         .frame(minWidth: 740, minHeight: 590)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(preferences.theme.colorScheme)
         .onAppear { model.refreshPermissions() }
         .alert(t("Delete all history?", "Удалить всю историю?"), isPresented: $confirmClear) {
             Button(t("Delete", "Удалить"), role: .destructive) { model.cancelSearch(); history.clear() }
@@ -71,6 +75,22 @@ struct SettingsView: View {
         }
     }
 
+    private var themeSwitcher: some View {
+        Menu {
+            Picker(t("App theme", "Тема приложения"), selection: $preferences.theme) {
+                ForEach(AppTheme.allCases, id: \.self) { theme in
+                    Label(theme.title(russian: preferences.isRussian), systemImage: theme.symbol).tag(theme)
+                }
+            }
+        } label: {
+            Image(systemName: preferences.theme.symbol).frame(width: 24, height: 24)
+        }
+        .menuStyle(.borderlessButton).fixedSize()
+        .help(t("Change app theme", "Изменить тему приложения"))
+        .accessibilityLabel(t("Change app theme", "Изменить тему приложения"))
+        .accessibilityValue(preferences.theme.title(russian: preferences.isRussian))
+    }
+
     private func navigation(_ id: String, _ title: String, _ symbol: String) -> some View {
         Button { selection = id } label: {
             HStack(spacing: 10) {
@@ -79,7 +99,7 @@ struct SettingsView: View {
                 Spacer(minLength: 0)
             }.font(.system(size: 13, weight: selection == id ? .medium : .regular))
                 .padding(.horizontal, 12).padding(.vertical, 10)
-                .background(selection == id ? Color.white.opacity(0.09) : Color.clear, in: RoundedRectangle(cornerRadius: 7))
+                .background(selection == id ? Color.primary.opacity(0.09) : Color.clear, in: RoundedRectangle(cornerRadius: 7))
                 .contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityAddTraits(selection == id ? .isSelected : [])
     }

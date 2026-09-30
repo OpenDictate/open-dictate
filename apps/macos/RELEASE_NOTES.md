@@ -1,6 +1,9 @@
-OpenDictate for macOS **0.2.0-rc.4** fixes dictation startup feedback,
-indicator spacing and the insertion caret. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.5** adds a theme switcher to the top-right
+corner of Settings. Requires macOS 14+ on Apple Silicon or Intel.
 
+- Choose **System**, **Light** or **Dark** appearance from the theme button.
+  The choice applies to all settings pages and is saved across restarts.
+  Existing installations retain their dark appearance until you choose another theme.
 - The indicator is half as wide and half as tall: **44 × 22 pt**, with balanced
   spacing around the microphone and red finish button.
 - The finish button appears as soon as the session starts, including preparation.
@@ -33,7 +36,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.4-universal.dmg`, open it and drag OpenDictate
+Download `OpenDictate-macOS-0.2.0-rc.5-universal.dmg`, open it and drag OpenDictate
 to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks

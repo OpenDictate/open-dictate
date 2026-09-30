@@ -52,6 +52,12 @@ with a verified whole-value fallback. The caret is placed after value readback. 
 paste using the clipboard. Editors without usable Accessibility metadata need
 manual Copy last transcript. Password fields are deliberately excluded.
 
+### Appearance
+
+The theme button at the top right of Settings offers System, Light and Dark.
+The choice is saved locally and applies across all settings pages. Dark preserves
+the previous default; System follows macOS. The recording indicator remains dark.
+
 ### Keyboard shortcuts
 
 In Settings, click either shortcut and press the desired combination. Letters,

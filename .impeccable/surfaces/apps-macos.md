@@ -100,3 +100,11 @@ white microphone as a native code adaptation of `docs/mark.svg` and the existing
 OpenDictate identity. Packaging produces the icon raster sizes and `.icns` in
 build output. No generated shipping raster assets are committed to the repository;
 review screenshots are evidence rather than shipping artwork.
+
+## Theme choice
+
+A native menu button at the top right offers System, Light and Dark appearance.
+The choice is saved in local preferences and applies to all four settings pages.
+Dark preserves the prior default; System follows macOS. Semantic AppKit surfaces
+and foreground colors keep the navigation selection readable in either theme.
+The nonactivating recording indicator retains its dark appearance.

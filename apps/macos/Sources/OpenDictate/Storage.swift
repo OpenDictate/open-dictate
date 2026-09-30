@@ -6,6 +6,7 @@ import OpenDictateCore
 @MainActor
 final class Preferences: ObservableObject {
     private let defaults: UserDefaults
+    @Published var theme: AppTheme { didSet { defaults.set(theme.rawValue, forKey: "theme") } }
     @Published var mode: DictationMode { didSet { defaults.set(mode.rawValue, forKey: "mode") } }
     @Published var speechLanguage: String { didSet { defaults.set(speechLanguage, forKey: "speechLanguage") } }
     @Published var interfaceLanguage: String { didSet { defaults.set(interfaceLanguage, forKey: "interfaceLanguage") } }
@@ -22,6 +23,7 @@ final class Preferences: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        theme = AppTheme(rawValue: defaults.string(forKey: "theme") ?? "") ?? .dark
         mode = DictationMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .live
         speechLanguage = defaults.string(forKey: "speechLanguage") ?? "auto"
         interfaceLanguage = defaults.string(forKey: "interfaceLanguage") ?? "auto"
