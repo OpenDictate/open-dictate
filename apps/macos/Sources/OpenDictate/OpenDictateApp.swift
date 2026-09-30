@@ -19,9 +19,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var model: AppModel!
     private var statusItem: NSStatusItem!
     private var settingsWindow: NSWindow?
-    private var recordingPanel: NSPanel?
+    private let recordingIndicator = RecordingIndicator()
     #if DEBUG
     private var localChecks: LocalSmokeChecks?
+    private var hudPreviewPhase: AppModel.Phase?
     #endif
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -47,6 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu(); menu.delegate = self
         statusItem.menu = menu
         updateState()
+        #if DEBUG
+        if localChecks != nil && CommandLine.arguments.contains("--hud-preview") {
+            hudPreviewPhase = .recording; updateState(); return
+        }
+        #endif
         if !model.hasKey || !model.microphoneAllowed || !model.accessibilityAllowed { openSettings() }
         #if DEBUG
         if localChecks != nil { openSettings() }
@@ -117,6 +123,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             cancellation.target = self; applicationMenu.addItem(cancellation)
             let sequence = NSMenuItem(title: "Local check: insertion and rollback in 3 seconds", action: #selector(checkSequence), keyEquivalent: "")
             sequence.target = self; applicationMenu.addItem(sequence)
+            let recording = NSMenuItem(title: "Local check: preview recording indicator", action: #selector(previewRecording), keyEquivalent: "")
+            recording.target = self; applicationMenu.addItem(recording)
+            let processing = NSMenuItem(title: "Local check: preview processing indicator", action: #selector(previewProcessing), keyEquivalent: "")
+            processing.target = self; applicationMenu.addItem(processing)
         }
         #endif
         applicationMenu.addItem(.separator())
@@ -137,22 +147,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.image = NSImage(systemSymbolName: model.isActive ? "waveform" : "mic", accessibilityDescription: "OpenDictate")
         statusItem.button?.title = model.phase == .processing ? " …" : ""
         statusItem.button?.toolTip = "OpenDictate · \(model.stateLabel) · \(model.preferences.shortcutLabel)"
+        #if DEBUG
+        if let phase = hudPreviewPhase {
+            recordingIndicator.show(phase: phase, isRussian: model.preferences.isRussian) { [weak self] in
+                self?.hudPreviewPhase = .processing; self?.updateState()
+            }
+            return
+        }
+        #endif
         if model.isActive && model.preferences.showStatus {
-            if recordingPanel == nil {
-                let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 316, height: 94),
-                                    styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-                panel.level = .statusBar; panel.isOpaque = false; panel.backgroundColor = .clear
-                panel.hasShadow = true; panel.ignoresMouseEvents = true
-                panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-                panel.contentView = NSHostingView(rootView: RecordingStatusView(model: model))
-                recordingPanel = panel
-            }
-            let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
-            if let screen {
-                recordingPanel?.setFrameOrigin(NSPoint(x: screen.visibleFrame.midX - 158, y: screen.visibleFrame.minY + 28))
-            }
-            recordingPanel?.orderFrontRegardless()
-        } else { recordingPanel?.orderOut(nil) }
+            recordingIndicator.show(phase: model.phase, isRussian: model.preferences.isRussian) { [weak model] in model?.stop() }
+        } else { recordingIndicator.hide() }
     }
 
     private func openSettings() {
@@ -191,6 +196,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func quit() { NSApp.terminate(nil) }
     #if DEBUG
     @objc private func checkMicrophone() { localChecks?.record() }
+    @objc private func previewRecording() { hudPreviewPhase = .recording; updateState() }
+    @objc private func previewProcessing() { hudPreviewPhase = .processing; updateState() }
     @objc private func checkInsertion() {
         Task { try? await Task.sleep(nanoseconds: 3_000_000_000); localChecks?.toggle() }
     }

@@ -9,10 +9,7 @@ staging="$macos_root/.build/dmg-staging"
 app="$output/OpenDictate.app"
 signing_identity="${MACOS_SIGNING_IDENTITY:--}"
 
-if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "APP_VERSION must be a stable three-part version." >&2
-    exit 1
-fi
+bundle_version="$(bash "$macos_root/scripts/release-version.sh" "$version")"
 mkdir -p "$output"
 for architecture in arm64 x86_64; do
     swift build --package-path "$macos_root" --build-system native --configuration release \
@@ -25,8 +22,11 @@ lipo -create \
     "$macos_root/.build/x86_64/x86_64-apple-macosx/release/OpenDictate" \
     -output "$app/Contents/MacOS/OpenDictate"
 cp "$macos_root/Resources/Info.plist" "$app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${APP_BUILD:-1}" "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $bundle_version" "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :OpenDictateReleaseVersion $version" "$app/Contents/Info.plist"
+if [[ -n "${APP_BUILD:-}" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_BUILD" "$app/Contents/Info.plist"
+fi
 cp -R "$macos_root/Resources/en.lproj" "$macos_root/Resources/ru.lproj" "$app/Contents/Resources/"
 cp "$repo_root/LICENSE" "$app/Contents/Resources/LICENSE.txt"
 swift "$macos_root/scripts/generate-icon.swift" "$macos_root/.build/AppIcon.iconset"

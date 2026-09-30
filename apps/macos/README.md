@@ -35,6 +35,10 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   Overflow fails visibly instead of silently dropping speech.
 - `OpenAIClient` uses ephemeral HTTPS sessions. Voice edits and explicit AI
   history searches use structured Responses output with `store: false`.
+- `RecordingIndicator` owns a nonactivating panel that cannot become key/main.
+  During recording it shows a microphone and red finish button (88 × 44 pt);
+  preparing/processing shows only a native spinner (44 × 44 pt). Clicking the
+  red button calls the same stop/submit path as the shortcut without moving focus.
 - The HUD never takes keyboard focus. Changing fields, typing, changing the
   caret, revoking Accessibility or sleeping detaches/stops a recording.
   Final results remain available to copy, without insertion into a new field.
@@ -65,6 +69,10 @@ synthetic text and provides a two-second microphone check in its menu. It makes
 no OpenAI requests, never reads your API key or history, and writes no audio.
 It uses a separate preference domain. These checks are absent from release builds.
 
+For a network-free indicator preview, also pass `--hud-preview`. It shows the
+production panel alone; clicking its finish button switches the preview to the
+spinner. Debug menu actions can show either state. Previewing never records audio.
+
 Use a disposable editor document to check cumulative insertion, Escape rollback,
 cursor movement, switching fields/apps, secure fields and clipboard fallback.
 Test permissions granted/denied, startup, menu actions, both languages, Spaces,
@@ -92,6 +100,14 @@ To release, update `VERSION`, `Resources/Info.plist` and `RELEASE_NOTES.md`, pas
 platform checks, merge to main and push a matching `macos-vX.Y.Z` tag. Verify
 the green release workflow, the DMG and checksum attachments before reporting
 completion. macOS and Android versions are independent.
+
+Release candidates use `X.Y.Z-rc.N` in `VERSION`, the displayed app version,
+DMG filename and `macos-v*` tag. The Apple bundle short version contains only
+`X.Y.Z`, per Apple's
+[bundle version format](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring);
+increment the numeric bundle build for each distribution. Release CI
+marks RC tags as GitHub prereleases and leaves the stable download unchanged.
+`scripts/test-release-version.sh` verifies accepted/rejected version strings.
 
 Protocol references checked on 2026-09-30:
 [Realtime transcription](https://developers.openai.com/api/docs/guides/realtime-transcription),

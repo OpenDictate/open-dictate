@@ -19,7 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Test
-        run: swift test --package-path apps/macos
+        run: |
+          bash apps/macos/scripts/test-release-version.sh
+          swift test --package-path apps/macos
       - name: Build universal application and DMG
         run: apps/macos/scripts/package.sh
       - uses: actions/upload-artifact@v7
