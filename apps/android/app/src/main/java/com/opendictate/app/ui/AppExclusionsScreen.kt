@@ -56,7 +56,7 @@ internal fun AppExclusionsScreen(
     val visibleApps = filterAndPrioritizeApps(apps, query, excludedPackages)
     val packageManager = LocalContext.current.packageManager
 
-    Column(modifier.fillMaxSize().background(Ink).statusBarsPadding().navigationBarsPadding()) {
+    Column(modifier.fillMaxSize().background(SettingsCanvas).statusBarsPadding().navigationBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().padding(start = 8.dp, end = 20.dp, top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -67,14 +67,14 @@ internal fun AppExclusionsScreen(
             Spacer(Modifier.width(8.dp))
             Text(
                 stringResource(R.string.app_exclusions_title),
-                color = White,
+                color = SettingsText,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 20.sp,
             )
         }
         Text(
             stringResource(R.string.app_exclusions_description),
-            color = Fog,
+            color = SettingsMuted,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
         )
         OutlinedTextField(
@@ -98,7 +98,7 @@ internal fun AppExclusionsScreen(
         } else if (visibleApps.isEmpty()) {
             Text(
                 stringResource(if (apps.isEmpty()) R.string.app_exclusions_empty else R.string.app_exclusions_no_matches),
-                color = Fog,
+                color = SettingsMuted,
                 modifier = Modifier.padding(20.dp),
             )
         } else {
@@ -124,7 +124,7 @@ internal fun AppExclusionsScreen(
                         Text(
                             app.label,
                             modifier = Modifier.weight(1f),
-                            color = White,
+                            color = SettingsText,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )

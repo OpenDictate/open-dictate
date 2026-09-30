@@ -1,6 +1,6 @@
 ---
 name: OpenDictate
-description: A dark, instrument-like visual system that makes speech becoming text feel immediate and trustworthy.
+description: The dark public website system, with a scoped native Android settings override.
 colors:
   ink: "#080808"
   ink-deep: "#030303"
@@ -145,18 +145,18 @@ components:
 
 **Creative North Star: "The Live Dictation Instrument"**
 
-OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.
+The OpenDictate website presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.
 
-This file is the repository-wide authority for the Android app, public web surface, and native macOS utility. Web and Android use black, white, and graphite, while Android retains Material 3 controls, insets, motion, and 48 dp touch targets. Do not mechanically transplant web pixels or fonts into Android.
+The frontmatter and the following instrument rules describe the public website. Android settings follow the scoped override under Components and the surface brief at `.impeccable/surfaces/android-settings.md`. Settings use native system typography and follow Android’s light/dark appearance. The dictation overlay and launcher mark retain their existing identity. Do not mechanically transplant web pixels or fonts into Android.
 
 macOS adapts the same white microphone and graphite identity through SwiftUI/AppKit system colors, system typography, SF Symbols, and native controls. Its dark settings surface is compact and direct; selected controls and keyboard focus retain the macOS accent. Native measurements use points, and the web's display fonts, control dimensions, and hover motion do not apply to this surface.
 
 **Key Characteristics:**
 
-- Black work surfaces with no light-theme inversion.
+- Black website work surfaces with no light-theme inversion.
 - White microphone mark, white primary actions, and a white live caret.
 - Restrained silver reserved for alternate modes and state contrast.
-- Unbounded display statements in the Android app; the GitHub Pages site pairs Literata headings with Golos body copy.
+- The GitHub Pages site pairs Literata headings with Golos body copy; Android settings use system sans-serif roles.
 - Hairline ledgers and routes instead of floating marketing cards.
 - Direct, literal diagrams and interactions instead of decorative product mockups.
 - System typography and native controls on macOS, with English/Russian copy and visible keyboard focus.
@@ -191,15 +191,15 @@ The native surface fixes `preferredColorScheme(.dark)` and uses semantic system 
 
 System accent color remains on selected segmented controls, enabled switches, picker focus, and keyboard focus rings. The review screenshots show the standard blue accent; its value belongs to macOS rather than a new OpenDictate brand color.
 
-**The Contrast Rule.** On web and Android, white marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.
+**The Contrast Rule.** On the website, white marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.
 
-**The Dark-Only Rule.** Web and brand surfaces are authored as a true dark scheme, not as colors awaiting automatic inversion.
+**The Dark-Only Rule.** The public website is authored as a true dark scheme, not as colors awaiting automatic inversion. This rule does not apply to Android settings.
 
 **The Native Controls Rule.** On macOS, keep semantic system colors and native accent/focus states. Do not force white brand fills onto platform controls.
 
 ## Typography
 
-**Display Font:** Unbounded (Arial fallback)
+**Website display token:** Unbounded (Arial fallback); the shipped GitHub Pages surface uses the Literata override below.
 
 **GitHub Pages display font:** Literata (Georgia fallback). The site uses it for the hero, section headings, and wordmark. Its calmer letterforms give the download page a more considered tone while keeping the black instrument palette and direct copy.
 
@@ -216,13 +216,13 @@ System accent color remains on selected segmented controls, enabled switches, pi
 - **Body:** Explanations and supporting prose; keep readable line lengths and use fog for secondary copy.
 - **Label:** Uppercase metadata, navigation, mode IDs, and technical annotations.
 
-**The Three-Voice Rule.** Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic; the Android app retains Unbounded.
+**The Three-Voice Rule.** Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic. Android settings do not use this three-font system.
 
 ### Native macOS
 
 SwiftUI system type carries all interface copy. The native hierarchy uses the scoped heading, navigation, and brand tokens above; selected navigation changes to medium weight. Body, callout, and caption text retain their native semantic styles. Shortcut labels use the system monospaced design, and elapsed time uses monospaced digits. English and Russian share the same hierarchy and wrap supporting copy vertically.
 
-**The Native Type Rule.** Keep macOS in system typography. The web and Android display/body pairing is specific to those surfaces.
+**The Native Type Rule.** Keep macOS in system typography. The website display/body pairing is specific to that surface.
 
 ## Layout
 
@@ -284,7 +284,25 @@ The two-option control has a Hairline Slate frame, a 13px outer corner, 4px inse
 
 ### Dictation Signal
 
-The public demo uses a five-bar signal inside its microphone control. It is white at rest and silver while replaying; its bars animate with staggered 760ms alternate pulses, while the caret blinks every 900ms. The Android launcher and header use the white microphone mark on black. Under reduced motion, the web demo resolves immediately and all CSS motion collapses to 1ms.
+The public demo uses a five-bar signal inside its microphone control. It is white at rest and silver while replaying; its bars animate with staggered 760ms alternate pulses, while the caret blinks every 900ms. The Android launcher retains the white microphone mark on black; the settings header uses the active theme foreground. Under reduced motion, the web demo resolves immediately and all CSS motion collapses to 1ms.
+
+### Android Settings Override
+
+Android settings are a modern, minimalist Operate surface. `SettingsTheme.kt` defines static neutral Material 3 light and dark schemes selected by `isSystemInDarkTheme()`; there is no manual theme selector or dynamic wallpaper palette. These settings rules override the website tokens above.
+
+| Role | Light | Dark |
+| --- | --- | --- |
+| Canvas | `#F3F4F6` | `#101114` |
+| Group surface | `#FFFFFF` | `#1B1D22` |
+| Inset controls | `#EEF0F3` | `#282B32` |
+| Primary text | `#202329` | `#F2F3F5` |
+| Supporting text | `#626975` | `#A9B0BC` |
+| Primary action | `#22252B` | `#F2F3F5` |
+| Divider | `#E4E7EC` | `#30343C` |
+
+Use native Material 3 sans-serif typography for headings, labels, and body copy; monospace is reserved for model IDs. A centered single column caps at 680 dp with 20 dp content gutters. Groups have 16 dp corners, 16 dp row padding, and inset 0.5 dp dividers. Separation comes from tone and spacing; surface tint is transparent. Rows grow with text, action rows have a 76 dp minimum, toggle rows an 80 dp minimum, and controls retain at least 48 dp targets. Respect font scaling, status/navigation bars, and keyboard insets rather than importing website breakpoints.
+
+The signature component is a compact readiness disclosure above the settings groups: it exposes API key, microphone, and Accessibility setup on demand and reports active dictation state. Dictation groups mode, recognition model, languages, punctuation, and dictionary. Keyboard controls group transformation, selected-text dictionary actions, and app exclusions. Advanced contains timeout and model refresh; a test field and privacy note finish the page. Languages and dictionary open native modal sheets; model choices use native menus and timeout uses a dialog. Toggle the whole row with one switch semantic target; preserve selected-state checks, disabled/loading/error feedback, and keyboard-safe editing. See the surface brief for interaction details and the sidecar’s `extensions.androidSettings` for native theme roles.
 
 ### Native Recording HUD
 
@@ -298,7 +316,7 @@ The macOS HUD shows a microphone or processing ellipsis, state label, elapsed ti
 - **Do** use hairline structure and tonal layers to organize dense information.
 - **Do** preserve the bilingual Latin/Cyrillic font setup and responsive English/Russian copy behavior.
 - **Do** keep every web control keyboard-visible and honor `prefers-reduced-motion`.
-- **Do** theme Android through Material 3 roles and components while keeping its black, white, and graphite palette and 48 dp minimum targets.
+- **Do** follow the Android settings override for system light/dark themes, native typography, and 48 dp minimum targets.
 - **Do** retain macOS system type, semantic colors, native controls, and localized responder-chain text commands.
 - **Do** keep the macOS recording HUD passive and nonactivating so dictation stays in the user's focused app.
 
@@ -306,8 +324,8 @@ The macOS HUD shows a microphone or processing ellipsis, state label, elapsed ti
 
 - **Don't** introduce generic feature-card grids, detached phone mockups, stock AI imagery, gradients, glassmorphism, or ambient shadows.
 - **Don't** use secondary as routine decoration or let it compete with signal for the primary action.
-- **Don't** use display faces for paragraphs or replace the chosen web/Android display face with a default system sans.
+- **Don't** use display faces for website paragraphs or replace the chosen website display face with a default system sans.
 - **Don't** flatten desktop composition onto mobile; preserve the explicit 1040px and 700px reflows.
 - **Don't** copy web pixel values, web fonts, or hover-only affordances directly into native Android UI.
-- **Don't** transplant web/Android fonts, control sizes, or decorative motion into the native macOS surface.
+- **Don't** transplant web fonts, control sizes, or decorative motion into the native macOS surface.
 - **Don't** commit generated macOS icon rasters or `.icns`; keep the source generator as the brand asset's provenance.
