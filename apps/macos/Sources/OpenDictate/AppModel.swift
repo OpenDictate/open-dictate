@@ -33,6 +33,7 @@ final class AppModel: ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     private var searchTask: Task<Void, Never>?
     private var searchID: UUID?
+    private var recordingShortcut = false
     var showSettings: (() -> Void)?
     var onStateChange: (() -> Void)?
 
@@ -77,10 +78,7 @@ final class AppModel: ObservableObject {
             }
         }
         configureHotKeys()
-        preferences.$shortcutModifiers.dropFirst().sink { [weak self] _ in
-            DispatchQueue.main.async { self?.configureHotKeys() }
-        }.store(in: &subscriptions)
-        preferences.$shortcutKey.dropFirst().sink { [weak self] _ in
+        preferences.$shortcuts.dropFirst().sink { [weak self] _ in
             DispatchQueue.main.async { self?.configureHotKeys() }
         }.store(in: &subscriptions)
         preferences.objectWillChange.sink { [weak self] in
@@ -301,15 +299,42 @@ final class AppModel: ObservableObject {
             }
         }
         let allowed = AXIsProcessTrusted()
-        if accessibilityAllowed != allowed { accessibilityAllowed = allowed }
+        if accessibilityAllowed != allowed {
+            accessibilityAllowed = allowed
+            if !recordingShortcut { configureHotKeys() }
+        }
     }
 
     private func configureHotKeys() {
         do {
-            try hotKeys.configure(modifiers: preferences.shortcutModifiers, key: preferences.shortcutKey)
+            try hotKeys.configure(preferences.shortcuts)
             shortcutError = ""
         } catch { shortcutError = (error as? DictationError)?.message(russian: preferences.isRussian) ?? error.localizedDescription }
         onStateChange?()
+    }
+
+    func recordShortcut(_ recording: Bool) {
+        recordingShortcut = recording
+        if recording { hotKeys.suspend() }
+        else { configureHotKeys() }
+    }
+
+    @discardableResult func setShortcuts(_ shortcuts: ShortcutBindings) -> Bool {
+        guard !isActive else { return false }
+        guard shortcuts.isValid else {
+            shortcutError = preferences.t("Dictation and voice editing need different shortcuts.",
+                                         "Для диктовки и голосовой правки нужны разные сочетания.")
+            return false
+        }
+        do {
+            try hotKeys.configure(shortcuts)
+            preferences.shortcuts = shortcuts
+            shortcutError = ""
+            return true
+        } catch {
+            shortcutError = (error as? DictationError)?.message(russian: preferences.isRussian) ?? error.localizedDescription
+            return false
+        }
     }
 
     func copyLast() {

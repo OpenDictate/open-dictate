@@ -13,8 +13,12 @@ OpenDictate does not operate a backend and does not include analytics or ads.
 - Microphone access is used only for a session you start. Accessibility reads
   the focused editable control and its selection, and inserts transcription
   there. Secure text fields are excluded; unrelated screen contents are not collected.
-- Global shortcuts use registered hotkeys, without logging keystrokes or
-  requiring Input Monitoring permission. Changing focus or editing the target
+- Ordinary global shortcuts use registered hotkeys. When you choose Globe/Fn
+  or a modifier-only shortcut, AppKit monitors key codes and modifier flags
+  using the existing Accessibility permission. These monitors never read typed
+  characters, log keystrokes or require Input Monitoring permission. Recording
+  a shortcut reads its label only inside the focused settings control and ends
+  when focus changes. Changing focus or editing the target
   prevents further automatic insertion. A completed result remains available
   to copy explicitly from the menu.
 - Some editors require a final clipboard paste. In that case, only the

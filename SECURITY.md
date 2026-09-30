@@ -18,6 +18,14 @@ and rechecks the field before posting Paste. Clipboard restoration is skipped
 if another action changed the clipboard. Cancellation restores only an unchanged
 original target. Secure fields and user-excluded apps are rejected before capture.
 
+Ordinary shortcuts use exclusive Carbon registrations. Only configured Globe/Fn
+or modifier-only shortcuts enable AppKit event monitors with Accessibility access;
+they inspect key codes and modifier flags, never event characters. Monitor state
+is in memory and removed on reconfiguration, shortcut recording or shutdown.
+The temporary local shortcut recorder reads a key label only while focused.
+No Input Monitoring permission is requested. Monitored shortcuts cannot suppress
+other applications' or macOS's own keyboard actions.
+
 Local transcript history has owner-only directory/file permissions and can be
 disabled or deleted. macOS backup software is controlled by the user. Unlike
 Android, macOS stores no retry recording. The app is not sandboxed because it
