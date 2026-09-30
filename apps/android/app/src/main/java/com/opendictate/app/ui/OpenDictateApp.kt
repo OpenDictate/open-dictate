@@ -258,11 +258,9 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         state, viewModel::selectModel,
                         viewModel::selectAccurateModel, viewModel::selectLiveModel,
                     )
-                    if (state.modelsLoading || state.modelsError || state.newModelCount > 0) {
+                    if (!state.modelsLoading && (state.modelsError || state.newModelCount > 0)) {
                         Spacer(Modifier.height(10.dp))
-                        if (state.modelsLoading) {
-                            Text(stringResource(R.string.models_loading), color = Fog, fontSize = 12.sp)
-                        } else if (state.modelsError) {
+                        if (state.modelsError) {
                             Text(stringResource(R.string.models_error), color = Fog, fontSize = 12.sp)
                         } else if (state.newModelCount > 0) {
                             Text(stringResource(R.string.models_new, state.newModelCount), color = White, fontSize = 12.sp)
@@ -366,8 +364,10 @@ fun OpenDictateApp(viewModel: MainViewModel = viewModel()) {
                         onSelectionDictionaryActionEnabledChange = viewModel::setSelectionDictionaryActionEnabled,
                         onKeepTrailingPeriod = viewModel::setKeepTrailingPeriod,
                     )
+                    Spacer(Modifier.height(26.dp))
+                    SectionLabel(stringResource(R.string.advanced_settings_title))
                     Spacer(Modifier.height(10.dp))
-                    AdvancedSettingsCard(
+                    TranscriptionTimeoutCard(
                         responseTimeoutSeconds = state.transcriptionResponseTimeoutSeconds,
                         onResponseTimeoutChange = viewModel::setTranscriptionResponseTimeout,
                     )
@@ -880,50 +880,34 @@ private fun PreferenceCard(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun AdvancedSettingsCard(
+private fun TranscriptionTimeoutCard(
     responseTimeoutSeconds: Int?,
     onResponseTimeoutChange: (Int?) -> Unit,
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     var showTimeoutDialog by remember { mutableStateOf(false) }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Panel),
-        shape = RoundedCornerShape(20.dp),
-    ) {
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
-            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+    PreferenceCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    stringResource(R.string.advanced_settings_title),
-                    color = Fog,
-                    modifier = Modifier.weight(1f),
+                    stringResource(R.string.transcription_timeout_title),
+                    color = White,
+                    fontWeight = FontWeight.SemiBold,
                 )
-                Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = Fog)
+                Text(
+                    stringResource(R.string.transcription_timeout_subtitle),
+                    color = Fog,
+                    fontSize = 12.sp,
+                )
             }
-            if (expanded) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            stringResource(R.string.transcription_timeout_title),
-                            color = White,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            stringResource(R.string.transcription_timeout_subtitle),
-                            color = Fog,
-                            fontSize = 12.sp,
-                        )
-                    }
-                    TextButton(onClick = { showTimeoutDialog = true }) {
-                        Text(
-                            if (responseTimeoutSeconds == null) {
-                                stringResource(R.string.transcription_timeout_unlimited)
-                            } else {
-                                stringResource(R.string.transcription_timeout_value, responseTimeoutSeconds)
-                            },
-                            color = White,
-                        )
-                    }
-                }
+            TextButton(onClick = { showTimeoutDialog = true }) {
+                Text(
+                    if (responseTimeoutSeconds == null) {
+                        stringResource(R.string.transcription_timeout_unlimited)
+                    } else {
+                        stringResource(R.string.transcription_timeout_value, responseTimeoutSeconds)
+                    },
+                    color = White,
+                )
             }
         }
     }
