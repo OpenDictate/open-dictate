@@ -34,6 +34,9 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ExpandLess
@@ -83,6 +86,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -92,6 +97,7 @@ import com.opendictate.app.R
 import com.opendictate.app.data.MAX_DICTIONARY_LENGTH
 import com.opendictate.app.data.normalizeDictionaryTerms
 import com.opendictate.app.model.DictationLanguage
+import com.opendictate.app.model.AppTheme
 import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.service.DictationPhase
@@ -132,6 +138,7 @@ internal fun SettingsScreen(
                 IconButton(onClick = onHistory) {
                     Icon(Icons.Outlined.History, stringResource(R.string.history_open), tint = SettingsMuted)
                 }
+                AppThemeSwitcher(state.theme, viewModel::selectTheme)
                 AppLanguageSwitcher()
             }
             Column(
@@ -302,6 +309,40 @@ internal fun SettingsScreen(
     if (dictionaryOpen) DictionarySheet(state.prompt, viewModel::savePrompt) { dictionaryOpen = false }
     if (timeoutOpen) TranscriptionTimeoutDialog(state.transcriptionResponseTimeoutSeconds,
         onDismiss = { timeoutOpen = false }, onSave = { viewModel.setTranscriptionResponseTimeout(it); timeoutOpen = false })
+}
+
+@Composable
+internal fun AppThemeSwitcher(theme: AppTheme, onSelect: (AppTheme) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val themeLabel = stringResource(theme.titleResource())
+    Box {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.semantics { stateDescription = themeLabel }) {
+            Icon(theme.icon(), stringResource(R.string.theme_switcher_description), tint = SettingsMuted)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            AppTheme.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(option.titleResource())) },
+                    onClick = { expanded = false; onSelect(option) },
+                    leadingIcon = { Icon(option.icon(), null) },
+                    trailingIcon = { if (option == theme) Icon(Icons.Outlined.Check, null) },
+                    modifier = Modifier.semantics { selected = option == theme },
+                )
+            }
+        }
+    }
+}
+
+private fun AppTheme.titleResource(): Int = when (this) {
+    AppTheme.SYSTEM -> R.string.theme_system
+    AppTheme.LIGHT -> R.string.theme_light
+    AppTheme.DARK -> R.string.theme_dark
+}
+
+private fun AppTheme.icon(): ImageVector = when (this) {
+    AppTheme.SYSTEM -> Icons.Outlined.BrightnessAuto
+    AppTheme.LIGHT -> Icons.Outlined.LightMode
+    AppTheme.DARK -> Icons.Outlined.DarkMode
 }
 
 @Composable

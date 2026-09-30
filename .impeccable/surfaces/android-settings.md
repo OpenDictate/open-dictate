@@ -17,7 +17,7 @@ OWN-WORLD: Static neutral Material 3 light/dark themes following Android, system
 
 STORY: Check readiness, finish missing permissions, choose recognition behavior, adjust keyboard tools, then test dictation.
 
-FIRST VIEWPORT: Compact brand/history/language header, large Settings heading and supporting line, full-width readiness disclosure, then Dictation and its two-option mode control. Single column, 680 dp maximum, 20 dp gutters; disclosure opens setup actions in place.
+FIRST VIEWPORT: Compact brand/history/theme/language header, large Settings heading and supporting line, full-width readiness disclosure, then Dictation and its two-option mode control. Single column, 680 dp maximum, 20 dp gutters; disclosure opens setup actions in place.
 
 FORM: User-constrained modern, minimalist, functional settings. No concept seed or candidate ranking was used.
 
@@ -37,4 +37,4 @@ Groups use 16 dp corners and tonal separation. Action rows are at least 76 dp, t
 
 ## Settled outcome
 
-Light canvas is `#F3F4F6`; dark canvas is `#101114`. Theme selection follows Android automatically; no manual selector or wallpaper-derived colors are present. `SettingsTheme.kt` and `SettingsScreen.kt` are the implementation sources, with native roles recorded under `extensions.androidSettings` in the sidecar. The final reviewer disposition is **ship**, with no material findings. No new raster assets were introduced and no design decisions remain unresolved.
+Light canvas is `#F3F4F6`; dark canvas is `#101114`. A top-right theme button opens System/Light/Dark choices with the selected option checked. The local preference survives restarts and applies across settings, history, exclusions and dialogs. System is the default and follows Android automatically; system bars follow the effective appearance. No wallpaper-derived colors are present. `SettingsTheme.kt` and `SettingsScreen.kt` are the implementation sources, with native roles recorded under `extensions.androidSettings` in the sidecar. The final reviewer disposition is **ship**, with no material findings. No new raster assets were introduced and no design decisions remain unresolved.

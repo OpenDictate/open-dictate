@@ -3,6 +3,7 @@ package com.opendictate.app.data
 import android.content.Context
 import android.content.res.Resources
 import androidx.core.content.edit
+import com.opendictate.app.model.AppTheme
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TextTransformationModel
@@ -12,6 +13,10 @@ import com.opendictate.app.model.preferredModelId
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+
+    var theme: AppTheme
+        get() = AppTheme.fromStored(prefs.getString(KEY_THEME, null))
+        set(value) = prefs.edit { putString(KEY_THEME, value.name) }
 
     var model: TranscriptionModel
         get() = TranscriptionModel.fromStored(prefs.getString(KEY_MODEL, null))
@@ -111,6 +116,7 @@ class SettingsStore(context: Context) {
 
     companion object {
         private const val FILE_NAME = "opendictate_settings"
+        private const val KEY_THEME = "theme"
         private const val KEY_MODEL = "model"
         private const val KEY_TRANSFORMATION_MODEL = "transformation_model"
         private const val KEY_LIVE_MODEL_ID = "live_model_id"

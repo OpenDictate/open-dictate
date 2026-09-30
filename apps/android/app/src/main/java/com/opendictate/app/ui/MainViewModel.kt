@@ -18,6 +18,7 @@ import com.opendictate.app.data.SettingsStore
 import com.opendictate.app.data.TranscriptHistoryItem
 import com.opendictate.app.data.fuzzySearch
 import com.opendictate.app.model.DictationLanguage
+import com.opendictate.app.model.AppTheme
 import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TranscriptionModel
 import com.opendictate.app.model.TranscriptionResponseTimeout
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class MainUiState(
+    val theme: AppTheme = AppTheme.SYSTEM,
     val hasApiKey: Boolean = false,
     val accessibilityEnabled: Boolean = false,
     val microphoneGranted: Boolean = false,
@@ -154,6 +156,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun selectModel(model: TranscriptionModel) {
         settings.model = model
         mutableState.update { it.copy(model = model) }
+    }
+
+    fun selectTheme(theme: AppTheme) {
+        settings.theme = theme
+        mutableState.update { it.copy(theme = theme) }
     }
 
     fun selectLiveModel(id: String) {
@@ -395,6 +402,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun loadState() = MainUiState(
+        theme = settings.theme,
         hasApiKey = apiKeyStore.hasKey(),
         accessibilityEnabled = isAccessibilityEnabled(getApplication()),
         microphoneGranted = hasMicrophonePermission(getApplication()),

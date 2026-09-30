@@ -1,11 +1,17 @@
 package com.opendictate.app.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.activity.compose.LocalActivity
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import com.opendictate.app.model.AppTheme
 
 internal val SettingsCanvas: Color @Composable get() = MaterialTheme.colorScheme.background
 internal val SettingsSurface: Color @Composable get() = MaterialTheme.colorScheme.surface
@@ -43,9 +49,17 @@ private val DarkSettingsColors = darkColorScheme(
 )
 
 @Composable
-internal fun OpenDictateTheme(content: @Composable () -> Unit) {
+internal fun OpenDictateTheme(theme: AppTheme = AppTheme.SYSTEM, content: @Composable () -> Unit) {
+    val dark = theme.isDark(isSystemInDarkTheme())
+    val activity = LocalActivity.current as? ComponentActivity
+    SideEffect {
+        activity?.enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { dark },
+            navigationBarStyle = SystemBarStyle.auto(0xE6FFFFFF.toInt(), 0x801B1B1B.toInt()) { dark },
+        )
+    }
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkSettingsColors else LightSettingsColors,
+        colorScheme = if (dark) DarkSettingsColors else LightSettingsColors,
         content = content,
     )
 }

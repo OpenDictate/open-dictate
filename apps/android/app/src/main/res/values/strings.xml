@@ -3,6 +3,10 @@
     <string name="app_name" translatable="false">OpenDictate</string>
 
     <string name="language_switcher_description">Change app language</string>
+    <string name="theme_switcher_description">Change app theme</string>
+    <string name="theme_system">System theme</string>
+    <string name="theme_light">Light theme</string>
+    <string name="theme_dark">Dark theme</string>
     <string name="language_system">System language</string>
     <string name="language_system_short">AUTO</string>
     <string name="language_russian">Русский</string>

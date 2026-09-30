@@ -145,7 +145,7 @@ components:
 
 The OpenDictate website presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.
 
-The frontmatter and the following instrument rules describe the public website. Android settings follow the scoped override under Components and the surface brief at `.impeccable/surfaces/android-settings.md`. Settings use native system typography and follow Android’s light/dark appearance. The dictation overlay and launcher mark retain their existing identity. Do not mechanically transplant web pixels or fonts into Android.
+The frontmatter and the following instrument rules describe the public website. Android settings follow the scoped override under Components and the surface brief at `.impeccable/surfaces/android-settings.md`. Settings use native system typography and offer a saved System/Light/Dark appearance choice. The dictation overlay and launcher mark retain their existing identity. Do not mechanically transplant web pixels or fonts into Android.
 
 macOS adapts the same white microphone and graphite identity through SwiftUI/AppKit system colors, system typography, SF Symbols, and native controls. Its dark settings surface is compact and direct; selected controls and keyboard focus retain the macOS accent. Native measurements use points, and the web's display fonts, control dimensions, and hover motion do not apply to this surface.
 
@@ -288,7 +288,7 @@ The public demo uses a five-bar signal inside its microphone control. It is whit
 
 ### Android Settings Override
 
-Android settings are a modern, minimalist Operate surface. `SettingsTheme.kt` defines static neutral Material 3 light and dark schemes selected by `isSystemInDarkTheme()`; there is no manual theme selector or dynamic wallpaper palette. These settings rules override the website tokens above.
+Android settings are a modern, minimalist Operate surface. `SettingsTheme.kt` defines static neutral Material 3 light and dark schemes selected by a saved System/Light/Dark preference (System by default). A 48 dp icon button in the top-right header opens a native menu with a checkmark on the selected option. System mode follows `isSystemInDarkTheme()`; system-bar contrast follows the effective appearance. There is no dynamic wallpaper palette. These settings rules override the website tokens above.
 
 | Role | Light | Dark |
 | --- | --- | --- |
@@ -303,6 +303,8 @@ Android settings are a modern, minimalist Operate surface. `SettingsTheme.kt` de
 Use native Material 3 sans-serif typography for headings, labels, and body copy; monospace is reserved for model IDs. A centered single column caps at 680 dp with 20 dp content gutters. Groups have 16 dp corners, 16 dp row padding, and inset 0.5 dp dividers. Separation comes from tone and spacing; surface tint is transparent. Rows grow with text, action rows have a 76 dp minimum, toggle rows an 80 dp minimum, and controls retain at least 48 dp targets. Respect font scaling, status/navigation bars, and keyboard insets rather than importing website breakpoints.
 
 The signature component is a compact readiness disclosure above the settings groups: it exposes API key, microphone, and Accessibility setup on demand and reports active dictation state. Dictation groups mode, recognition model, languages, punctuation, and dictionary. Keyboard controls group transformation, selected-text dictionary actions, and app exclusions. Advanced contains timeout and model refresh; a test field and privacy note finish the page. Languages and dictionary open native modal sheets; model choices use native menus and timeout uses a dialog. Toggle the whole row with one switch semantic target; preserve selected-state checks, disabled/loading/error feedback, and keyboard-safe editing. See the surface brief for interaction details and the sidecar’s `extensions.androidSettings` for native theme roles.
+
+macOS settings offer the same three choices from a native menu button at the top right. The saved choice applies across all four pages; Dark preserves the previous default. Light appearance uses semantic AppKit surfaces and foreground colors, including the selected navigation row. The recording HUD retains its dark nonactivating appearance.
 
 ### Native Recording Indicator
 
