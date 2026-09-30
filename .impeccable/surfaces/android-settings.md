@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "android-settings"
-primary_target: "app/src/main/java/com/opendictate/app/ui/SettingsScreen.kt"
-related_targets: ["app/src/main/java/com/opendictate/app/ui/SettingsTheme.kt"]
+primary_target: "apps/android/app/src/main/java/com/opendictate/app/ui/SettingsScreen.kt"
+related_targets: ["apps/android/app/src/main/java/com/opendictate/app/ui/SettingsTheme.kt"]
 ---
 
 SCOPE: Android settings redesign. Mode: Operate. The existing dictation overlay, launcher mark, and website identity are outside this surface.

@@ -1,0 +1,33 @@
+name: macOS release
+
+on:
+  push:
+    tags: ["macos-v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate version
+        run: |
+          test "$GITHUB_REF_NAME" = "macos-v$(cat apps/macos/VERSION)"
+      - name: Test
+        run: swift test --package-path apps/macos
+      - name: Build universal app and installer
+        run: apps/macos/scripts/package.sh
+      - name: Publish macOS release
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/macos/*.dmg dist/macos/*.sha256 \
+            --verify-tag --title "OpenDictate for macOS $(cat apps/macos/VERSION)" \
+            --notes-file apps/macos/RELEASE_NOTES.md --latest=false

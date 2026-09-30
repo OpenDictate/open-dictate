@@ -3,6 +3,36 @@
 Please report vulnerabilities privately through GitHub Security Advisories.
 Do not include API keys, recordings, or other sensitive data in public issues.
 
+## macOS
+
+The macOS app uses device-only Keychain credentials, ephemeral URLSession
+connections to OpenAI over HTTPS/WSS, bounded in-memory audio and no audio
+files. It never logs keys, audio, transcripts, field contents or raw provider
+responses. Provider errors are mapped to safe status messages rather than
+displayed verbatim. Text Responses requests disable storage.
+
+Accessibility insertion checks the original process and exact element, current
+text, selection and secure-field subrole before every write. UUID session guards
+discard stale callbacks. Clipboard fallback is directed at the original process
+and rechecks the field before posting Paste. Clipboard restoration is skipped
+if another action changed the clipboard. Cancellation restores only an unchanged
+original target. Secure fields and user-excluded apps are rejected before capture.
+
+Local transcript history has owner-only directory/file permissions and can be
+disabled or deleted. macOS backup software is controlled by the user. Unlike
+Android, macOS stores no retry recording. The app is not sandboxed because it
+uses system-wide Accessibility insertion; its entitlements allow microphone input,
+with macOS privacy permissions still required. It has no privileged helper.
+
+Universal DMGs are built in GitHub Actions from `macos-v*` tags, with SHA-256
+checksums. The initial release uses ad-hoc signing, not Developer ID signing or
+Apple notarization; installation instructions disclose the Gatekeeper step.
+Developer ID identities and notary profiles are supported for local packaging
+but their certificates, private keys and credentials must stay outside Git.
+Debug-only local smoke checks do not call OpenAI and are absent from release builds.
+
+## Android
+
 OpenDictate intentionally never logs authorization headers, API keys, audio,
 transcript contents, transformation instructions, or focused-field text.
 Model discovery calls OpenAI directly and stores only model IDs in app-private

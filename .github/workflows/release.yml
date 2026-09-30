@@ -37,7 +37,7 @@ jobs:
       - name: Verify and assemble release
         run: ./gradlew testDebugUnitTest lintRelease assembleRelease --stacktrace
       - name: Name artifact
-        run: cp app/build/outputs/apk/release/app-release.apk "OpenDictate-${GITHUB_REF_NAME}.apk"
+        run: cp apps/android/app/build/outputs/apk/release/app-release.apk "OpenDictate-${GITHUB_REF_NAME}.apk"
       - name: Generate changelog
         shell: bash
         run: |

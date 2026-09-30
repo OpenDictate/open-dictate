@@ -10,3 +10,10 @@ captures/
 *.jks
 *.keystore
 release-key.properties
+.build/
+.swiftpm/
+dist/
+*.dmg
+*.xcarchive
+*.p12
+.impeccable/review/

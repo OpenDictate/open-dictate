@@ -93,7 +93,7 @@ jobs:
           PREVIEW_TAG: ${{ steps.plan.outputs.preview_tag }}
           PREVIOUS_TAG: ${{ steps.plan.outputs.previous_tag }}
         run: |
-          cp app/build/outputs/apk/preview/app-preview.apk "OpenDictate-${PREVIEW_TAG}.apk"
+          cp apps/android/app/build/outputs/apk/preview/app-preview.apk "OpenDictate-${PREVIEW_TAG}.apk"
           {
             echo '## Preview build'
             echo

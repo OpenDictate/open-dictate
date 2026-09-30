@@ -1,94 +1,117 @@
-# OpenDictate for Android
+# OpenDictate
 
-OpenDictate turns speech into text in any Android app. When the keyboard opens,
-a small dictation button appears above it. Text is inserted directly into the
-active input field through the Android Accessibility API.
+Dictate into the app you're already using, on **Android and macOS**.
+OpenDictate sends audio directly to OpenAI using your own API key. There is
+no backend, analytics or account to create.
 
-Visit the [OpenDictate website](https://opendictate.github.io/open-dictate/) or
-download the latest APK from [GitHub Releases](https://github.com/OpenDictate/open-dictate/releases/latest).
+| | Android | macOS |
+|---|---|---|
+| Start / finish | Tap the keyboard overlay | **Option + Space** |
+| Voice editing | Long-press → Edit text | **Option + Shift + Space** |
+| Installation | Signed APK | Universal DMG, Apple Silicon + Intel |
+| Requires | Android 8+ | macOS 14+ |
+| Downloads | [Android releases](https://github.com/OpenDictate/open-dictate/releases/latest) | [macOS 0.1.0](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0) |
 
 ## Features
 
-- **GPT Live Transcribe** (`gpt-live-transcribe`) — streams text as you speak
-  with minimal latency.
-- **GPT Transcribe** (`gpt-transcribe`) — accurately transcribes a completed recording.
-- Voice-directed text transformation through the Responses API, with
-  **GPT-6 Luna** (`gpt-6-luna`) as the default and **GPT-6 Sol** (`gpt-6-sol`) selectable.
-- Text transformations stop after 30 seconds. The model can occasionally answer
-  a direct question or explain a failed edit in a private Android notification.
-- Your own OpenAI API key, encrypted with Android Keystore.
-- Local transcript history with deletion, on-device fuzzy search, and explicit
-  AI semantic search through the Responses API.
-- No backend, analytics, or stored recordings.
-- A floating dictation button that appears only while the keyboard is open,
-  can be dismissed with a right swipe, and reveals text editing on long-press.
-- Completed text falls back to the system clipboard if the original input field
-  is no longer available.
-- Russian and English speech recognition, or automatic language detection.
-- Add selected text to the transcription dictionary from Android's text
-  selection menu (sometimes under ⋮), the floating button's long-press menu,
-  or Android's Share menu. The text selection action can be turned off in
-  OpenDictate settings.
+- **Live** (`gpt-live-transcribe`) inserts text as you speak.
+- **Accurate** (`gpt-transcribe`) transcribes a completed recording.
+- Voice-directed editing of the selection, or the whole field without a selection,
+  using GPT-6 Luna or GPT-6 Sol.
+- A transcription dictionary, local history, on-device search, and explicit AI search.
+- English/Russian settings, automatic speech language detection and language hints.
+- Focus guards prevent delayed text from being inserted in another field or app.
+- Encrypted credentials: Android Keystore on Android, Keychain on macOS.
 
-## Installation
+## Install on macOS
 
-1. Download the APK from the **Releases** page and install it.
-2. Open OpenDictate and save your OpenAI API key.
-3. Grant microphone access.
-4. Enable the OpenDictate service in the system accessibility settings.
-5. Open an input field in any app. Tap the floating button for dictation, or
-   long-press it and choose **Edit text** to speak an instruction that transforms
-   selected text (or the whole field when nothing is selected). Swipe the button
-   right to hide it until the keyboard closes.
+1. Download the universal DMG from the [macOS release](https://github.com/OpenDictate/open-dictate/releases/tag/macos-v0.1.0).
+2. Open it, drag **OpenDictate** into **Applications**, and eject the disk image.
+3. Launch OpenDictate. This release is locally signed and **not notarized**.
+   If macOS blocks launching it, choose **System Settings → Privacy & Security →
+   Open Anyway** for OpenDictate, then launch it again.
+4. Save your own OpenAI API key and allow **Microphone** and **Accessibility**
+   with the setup buttons. Reopen the app if macOS requests it.
+5. Focus a text field in another app. Press **Option + Space** to start and again
+   to finish. **Escape** cancels. Add **Shift** to edit text with a spoken instruction.
 
-> Version 0.6.0 introduces the new `com.opendictate.app` package identity. It
-> installs separately from earlier builds, so enable the new accessibility
-> service and enter the API key again after installation.
+OpenDictate lives in the menu bar. Its menu provides Settings, mode selection,
+copy/paste of the latest transcript and adding selected text to the dictionary.
+Shortcuts, excluded apps and launch at login are configurable.
 
-> Accessibility access is used to detect the open keyboard and update the
-> focused field. Text is sent to OpenAI only when you explicitly start a
-> transformation; unrelated screen contents are not collected.
+macOS recordings stay in memory and are discarded after use; there is no
+recording archive or audio retry. Completed transcripts remain available in
+local history, which can be disabled or deleted. Editors without writable
+Accessibility text use a final clipboard paste. Previous clipboard contents
+are restored if unchanged. Secure fields are excluded.
 
-## Building
+API billing is separate from a ChatGPT subscription. A model must be available
+to your OpenAI API project. See [macOS documentation](apps/macos/README.md).
 
-Requires JDK 17 and Android SDK 37.0.
+## Install on Android
 
-```bash
-./gradlew assembleDebug
-./gradlew testDebugUnitTest lintDebug
+1. Download and install the latest signed APK from [Android Releases](https://github.com/OpenDictate/open-dictate/releases/latest).
+2. Save your OpenAI API key, grant microphone access and enable the OpenDictate
+   service in the system accessibility settings.
+3. Open a text field and tap the overlay to dictate. Long-press for voice editing,
+   the dictionary, last recording retry and paste-last actions.
+
+The overlay appears while the keyboard and an editable field are present.
+Swipe right to dismiss it until the keyboard closes. Add dictionary words from
+Android's text selection or Share menu. Android retains one private recording
+for retry; the next dictation replaces it.
+
+Preview APKs install separately as `com.opendictate.app.preview`. Disable the
+stable accessibility service before enabling the preview service.
+
+## Repository and builds
+
+```text
+apps/android/   Android application, Gradle wrapper and tests
+apps/macos/     Native SwiftUI/AppKit application, Swift package and tests
+docs/          Public website and platform documentation
+.github/       Platform verification and release workflows
 ```
 
-The debug APK will be in `app/build/outputs/apk/debug/`.
+Android requires JDK 17+ and Android SDK 37. The root wrapper forwards to
+`apps/android` so existing commands keep working:
+
+```bash
+./gradlew testDebugUnitTest lintDebug assembleDebug
+./gradlew lintRelease assembleRelease
+```
+
+APKs are under `apps/android/app/build/outputs/apk/`.
+macOS requires Xcode 16+:
+
+```bash
+swift test --package-path apps/macos
+apps/macos/scripts/package.sh
+open dist/macos/OpenDictate.app
+```
+
+The packaging script builds both architectures, creates and verifies a signed
+`.app`, and packages a DMG and SHA-256 checksum in `dist/macos/`.
+Build output is ignored by Git. No third-party Swift dependencies are needed.
 
 ## Releases
 
-The `.github/workflows/release.yml` workflow builds and publishes a signed APK
-for `v*` tags other than preview tags. Tags with a prerelease suffix, such as
-`v0.6.6-rc.1`, publish as GitHub prereleases and use the regular
-`com.opendictate.app` application ID. The repository requires four
-Actions secrets:
-
-- `SIGNING_KEY` — a base64-encoded JKS file;
-- `KEY_ALIAS`;
-- `KEY_PASSWORD`;
-- `STORE_PASSWORD`.
-
-The `.github/workflows/preview.yml` workflow publishes a signed prerelease from
-`main` every Sunday when commits have landed since the previous release. It can
-also be run manually. Preview tags follow the next-patch SemVer form
-`vX.Y.Z-preview.N` (for example, `v0.5.1-preview.123`). The preview APK uses the
-`com.opendictate.app.preview` application ID and installs alongside the stable app.
-It has separate settings; disable the stable accessibility service before
-enabling the preview service to avoid showing two overlays.
+- Android: `v*` tags publish signed APKs through `release.yml`. Signing uses
+  `SIGNING_KEY`, `KEY_ALIAS`, `KEY_PASSWORD` and `STORE_PASSWORD` Actions secrets.
+  Preview builds retain the weekly/manual `preview.yml` workflow.
+- macOS: `macos-v*` tags publish universal DMGs and checksums through
+  `macos-release.yml`. The version must match `apps/macos/VERSION`.
+  macOS releases do not replace the latest Android download.
+- Local macOS packaging also supports Developer ID signing and notarization
+  when an identity and notary profile are supplied; see the platform README.
 
 ## Privacy and security
 
-The API key is encrypted using hardware-backed Android Keystore when supported
-by the device. Transcript history stays in the app-private local database.
-Audio, text chosen for transformation, and history explicitly submitted to AI
-search are sent directly from your phone to OpenAI. See
-[PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md) for details.
+The only external service is OpenAI. Voice editing sends only the selected
+text (or whole focused field) and the recorded instruction. AI history search
+sends history only when explicitly requested. Unrelated screen contents are
+not collected. See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT
+MIT. See [third-party notices](THIRD_PARTY_NOTICES.md).
