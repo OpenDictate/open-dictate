@@ -24,9 +24,12 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
 - `TextTarget` captures the focused Accessibility element, process, value and
   UTF-16 selection. Every insertion rechecks focus, text and caret. Partials
   replace the original selection. Cancel restores only an untouched target.
-- `HotKeys` uses Carbon registration, avoiding keyboard monitoring. Holding a
-  shortcut does not repeatedly toggle dictation. Escape is registered only
-  during recording/processing.
+- `HotKeys` uses exclusive Carbon registration for ordinary key combinations.
+  Globe/Fn combinations and modifier-only taps use AppKit event monitors with
+  the existing Accessibility permission, without requesting Input Monitoring.
+  Only key codes and modifier flags are inspected; typed characters are not read
+  or stored. Holding a shortcut does not repeatedly toggle dictation. Escape is
+  registered only during recording/processing (or when explicitly assigned).
 - `AudioRecorder` copies tap buffers and converts on a serial worker to mono
   PCM16 at 24 kHz. Chunks are 40 ms. Live audio stays off disk; Accurate builds
   a WAV in memory. Both stop below the provider's 25 MB upload limit.
@@ -44,6 +47,32 @@ Writable values receive live updates. Other accessible editors receive a final
 paste using the clipboard. Editors without usable Accessibility metadata need
 manual Copy last transcript. Password fields are deliberately excluded.
 
+### Keyboard shortcuts
+
+In Settings, click either shortcut and press the desired combination. Letters,
+symbols, navigation, numpad and F1–F20 keys work with any combination of Control,
+Option, Shift and Command, or without modifiers. Dictation and voice editing are
+configured independently; their defaults remain Option+Space and Option+Shift+Space.
+Existing preferences migrate automatically. Escape cancels shortcut recording;
+use the adjacent key menu to assign Escape, an F-key, or Globe/Fn directly.
+During an active dictation, unmodified Escape always cancels even if assigned.
+Conflicting registrations leave the previous shortcut working and show an error.
+
+Press and release modifiers to assign a modifier-only shortcut, including
+Globe/Fn. Modifier-only shortcuts fire on release; using the modifier with another
+key does not start dictation. Globe/Fn with an ordinary key is also supported.
+These monitored shortcuts do not suppress system/other-app actions. In macOS
+Keyboard settings, set “Press 🌐 key to” to “Do Nothing” to avoid input-source,
+emoji or system dictation actions. Accessibility must be allowed. Some external
+keyboards handle Fn in firmware and never send its events to macOS.
+
+For F1–F12, enable “Use F1, F2, etc. keys as standard function keys” under Keyboard
+→ Keyboard Shortcuts → Function Keys, or hold Fn when pressing the key. The recorder
+normalizes the function flag on F/navigation keys so they remain ordinary keys.
+Keys reserved by macOS or intercepted by keyboard firmware cannot be guaranteed.
+See [Apple's function-key guide](https://support.apple.com/102439) and
+[AppKit event monitoring](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/MonitoringEvents/MonitoringEvents.html).
+
 Credentials live in a device-only, non-synchronizing Keychain item. Preferences
 use the app's UserDefaults domain. The last 500 completed transcripts are saved
 in `~/Library/Application Support/OpenDictate/history.json` with owner-only
@@ -58,8 +87,9 @@ bounded queues, cancellation, local search and history batching. Mock transport
 tests do not require a key or call OpenAI.
 
 For native smoke checks, run `scripts/build-smoke.sh` and
-`scripts/build-editor-fixture.sh`, then launch the printed app paths. Pass
-`--local-smoke-test` when launching the OpenDictate debug bundle.
+`scripts/build-editor-fixture.sh`, then launch the printed app paths. The smoke
+bundle enables local-only checks automatically; other debug bundles accept
+`--local-smoke-test`.
 This debug-only mode uses the real shortcut and Accessibility insertion with
 synthetic text and provides a two-second microphone check in its menu. It makes
 no OpenAI requests, never reads your API key or history, and writes no audio.

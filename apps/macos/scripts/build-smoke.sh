@@ -11,7 +11,8 @@ fi
 rm -rf "$smoke_app"
 ditto "$repo_root/dist/macos/OpenDictate.app" "$smoke_app"
 cp "$macos_root/.build/arm64-apple-macosx/debug/OpenDictate" "$smoke_app/Contents/MacOS/OpenDictate"
+/usr/libexec/PlistBuddy -c 'Add :OpenDictateLocalSmokeTest bool true' "$smoke_app/Contents/Info.plist"
 codesign --force --sign - --identifier com.opendictate.mac \
     --requirements '=designated => identifier "com.opendictate.mac"' \
     --entitlements "$macos_root/Resources/OpenDictate.entitlements" "$smoke_app"
-echo "Local-only checks: open '$smoke_app' --args --local-smoke-test"
+echo "Local-only checks: open '$smoke_app'"

@@ -253,19 +253,17 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 24) {
             heading(t("Make it yours.", "Настройте под себя."), t("A few preferences. Nothing in your way.", "Всё нужное. Ничего лишнего."))
             VStack(alignment: .leading, spacing: 14) {
-                Text(t("Keyboard shortcut", "Сочетание клавиш")).fontWeight(.medium)
-                HStack {
-                    Picker(t("Modifiers", "Модификаторы"), selection: $preferences.shortcutModifiers) {
-                        Text("⌥ Option").tag("option")
-                        Text("⌃⌥ Control + Option").tag("control-option")
-                        Text("⌥⌘ Option + Command").tag("command-option")
-                    }.labelsHidden()
-                    Picker(t("Key", "Клавиша"), selection: $preferences.shortcutKey) {
-                        Text("Space").tag("space"); Text("D").tag("d"); Text("R").tag("r")
-                    }.labelsHidden().frame(width: 90)
-                }.disabled(model.isActive)
-                Text(t("Add Shift to the same shortcut to edit text by voice.", "Добавьте Shift к этому сочетанию для голосовой правки."))
+                Text(t("Keyboard shortcuts", "Сочетания клавиш")).fontWeight(.medium)
+                shortcutSetting(t("Dictation", "Диктовка"), transform: false)
+                shortcutSetting(t("Voice editing", "Голосовая правка"), transform: true)
+                Text(t("Click a shortcut and press any key combination, or press and release modifiers. Escape cancels recording.",
+                       "Нажмите на сочетание и введите новое, либо нажмите и отпустите модификаторы. Escape отменяет назначение."))
                     .font(.caption).foregroundStyle(.secondary)
+                Text(t("For F1–F12, enable standard function keys in macOS Keyboard settings (or hold Fn). For Globe/Fn taps, set “Press 🌐 key to” to “Do Nothing”; Accessibility must be allowed.",
+                       "Для F1–F12 включите стандартные функциональные клавиши в настройках клавиатуры macOS (либо удерживайте Fn). Для нажатий Globe/Fn выберите «При нажатии 🌐» → «Ничего не делать»; нужен доступ к Универсальному доступу."))
+                    .font(.caption).foregroundStyle(.secondary)
+                Button(t("Reset shortcuts", "Сбросить сочетания")) { model.setShortcuts(.defaults) }
+                    .disabled(model.isActive)
                 if !model.shortcutError.isEmpty { Text(model.shortcutError).font(.callout) }
             }
             Divider()
@@ -319,6 +317,35 @@ struct SettingsView: View {
                         .disabled(!model.hasKey || model.isActive)
                 }
             }
+        }
+    }
+
+    private func shortcutSetting(_ label: String, transform: Bool) -> some View {
+        let shortcut = transform ? preferences.shortcuts.transform : preferences.shortcuts.dictate
+        let save: (KeyboardShortcut) -> Void = { value in
+            var bindings = preferences.shortcuts
+            if transform { bindings.transform = value } else { bindings.dictate = value }
+            model.setShortcuts(bindings)
+        }
+        return HStack {
+            Text(label)
+            Spacer()
+            ShortcutRecorder(shortcut: shortcut, title: label,
+                             prompt: t("Press keys…", "Нажмите клавиши…"), enabled: !model.isActive,
+                             onRecording: model.recordShortcut, onSave: save)
+                .frame(width: 175, height: 28)
+            Menu {
+                Button("Globe / Fn") { save(.init(keyCode: nil, flags: .function)) }
+                Divider()
+                ForEach(Array(KeyboardShortcut.functionKeyCodes.enumerated()), id: \.element) { index, code in
+                    Button("F\(index + 1)") { save(.init(keyCode: code, flags: [], keyLabel: "F\(index + 1)")) }
+                }
+                Divider()
+                Button("Escape") { save(.init(keyCode: 53, flags: [], keyLabel: "Esc")) }
+            } label: { Image(systemName: "keyboard") }
+                .menuStyle(.borderlessButton).fixedSize()
+                .accessibilityLabel(t("Choose a key for \(label)", "Выбрать клавишу: \(label)"))
+                .disabled(model.isActive)
         }
     }
 

@@ -26,12 +26,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
-        model = AppModel(localOnly: CommandLine.arguments.contains("--local-smoke-test"))
+        let localOnly = CommandLine.arguments.contains("--local-smoke-test") ||
+            Bundle.main.object(forInfoDictionaryKey: "OpenDictateLocalSmokeTest") as? Bool == true
+        model = AppModel(localOnly: localOnly)
         #else
         model = AppModel()
         #endif
         #if DEBUG
-        if CommandLine.arguments.contains("--local-smoke-test") {
+        if localOnly {
             let checks = LocalSmokeChecks(model: model); localChecks = checks
             model.hotKeys.onAction = { action in
                 switch action {

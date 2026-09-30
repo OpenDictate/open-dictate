@@ -1,3 +1,32 @@
+# macOS 0.1.1 verification
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
+
+- All 34 Swift tests pass. The 11 new shortcut tests cover F1–F20, navigation
+  and arbitrary key combinations, synthetic Fn-flag normalization, legacy
+  preference migration, independent shortcut persistence, duplicate detection,
+  Fn/modifier-tap release and chord guards, autorepeat, and real Carbon
+  registration conflict rollback/cleanup.
+- In the isolated debug bundle, recorded F5 without modifiers, Shift+Command+F5
+  and Command+Q; Command+Q was captured without quitting the application.
+  Duplicate assignments kept the previous shortcut and showed a localized error.
+  Escape cancelled recording; the key menu assigned Globe/Fn; reset restored
+  the defaults. English and Russian settings were inspected in the native window.
+- The disposable AppKit editor received synthetic cumulative text and cancellation
+  restored its original value and selection. The sequence passed with ordinary
+  shortcuts and with the Globe/Fn monitor configured. No API key/history was read,
+  OpenAI request made, or audio persisted. The installed app was reopened afterward.
+- Android debug tests/lint/assembly and release lint/assembly pass.
+- Universal arm64/x86_64 packaging, ad-hoc signature and DMG integrity pass;
+  the installer has a SHA-256 attachment. This release is not notarized.
+
+Automation delivers keys to an app, so it cannot validate physical global Carbon
+hotkeys or synthesize the Globe/Fn key. Fn tap/chord behavior has deterministic
+tests, but Apple/external-keyboard event delivery, macOS reserved shortcuts,
+permission denial/revocation, Spaces, full-screen apps and Intel/macOS 14 remain
+manual compatibility checks. The existing focus/cursor/secure-field guard tests
+remain green; provider model access and transcription accuracy are not tested.
+
 # macOS 0.1.0 verification
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30. The deployment target is

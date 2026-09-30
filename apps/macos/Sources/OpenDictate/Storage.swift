@@ -12,8 +12,9 @@ final class Preferences: ObservableObject {
     @Published var dictionary: String { didSet { defaults.set(dictionary, forKey: "dictionary") } }
     @Published var keepTrailingPeriod: Bool { didSet { defaults.set(keepTrailingPeriod, forKey: "keepTrailingPeriod") } }
     @Published var saveHistory: Bool { didSet { defaults.set(saveHistory, forKey: "saveHistory") } }
-    @Published var shortcutModifiers: String { didSet { defaults.set(shortcutModifiers, forKey: "shortcutModifiers") } }
-    @Published var shortcutKey: String { didSet { defaults.set(shortcutKey, forKey: "shortcutKey") } }
+    @Published var shortcuts: ShortcutBindings {
+        didSet { if let data = try? JSONEncoder().encode(shortcuts) { defaults.set(data, forKey: "shortcuts") } }
+    }
     @Published var textModel: String { didSet { defaults.set(textModel, forKey: "textModel") } }
     @Published var timeout: Int { didSet { defaults.set(timeout, forKey: "timeout") } }
     @Published var excludedApps: [String] { didSet { defaults.set(excludedApps, forKey: "excludedApps") } }
@@ -27,8 +28,13 @@ final class Preferences: ObservableObject {
         dictionary = defaults.string(forKey: "dictionary") ?? "OpenDictate"
         keepTrailingPeriod = defaults.object(forKey: "keepTrailingPeriod") as? Bool ?? true
         saveHistory = defaults.object(forKey: "saveHistory") as? Bool ?? true
-        shortcutModifiers = defaults.string(forKey: "shortcutModifiers") ?? "option"
-        shortcutKey = defaults.string(forKey: "shortcutKey") ?? "space"
+        if let data = defaults.data(forKey: "shortcuts"),
+           let saved = try? JSONDecoder().decode(ShortcutBindings.self, from: data), saved.isValid {
+            shortcuts = saved
+        } else {
+            shortcuts = .legacy(modifiers: defaults.string(forKey: "shortcutModifiers") ?? "option",
+                                key: defaults.string(forKey: "shortcutKey") ?? "space")
+        }
         textModel = defaults.string(forKey: "textModel") ?? "gpt-6-luna"
         timeout = [30, 60, 120].contains(defaults.integer(forKey: "timeout")) ? defaults.integer(forKey: "timeout") : 60
         excludedApps = defaults.stringArray(forKey: "excludedApps") ?? []
@@ -43,11 +49,8 @@ final class Preferences: ObservableObject {
         let languages = speechLanguage == "ru-en" ? ["ru", "en"] : (speechLanguage == "auto" ? [] : [speechLanguage])
         return TranscriptionContext(languages: languages, dictionary: DictionaryTerms.normalize(dictionary))
     }
-    var shortcutLabel: String {
-        let modifiers = shortcutModifiers == "control-option" ? "⌃⌥" : (shortcutModifiers == "command-option" ? "⌥⌘" : "⌥")
-        return modifiers + (shortcutKey == "space" ? "Space" : shortcutKey.uppercased())
-    }
-    var editShortcutLabel: String { "⇧" + shortcutLabel }
+    var shortcutLabel: String { shortcuts.dictate.label }
+    var editShortcutLabel: String { shortcuts.transform.label }
 }
 
 enum APIKeyStore {

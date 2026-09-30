@@ -1,29 +1,33 @@
-OpenDictate is now available for macOS 14 and later, on Apple Silicon and Intel.
+OpenDictate for macOS 0.1.1 expands keyboard shortcut customization.
 
-- Press **Option + Space** to start dictation, then press it again to finish.
-- **Live** inserts text as you speak; **Accurate** transcribes the completed recording.
-- Press **Option + Shift + Space** to edit selected text with a spoken instruction.
-- **Escape** cancels and restores the original text when the field is unchanged.
-- Includes a dictionary, local searchable history, explicit AI history search,
-  configurable shortcuts, excluded apps, login launch and English/Russian settings.
-- Runs in the menu bar. Keys are stored in Keychain, audio stays in memory,
-  and requests go directly to OpenAI. There is no backend or analytics.
+- Record arbitrary key combinations instead of choosing from a fixed list.
+  Supports letters, symbols, navigation, numpad keys and **F1–F20**, with or
+  without Control, Option, Shift and Command.
+- Assign **Globe/Fn**, modifier-only taps, or Globe/Fn with an ordinary key.
+  Modifier taps fire on release and do not activate when used with another key.
+- Configure dictation and voice editing independently, including Shift in either
+  shortcut. Existing settings migrate automatically; defaults remain
+  **Option+Space** and **Option+Shift+Space**.
+- Select F-keys or Globe/Fn directly from the key menu, cancel recording with
+  Escape, or reset both shortcuts. Failed registrations preserve working bindings.
+
+For F1–F12, enable standard function keys in macOS Keyboard settings or hold Fn.
+For Globe/Fn taps, set **Keyboard → Press 🌐 key to → Do Nothing** and allow
+Accessibility. Some external keyboards handle Fn internally and do not send it
+to macOS. System-reserved keys may remain unavailable; Globe/Fn and modifier-only
+shortcuts do not suppress existing macOS or other-app actions.
 
 ### Install
 
-Download `OpenDictate-macOS-0.1.0-universal.dmg`, open it and drag OpenDictate
-to Applications. Launch it, save your own OpenAI API key, and allow Microphone
-and Accessibility in the app's setup screen.
+Download `OpenDictate-macOS-0.1.1-universal.dmg`, open it and drag OpenDictate
+to Applications. Requires macOS 14+ on Apple Silicon or Intel.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks
 launching it, use **System Settings → Privacy & Security → Open Anyway**
 for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
-For editors without writable Accessibility text, insertion briefly uses the
-clipboard and restores its previous contents if unchanged. Focus changes never
-send text to a different field; a completed result stays available from the menu.
-
-API usage is billed separately by OpenAI. Check the `.sha256` attachment to
-verify the downloaded installer.
+Audio stays in memory and goes directly to OpenAI. There is no backend or
+analytics. No Input Monitoring permission is requested. API usage is billed
+separately by OpenAI. Check the `.sha256` attachment to verify the installer.
 
 Android releases retain their existing `v*` tags. macOS releases use `macos-v*`.
