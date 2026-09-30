@@ -85,7 +85,7 @@ internal fun TranscriptHistoryScreen(
     val copiedMessage = stringResource(R.string.history_copied)
 
     Box(
-        modifier = modifier.fillMaxSize().background(Ink),
+        modifier = modifier.fillMaxSize().background(SettingsCanvas),
     ) {
         Column(
             modifier = Modifier
@@ -134,7 +134,7 @@ internal fun TranscriptHistoryScreen(
                         if (state.isLoading && state.searchMode == HistorySearchMode.AI) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
-                                color = Ink,
+                                color = SettingsCanvas,
                                 strokeWidth = 2.dp,
                             )
                         } else {
@@ -156,13 +156,13 @@ internal fun TranscriptHistoryScreen(
                     Icon(
                         Icons.Outlined.Lock,
                         contentDescription = null,
-                        tint = Fog,
+                        tint = SettingsMuted,
                         modifier = Modifier.size(15.dp),
                     )
                     Spacer(Modifier.width(7.dp))
                     Text(
                         text = stringResource(R.string.history_ai_privacy),
-                        color = Fog,
+                        color = SettingsMuted,
                         fontSize = 11.sp,
                         lineHeight = 15.sp,
                     )
@@ -171,10 +171,10 @@ internal fun TranscriptHistoryScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         text = message,
-                        color = Silver,
+                        color = SettingsSecondary,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Silver.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .background(SettingsSecondary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         fontSize = 13.sp,
                         lineHeight = 18.sp,
@@ -218,8 +218,8 @@ internal fun TranscriptHistoryScreen(
                         onDelete(item.id)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Silver,
-                        contentColor = Ink,
+                        containerColor = SettingsSecondary,
+                        contentColor = SettingsCanvas,
                     ),
                 ) {
                     Text(stringResource(R.string.history_delete_action))
@@ -230,9 +230,9 @@ internal fun TranscriptHistoryScreen(
                     Text(stringResource(R.string.action_cancel))
                 }
             },
-            containerColor = Panel,
-            titleContentColor = White,
-            textContentColor = Fog,
+            containerColor = SettingsSurface,
+            titleContentColor = SettingsText,
+            textContentColor = SettingsMuted,
         )
     }
 }
@@ -249,20 +249,20 @@ private fun HistoryTopBar(entryCount: Int, onBack: () -> Unit) {
             Icon(
                 Icons.AutoMirrored.Outlined.ArrowBack,
                 contentDescription = stringResource(R.string.history_back),
-                tint = White,
+                tint = SettingsText,
             )
         }
         Spacer(Modifier.width(4.dp))
         Column {
             Text(
                 text = stringResource(R.string.history_title),
-                color = White,
+                color = SettingsText,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
             )
             Text(
                 text = stringResource(R.string.history_count, entryCount),
-                color = Fog,
+                color = SettingsMuted,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
                 fontSize = 10.sp,
@@ -293,7 +293,7 @@ private fun SearchModeButton(
             onClick = onClick,
             modifier = modifier.height(48.dp),
             enabled = enabled,
-            colors = ButtonDefaults.buttonColors(containerColor = White, contentColor = Ink),
+            colors = ButtonDefaults.buttonColors(containerColor = SettingsText, contentColor = SettingsCanvas),
             content = { content() },
         )
     } else {
@@ -301,7 +301,7 @@ private fun SearchModeButton(
             onClick = onClick,
             modifier = modifier.height(48.dp),
             enabled = enabled,
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = White),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = SettingsText),
             content = { content() },
         )
     }
@@ -317,7 +317,7 @@ private fun HistoryList(
     when {
         state.isLoading -> {
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = White)
+                CircularProgressIndicator(color = SettingsText)
             }
         }
         state.entries.isEmpty() -> {
@@ -360,20 +360,20 @@ private fun HistoryEmptyState(title: String, message: String, modifier: Modifier
         verticalArrangement = Arrangement.Center,
     ) {
         Box(
-            modifier = Modifier.size(58.dp).background(PanelLight, CircleShape),
+            modifier = Modifier.size(58.dp).background(SettingsInset, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Outlined.History,
                 contentDescription = null,
-                tint = White,
+                tint = SettingsText,
                 modifier = Modifier.size(28.dp),
             )
         }
         Spacer(Modifier.height(16.dp))
-        Text(title, color = White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(title, color = SettingsText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(6.dp))
-        Text(message, color = Fog, fontSize = 13.sp, lineHeight = 19.sp)
+        Text(message, color = SettingsMuted, fontSize = 13.sp, lineHeight = 19.sp)
     }
 }
 
@@ -391,7 +391,7 @@ private fun HistoryItem(
     }
     Card(
         onClick = { expanded = !expanded },
-        colors = CardDefaults.cardColors(containerColor = Panel),
+        colors = CardDefaults.cardColors(containerColor = SettingsSurface),
         shape = RoundedCornerShape(16.dp),
     ) {
         Row(
@@ -401,7 +401,7 @@ private fun HistoryItem(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = formattedDate,
-                    color = White,
+                    color = SettingsText,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
@@ -413,7 +413,7 @@ private fun HistoryItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(onClickLabel = copyAction, onClick = onCopy),
-                    color = White,
+                    color = SettingsText,
                     fontSize = 15.sp,
                     lineHeight = 21.sp,
                     maxLines = if (expanded) Int.MAX_VALUE else 5,
@@ -424,7 +424,7 @@ private fun HistoryItem(
                 Icon(
                     Icons.Outlined.DeleteOutline,
                     contentDescription = stringResource(R.string.history_delete_item),
-                    tint = Silver,
+                    tint = SettingsSecondary,
                 )
             }
         }
