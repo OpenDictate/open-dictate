@@ -86,16 +86,18 @@ enum APIKeyStore {
 final class HistoryStore: ObservableObject {
     @Published private(set) var entries = [HistoryEntry]()
     @Published private(set) var error: String?
-    private let url: URL
-    init() {
+    private let url: URL?
+    init(inMemory: Bool = false) {
+        if inMemory { url = nil; return }
         let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("OpenDictate", isDirectory: true)
-        url = folder.appendingPathComponent("history.json")
+        let historyURL = folder.appendingPathComponent("history.json")
+        url = historyURL
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true,
                                                     attributes: [.posixPermissions: 0o700])
-            if FileManager.default.fileExists(atPath: url.path) {
-                entries = try JSONDecoder().decode([HistoryEntry].self, from: Data(contentsOf: url))
+            if FileManager.default.fileExists(atPath: historyURL.path) {
+                entries = try JSONDecoder().decode([HistoryEntry].self, from: Data(contentsOf: historyURL))
             }
         } catch { self.error = DictationError.storage.localizedDescription }
     }
@@ -107,6 +109,7 @@ final class HistoryStore: ObservableObject {
     func delete(_ id: UUID) { entries.removeAll { $0.id == id }; persist() }
     func clear() { entries.removeAll(); persist() }
     private func persist() {
+        guard let url else { return }
         do {
             try JSONEncoder().encode(entries).write(to: url, options: [.atomic])
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)

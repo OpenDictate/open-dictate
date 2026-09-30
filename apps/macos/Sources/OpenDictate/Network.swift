@@ -30,6 +30,32 @@ enum DictationError: Error, LocalizedError {
         case .shortcut: return "This shortcut is already in use. Choose another combination in Settings."
         }
     }
+
+    func message(russian: Bool) -> String {
+        guard russian else { return localizedDescription }
+        switch self {
+        case .missingKey: return "Сохраните ключ API OpenAI в настройках."
+        case .microphone: return "Разрешите микрофон в системных настройках и повторите."
+        case .accessibility: return "Разрешите OpenDictate в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ."
+        case .noField: return "Поставьте курсор в редактируемое поле и нажмите сочетание клавиш."
+        case .secureField: return "Диктовка в полях паролей отключена."
+        case .excluded: return "Диктовка в этом приложении отключена. Измените исключения в настройках."
+        case .audio: return "Не удалось записать звук. Проверьте микрофон и повторите."
+        case .tooLong: return "Запись достигла ограничения в восемь минут. Начните новую диктовку."
+        case .tooShort: return "Запись слишком короткая. Говорите немного дольше перед остановкой."
+        case .queueFull: return "Соединение слишком медленное для Live. Попробуйте режим Accurate."
+        case .connection: return "Соединение с OpenAI прервано. Проверьте интернет."
+        case .timeout: return "OpenAI не ответил вовремя. Попробуйте ещё раз."
+        case .invalidResponse: return "OpenAI вернул неполный ответ. Попробуйте ещё раз."
+        case .api(let code):
+            if code == 401 { return "OpenAI отклонил ключ API. Обновите его в настройках." }
+            if code == 429 { return "Достигнут лимит OpenAI. Проверьте баланс API и повторите позже." }
+            return "OpenAI вернул ошибку \(code). Проверьте доступ к модели и повторите."
+        case .keychain: return "Не удалось открыть Keychain. Разблокируйте связку ключей и повторите."
+        case .storage: return "Не удалось сохранить историю. Проверьте свободное место и права папки."
+        case .shortcut: return "Сочетание клавиш занято. Выберите другое в настройках."
+        }
+    }
 }
 
 actor OpenAIClient {

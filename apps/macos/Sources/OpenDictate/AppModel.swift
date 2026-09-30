@@ -20,8 +20,9 @@ final class AppModel: ObservableObject {
     @Published var isSearching = false
     @Published var searchMatches: [UUID]?
     @Published var loginEnabled = false
-    let preferences = Preferences()
-    let history = HistoryStore()
+    let preferences: Preferences
+    let history: HistoryStore
+    private let localOnly: Bool
     let hotKeys = HotKeys()
     private let client = OpenAIClient()
     private var current: Session?
@@ -59,7 +60,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    init() {
+    init(localOnly: Bool = false) {
+        self.localOnly = localOnly
+        preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
+        history = HistoryStore(inMemory: localOnly)
         refreshPermissions()
         loginEnabled = SMAppService.mainApp.status == .enabled
         hotKeys.onAction = { [weak self] action in
@@ -104,6 +108,7 @@ final class AppModel: ObservableObject {
     func refreshPermissions() {
         microphoneAllowed = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAllowed = AXIsProcessTrusted()
+        guard !localOnly else { hasKey = false; return }
         do { hasKey = try APIKeyStore.load()?.isEmpty == false }
         catch { present(error) }
     }
@@ -124,17 +129,23 @@ final class AppModel: ObservableObject {
             NSWorkspace.shared.open(url)
         }
     }
-    func saveKey(_ key: String) {
-        do { try APIKeyStore.save(key); hasKey = true; message = preferences.t("API key saved in Keychain.", "Ключ сохранён в Keychain.") }
-        catch { present(error) }
+    @discardableResult func saveKey(_ key: String) -> Bool {
+        guard !localOnly else { return false }
+        do {
+            try APIKeyStore.save(key); hasKey = true
+            message = preferences.t("API key saved in Keychain.", "Ключ сохранён в Keychain.")
+            return true
+        } catch { present(error); return false }
     }
     func deleteKey() {
+        guard !localOnly else { return }
         guard !isActive else { return }
         do { try APIKeyStore.delete(); hasKey = false; message = "" }
         catch { present(error) }
     }
 
     func toggle(transform: Bool) {
+        guard !localOnly else { return }
         if phase == .preparing { current?.stopRequested = true; return }
         if phase == .recording { stop(); return }
         guard phase == .idle else { return }
@@ -286,7 +297,7 @@ final class AppModel: ObservableObject {
         do {
             try hotKeys.configure(modifiers: preferences.shortcutModifiers, key: preferences.shortcutKey)
             shortcutError = ""
-        } catch { shortcutError = error.localizedDescription }
+        } catch { shortcutError = (error as? DictationError)?.message(russian: preferences.isRussian) ?? error.localizedDescription }
         onStateChange?()
     }
 
@@ -316,6 +327,7 @@ final class AppModel: ObservableObject {
     }
 
     func searchHistory(_ query: String) {
+        guard !localOnly else { return }
         cancelSearch()
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         do {
@@ -346,7 +358,10 @@ final class AppModel: ObservableObject {
                                     "Не удалось изменить автозапуск. Переместите OpenDictate в Программы и повторите.")
         }
     }
-    func present(_ error: Error) { message = error.localizedDescription; onStateChange?() }
+    func present(_ error: Error) {
+        message = (error as? DictationError)?.message(russian: preferences.isRussian) ?? error.localizedDescription
+        onStateChange?()
+    }
     func clearMessage() { message = "" }
     func shutdown() { cancel(); cancelSearch(); timer?.invalidate(); hotKeys.shutdown() }
 }

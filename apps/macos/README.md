@@ -57,11 +57,13 @@ WAV/chunk boundaries, protocol payloads, ordered early-audio flush and commit,
 bounded queues, cancellation, local search and history batching. Mock transport
 tests do not require a key or call OpenAI.
 
-For native smoke checks, build a debug executable, place it into a development
-copy of the bundled app, sign the bundle, and launch with `--local-smoke-test`.
+For native smoke checks, run `scripts/build-smoke.sh` and
+`scripts/build-editor-fixture.sh`, then launch the printed app paths. Pass
+`--local-smoke-test` when launching the OpenDictate debug bundle.
 This debug-only mode uses the real shortcut and Accessibility insertion with
 synthetic text and provides a two-second microphone check in its menu. It makes
-no OpenAI requests and writes no audio. These checks are absent from release builds.
+no OpenAI requests, never reads your API key or history, and writes no audio.
+It uses a separate preference domain. These checks are absent from release builds.
 
 Use a disposable editor document to check cumulative insertion, Escape rollback,
 cursor movement, switching fields/apps, secure fields and clipboard fallback.

@@ -25,7 +25,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     #endif
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        model = AppModel(localOnly: CommandLine.arguments.contains("--local-smoke-test"))
+        #else
         model = AppModel()
+        #endif
         #if DEBUG
         if CommandLine.arguments.contains("--local-smoke-test") {
             let checks = LocalSmokeChecks(model: model); localChecks = checks
@@ -44,6 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = menu
         updateState()
         if !model.hasKey || !model.microphoneAllowed || !model.accessibilityAllowed { openSettings() }
+        #if DEBUG
+        if localChecks != nil { openSettings() }
+        #endif
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -100,6 +107,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let applicationMenu = NSMenu(title: "OpenDictate")
         let settings = NSMenuItem(title: model.preferences.t("Settings…", "Настройки…"), action: #selector(settings), keyEquivalent: ",")
         settings.target = self; applicationMenu.addItem(settings)
+        #if DEBUG
+        if localChecks != nil {
+            let microphone = NSMenuItem(title: "Local check: record microphone (2 seconds)", action: #selector(checkMicrophone), keyEquivalent: "")
+            microphone.target = self; applicationMenu.addItem(microphone)
+            let insertion = NSMenuItem(title: "Local check: insert in 3 seconds", action: #selector(checkInsertion), keyEquivalent: "")
+            insertion.target = self; applicationMenu.addItem(insertion)
+            let cancellation = NSMenuItem(title: "Local check: cancel in 3 seconds", action: #selector(checkCancellation), keyEquivalent: "")
+            cancellation.target = self; applicationMenu.addItem(cancellation)
+            let sequence = NSMenuItem(title: "Local check: insertion and rollback in 3 seconds", action: #selector(checkSequence), keyEquivalent: "")
+            sequence.target = self; applicationMenu.addItem(sequence)
+        }
+        #endif
         applicationMenu.addItem(.separator())
         let quit = NSMenuItem(title: model.preferences.t("Quit OpenDictate", "Завершить OpenDictate"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self; applicationMenu.addItem(quit)
@@ -156,5 +175,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func quit() { NSApp.terminate(nil) }
     #if DEBUG
     @objc private func checkMicrophone() { localChecks?.record() }
+    @objc private func checkInsertion() {
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); localChecks?.toggle() }
+    }
+    @objc private func checkCancellation() {
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); localChecks?.cancel() }
+    }
+    @objc private func checkSequence() {
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.verifyInsertionAndRollback() }
+    }
     #endif
 }

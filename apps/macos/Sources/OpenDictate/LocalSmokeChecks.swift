@@ -28,6 +28,22 @@ final class LocalSmokeChecks {
         target?.restore(); target = nil; model.hotKeys.setCancelEnabled(false)
         model.present(CheckMessage("LOCAL CHECK: cancellation restored unchanged field"))
     }
+    func verifyInsertionAndRollback() async {
+        do {
+            let target = try TextTarget.capture(exclusions: [])
+            let original = target.snapshot
+            target.preserveOriginal()
+            guard target.apply("Проверка") else { throw CheckMessage("LOCAL CHECK: partial delivery rejected") }
+            try await Task.sleep(nanoseconds: 100_000_000)
+            guard target.apply("Проверка 🙂") else { throw CheckMessage("LOCAL CHECK: cumulative delivery rejected") }
+            try await Task.sleep(nanoseconds: 100_000_000)
+            target.restore()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            let restored = try TextTarget.capture(exclusions: []).snapshot
+            guard restored == original else { throw CheckMessage("LOCAL CHECK: original selection was not restored") }
+            model.present(CheckMessage("LOCAL CHECK: cumulative insertion and cancellation verified; original restored"))
+        } catch { model.present(error) }
+    }
     func record() {
         Task {
             let recorder = AudioRecorder()

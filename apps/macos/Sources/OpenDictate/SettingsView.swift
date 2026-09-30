@@ -149,8 +149,7 @@ struct SettingsView: View {
     }
 
     private func saveKey() {
-        model.saveKey(apiKey)
-        if model.hasKey { apiKey = "" }
+        if model.saveKey(apiKey) { apiKey = "" }
     }
     private func permission(_ title: String, granted: Bool, action: @escaping () -> Void) -> some View {
         HStack {
@@ -187,7 +186,7 @@ struct SettingsView: View {
                 .frame(minHeight: 290).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
                 .accessibilityLabel(t("Dictionary terms", "Слова в словаре"))
             HStack {
-                Text(t("\(DictionaryTerms.normalize(preferences.dictionary).count) terms · saved automatically", "\(DictionaryTerms.normalize(preferences.dictionary).count) слов · сохранено автоматически"))
+                Text(t("\(DictionaryTerms.normalize(preferences.dictionary).count) \(DictionaryTerms.normalize(preferences.dictionary).count == 1 ? "term" : "terms") · saved automatically", "Слов в словаре: \(DictionaryTerms.normalize(preferences.dictionary).count) · сохранено автоматически"))
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button(t("Clean up", "Упорядочить")) { preferences.dictionary = DictionaryTerms.normalize(preferences.dictionary).joined(separator: "\n") }
@@ -271,9 +270,9 @@ struct SettingsView: View {
             }
             Divider()
             VStack(spacing: 16) {
-                Toggle(t("Launch at login", "Запускать при входе"), isOn: Binding(get: { model.loginEnabled }, set: model.setLoginEnabled))
-                Toggle(t("Show recording status", "Показывать состояние записи"), isOn: $preferences.showStatus)
-                Toggle(t("Keep the final period", "Оставлять точку в конце"), isOn: $preferences.keepTrailingPeriod)
+                settingToggle(t("Launch at login", "Запускать при входе"), Binding(get: { model.loginEnabled }, set: model.setLoginEnabled))
+                settingToggle(t("Show recording status", "Показывать состояние записи"), $preferences.showStatus)
+                settingToggle(t("Keep the final period", "Оставлять точку в конце"), $preferences.keepTrailingPeriod)
                 HStack {
                     Text(t("Interface language", "Язык интерфейса")); Spacer()
                     Picker(t("Interface language", "Язык интерфейса"), selection: $preferences.interfaceLanguage) {
@@ -330,6 +329,13 @@ struct SettingsView: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         if panel.runModal() == .OK, let url = panel.url, let id = Bundle(url: url)?.bundleIdentifier,
            !preferences.excludedApps.contains(id) { preferences.excludedApps.append(id) }
+    }
+
+    private func settingToggle(_ label: String, _ binding: Binding<Bool>) -> some View {
+        HStack {
+            Text(label); Spacer()
+            Toggle(label, isOn: binding).labelsHidden().accessibilityLabel(label)
+        }
     }
 }
 

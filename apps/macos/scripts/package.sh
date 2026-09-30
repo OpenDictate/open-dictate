@@ -49,7 +49,7 @@ ln -s /Applications "$staging/Applications"
 cp "$macos_root/INSTALL.txt" "$staging/Install OpenDictate.txt"
 dmg="$output/OpenDictate-macOS-$version-universal.dmg"
 rm -f "$dmg"
-hdiutil create -volname "OpenDictate $version" -srcfolder "$staging" -format UDZO "$dmg"
+hdiutil create -volname "OpenDictate $version" -srcfolder "$staging" -fs HFS+ -format UDZO "$dmg"
 hdiutil verify "$dmg"
 
 if [[ -n "${MACOS_NOTARY_PROFILE:-}" ]]; then
