@@ -33,7 +33,7 @@ struct SettingsView: View {
                         .font(.caption).foregroundStyle(.secondary).lineSpacing(3)
                 }
                 Divider()
-                Text("macOS · \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0")")
+                Text("macOS · \(Bundle.main.object(forInfoDictionaryKey: "OpenDictateReleaseVersion") as? String ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2.0-rc.1")")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(20).frame(width: 190).background(Color(nsColor: .controlBackgroundColor))
             Divider()
@@ -336,30 +336,5 @@ struct SettingsView: View {
             Text(label); Spacer()
             Toggle(label, isOn: binding).labelsHidden().accessibilityLabel(label)
         }
-    }
-}
-
-struct RecordingStatusView: View {
-    @ObservedObject var model: AppModel
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: model.phase == .processing ? "ellipsis" : "mic.fill").font(.system(size: 19))
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text(model.stateLabel).font(.system(size: 13, weight: .medium))
-                    Spacer()
-                    Text(String(format: "%d:%02d", model.elapsed / 60, model.elapsed % 60)).monospacedDigit().font(.caption).foregroundStyle(.secondary)
-                }
-                HStack(spacing: 3) {
-                    ForEach(0..<20, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(Float(index) / 20 < model.level ? 0.9 : 0.18))
-                            .frame(height: 4)
-                    }
-                }.accessibilityLabel(model.preferences.t("Microphone level", "Уровень микрофона"))
-                Text(model.preferences.t("\(model.preferences.shortcutLabel) to finish · Esc to cancel", "\(model.preferences.shortcutLabel) — завершить · Esc — отменить"))
-                    .font(.system(size: 10)).foregroundStyle(.secondary)
-            }
-        }.padding(18).frame(width: 316).background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
-            .preferredColorScheme(.dark)
     }
 }

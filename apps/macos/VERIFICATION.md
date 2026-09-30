@@ -1,4 +1,28 @@
-# macOS 0.1.0 verification
+# macOS verification
+
+## 0.2.0-rc.1
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.
+
+- Native captures verify the 88 × 44 pt recording capsule with only a
+  microphone and red finish button, and the 44 × 44 pt processing indicator
+  with only a spinner. Preparation uses the same spinner layout; idle hides
+  the panel.
+- A local debug preview uses the production panel and view without recording
+  or networking. Clicking its finish button replaced the accessible button
+  with a busy indicator. The disposable editor retained its focused text field
+  before and after the click.
+- 23 Swift tests and the stable/RC release-version validation checks pass.
+  Android debug tests/lint/assembly and release lint/assembly pass.
+- Universal release packaging verifies arm64/x86_64, the ad-hoc signature and
+  DMG integrity. The full RC version appears in the app and installer name;
+  the bundle short version remains numeric, with build number 2.
+
+The preview validates the HUD interaction and state transition. Actual OpenAI
+submission is not exercised; the finish action uses the existing session stop
+path. The compatibility limitations below still apply.
+
+## 0.1.0
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30. The deployment target is
 macOS 14; Intel is cross-compiled, not exercised on Intel hardware.

@@ -1,17 +1,19 @@
-OpenDictate is now available for macOS 14 and later, on Apple Silicon and Intel.
+Release candidate for OpenDictate 0.2.0, for macOS 14 and later on Apple Silicon and Intel.
 
-- Press **Option + Space** to start dictation, then press it again to finish.
-- **Live** inserts text as you speak; **Accurate** transcribes the completed recording.
-- Press **Option + Shift + Space** to edit selected text with a spoken instruction.
-- **Escape** cancels and restores the original text when the field is unchanged.
-- Includes a dictionary, local searchable history, explicit AI history search,
-  configurable shortcuts, excluded apps, login launch and English/Russian settings.
-- Runs in the menu bar. Keys are stored in Keychain, audio stays in memory,
-  and requests go directly to OpenAI. There is no backend or analytics.
+- A compact dark indicator replaces the large recording panel.
+- While recording, it shows only a microphone and a red finish button.
+- Click the red button or press **Option + Space** to finish and submit.
+  The panel keeps keyboard focus in your editor.
+- After submission, only a native spinner remains. The indicator disappears
+  when dictation completes or is cancelled.
+- **Escape** still cancels and restores an unchanged field.
+- Live, Accurate, voice editing, dictionary and history remain available.
+
+This is a **prerelease**, published separately from the stable 0.1.0 download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.1.0-universal.dmg`, open it and drag OpenDictate
+Download `OpenDictate-macOS-0.2.0-rc.1-universal.dmg`, open it and drag OpenDictate
 to Applications. Launch it, save your own OpenAI API key, and allow Microphone
 and Accessibility in the app's setup screen.
 
