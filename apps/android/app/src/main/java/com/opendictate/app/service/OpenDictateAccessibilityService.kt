@@ -124,7 +124,8 @@ class OpenDictateAccessibilityService : AccessibilityService() {
     private val updateOverlayRunnable = Runnable {
         overlayUpdateScheduled = false
         val ime = windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-        val focused = findFocusedEditable()
+        // Node queries can block the main thread; there is no eligible target without an IME.
+        val focused = if (ime != null) findFocusedEditable() else null
         val hasEligibleTarget = ime != null && focused?.isTextInput() == true &&
             !settings.isPackageExcluded(focused.packageName)
         if (overlayVisibilitySession.shouldShow(hasEligibleTarget)) {
