@@ -82,6 +82,7 @@ struct SettingsView: View {
                     Label(theme.title(russian: preferences.isRussian), systemImage: theme.symbol).tag(theme)
                 }
             }
+            .pickerStyle(.inline)
         } label: {
             Image(systemName: preferences.theme.symbol).frame(width: 24, height: 24)
         }
