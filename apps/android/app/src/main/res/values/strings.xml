@@ -231,8 +231,20 @@
     <string name="replacements_invalid">Use a unique phrase (up to 256 characters) and a replacement (up to 2,048). Maximum 500 rules.</string>
     <string name="replacements_storage_error">Could not read or save replacements. Your saved data was kept. Restore your preferences before editing.</string>
     <string name="replacements_empty">No replacements yet. Example: open dictate → OpenDictate.</string>
-    <string name="replacements_note">Whole words and phrases, ignoring case. Replacement spelling stays exactly as entered. Rules stay on this device and are not sent to OpenAI. Voice editing commands are unchanged.</string>
+    <string name="replacements_note">Whole words and phrases, ignoring case. Replacement spelling stays exactly as entered. Connect Google Drive to sync rules across devices. Rules are not sent to OpenAI. Voice editing commands are unchanged.</string>
     <string name="replacements_edit_rule">Edit replacement for %1$s</string>
     <string name="replacements_delete_rule">Delete replacement for %1$s</string>
     <string name="replacements_toggle_rule">Enable replacement for %1$s</string>
+    <string name="drive_sync_description">Sync your dictionary, word replacements, dictation mode and selected models across Android and macOS.</string>
+    <string name="drive_sync_authorizing">Waiting for Google sign-in…</string>
+    <string name="drive_sync_busy">Synchronizing…</string>
+    <string name="drive_sync_sign_in_again">Sign in again to resume synchronization.</string>
+    <string name="drive_sync_failed">Could not sync. Your local settings are saved. Check your connection and try again.</string>
+    <string name="drive_sync_off">Not connected</string>
+    <string name="drive_sync_done">Settings synchronized. Changes sync automatically while the app is running.</string>
+    <string name="drive_sync_waiting">Waiting to synchronize</string>
+    <string name="drive_sync_now">Sync now</string>
+    <string name="drive_sync_connect">Connect Google Drive</string>
+    <string name="drive_sync_disconnect">Disconnect</string>
+    <string name="drive_sync_privacy">Only these settings are sent to Google. API keys, audio and history stay out of sync. Disconnecting keeps local and cloud settings.</string>
 </resources>

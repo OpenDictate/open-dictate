@@ -107,6 +107,9 @@ class DictationForegroundService : Service() {
         val transformationModelId = settings.transformationModelId
         val keepTrailingPeriod = settings.keepTrailingPeriod
         val replacements = (application as OpenDictateApplication).replacementStore.engine()
+        val languages = settings.languages
+        val prompt = settings.prompt
+        val responseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds
         val sessionId = nextSession.incrementAndGet()
         activeOperation = operation
         stopSignal = CompletableDeferred()
@@ -138,9 +141,9 @@ class DictationForegroundService : Service() {
                             modelId = liveModelId,
                             scope = scope,
                             recorder = recorder,
-                            languages = settings.languages,
-                            prompt = settings.prompt,
-                            responseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
+                            languages = languages,
+                            prompt = prompt,
+                            responseTimeoutSeconds = responseTimeoutSeconds,
                             waitForStop = { stopSignal.await() },
                             onReady = {
                                 publishWhileActive(
@@ -224,9 +227,9 @@ class DictationForegroundService : Service() {
                             apiKey,
                             accurateModelId,
                             file,
-                            settings.languages,
-                            settings.prompt,
-                            settings.transcriptionResponseTimeoutSeconds,
+                            languages,
+                            prompt,
+                            responseTimeoutSeconds,
                         )
                     }
                 }

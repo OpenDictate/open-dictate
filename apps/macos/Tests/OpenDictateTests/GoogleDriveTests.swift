@@ -1,0 +1,186 @@
+import XCTest
+import OpenDictateCore
+import CryptoKit
+@testable import OpenDictate
+
+private final class DriveHTTP: URLProtocol, @unchecked Sendable {
+    static var handler: ((URLRequest) throws -> (Int, Data))?
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        do {
+            let (status, body) = try Self.handler!(request)
+            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status,
+                httpVersion: "HTTP/1.1", headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: body); client?.urlProtocolDidFinishLoading(self)
+        } catch { client?.urlProtocol(self, didFailWithError: error) }
+    }
+    override func stopLoading() {}
+}
+
+final class GoogleDriveTests: XCTestCase {
+    private func client() -> GoogleDriveClient {
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [DriveHTTP.self]
+        return GoogleDriveClient(session: URLSession(configuration: config))
+    }
+    func testPaginationMergesReplicasAndUploadsOnlyOwnFile() async throws {
+        var calls = 0
+        DriveHTTP.handler = { request in
+            calls += 1
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer synthetic-drive-token")
+            let response: String
+            switch calls {
+            case 1:
+                XCTAssertTrue(request.url!.absoluteString.contains("spaces=appDataFolder"))
+                response = #"{"nextPageToken":"page2","files":[{"id":"android-file","name":"opendictate-settings-v1-android.json","size":"150"}]}"#
+            case 2: response = #"{"schemaVersion":1,"entries":{"dictionary":{"value":"Никита","modifiedAt":20,"deviceId":"android"}}}"#
+            case 3:
+                XCTAssertTrue(request.url!.absoluteString.contains("pageToken=page2"))
+                response = #"{"files":[{"id":"own-file","name":"opendictate-settings-v1-mac.json","size":"150"}]}"#
+            case 4: response = #"{"schemaVersion":1,"entries":{"textModel":{"value":"gpt-6-sol","modifiedAt":30,"deviceId":"mac"}}}"#
+            default:
+                XCTAssertEqual(request.httpMethod, "PATCH")
+                XCTAssertEqual(request.url?.path, "/upload/drive/v3/files/own-file")
+                response = "{}"
+            }
+            return (200, Data(response.utf8))
+        }
+        let client = client(), remote = try await client.download(token: "synthetic-drive-token", deviceID: "mac")
+        XCTAssertEqual(remote.ownFileID, "own-file")
+        XCTAssertEqual(remote.document.entries["dictionary"]?.value, "Никита")
+        XCTAssertEqual(remote.document.entries["textModel"]?.value, "gpt-6-sol")
+        try await client.upload(token: "synthetic-drive-token", deviceID: "mac", fileID: remote.ownFileID, document: remote.document)
+        XCTAssertEqual(calls, 5)
+    }
+    func testInitialUploadUsesAppDataAndMultipart() async throws {
+        DriveHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.query, "uploadType=multipart")
+            XCTAssertTrue(request.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("multipart/related") == true)
+            return (200, Data("{}".utf8))
+        }
+        try await client().upload(token: "synthetic-drive-token", deviceID: "mac", fileID: nil, document: .init())
+    }
+    func testAuthFailureDoesNotExposeResponseBody() async {
+        DriveHTTP.handler = { _ in (401, Data("private-provider-response".utf8)) }
+        do { _ = try await client().download(token: "synthetic-drive-token", deviceID: "mac"); XCTFail("Should fail") }
+        catch { XCTAssertTrue(error as? DriveError == .authorization); XCTAssertFalse(error.localizedDescription.contains("private-provider-response")) }
+    }
+    @MainActor func testImportPreservesInFlightLocalEditsAndDoesNotRestampRemote() throws {
+        let suite = "opendictate-sync-test-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        var remote = SettingsSyncDocument()
+        remote.entries["dictionary"] = .init(value: "Remote", modifiedAt: 100, deviceId: "android")
+        remote.entries["textModel"] = .init(value: "gpt-6-sol", modifiedAt: 100, deviceId: "android")
+        preferences.dictionary = "Local edit made during download"
+        let merged = try preferences.mergeSync(remote)
+        XCTAssertEqual(preferences.dictionary, "Local edit made during download")
+        XCTAssertEqual(preferences.textModel, "gpt-6-sol")
+        XCTAssertEqual(merged.entries["textModel"]?.modifiedAt, 100)
+        XCTAssertEqual(merged, try preferences.syncDocument())
+        let context = preferences.context
+        preferences.liveModel = "changed-later"
+        XCTAssertEqual(context.liveModel, "gpt-live-transcribe")
+    }
+    @MainActor func testInvalidRemoteDoesNotPartiallyApply() throws {
+        let suite = "opendictate-sync-test-\(UUID().uuidString)", defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        var remote = SettingsSyncDocument()
+        remote.entries["dictionary"] = .init(value: "Remote", modifiedAt: 100, deviceId: "android")
+        remote.entries["mode"] = .init(value: "invalid", modifiedAt: 100, deviceId: "android")
+        XCTAssertThrowsError(try preferences.mergeSync(remote))
+        XCTAssertEqual(preferences.dictionary, "OpenDictate")
+    }
+
+    @MainActor func testDesktopOAuthValidatesStateAndExchangesPKCEWithoutRealBrowserOrKeychain() async throws {
+        var challenge = "", saved: DriveCredentials?
+        let authorization = GoogleDriveAuthorization(openBrowser: { url in
+            let query = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems!
+            func value(_ key: String) -> String { query.first { $0.name == key }!.value! }
+            challenge = value("code_challenge")
+            XCTAssertEqual(value("code_challenge_method"), "S256")
+            XCTAssertEqual(value("scope"), GoogleDriveAuthorization.scope)
+            let redirect = value("redirect_uri"), state = value("state")
+            XCTAssertTrue(redirect.hasPrefix("http://127.0.0.1:"))
+            Task { @MainActor in
+                // A callback with an incorrect state must not complete or exchange a code.
+                _ = try? await URLSession.shared.data(from: URL(string: redirect + "?code=wrong&state=wrong")!)
+                _ = try? await URLSession.shared.data(from: URL(string: redirect + "?code=synthetic-code&state=" + state)!)
+            }
+            return true
+        }, saveCredentials: { saved = $0 })
+        DriveHTTP.handler = { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://oauth2.googleapis.com/token")
+            let data: Data
+            if let body = request.httpBody { data = body }
+            else {
+                let stream = try XCTUnwrap(request.httpBodyStream)
+                stream.open(); defer { stream.close() }
+                var body = Data(), buffer = [UInt8](repeating: 0, count: 4096)
+                while stream.hasBytesAvailable {
+                    let count = stream.read(&buffer, maxLength: buffer.count)
+                    if count <= 0 { break }; body.append(contentsOf: buffer.prefix(count))
+                }
+                data = body
+            }
+            let fields = URLComponents(string: "https://example.test/?" + String(decoding: data, as: UTF8.self))!.queryItems!
+            func value(_ key: String) -> String { fields.first { $0.name == key }!.value! }
+            XCTAssertEqual(value("code"), "synthetic-code")
+            let hash = Data(SHA256.hash(data: Data(value("code_verifier").utf8))).base64EncodedString()
+                .replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+            XCTAssertEqual(hash, challenge)
+            return (200, Data(#"{"access_token":"synthetic-access","refresh_token":"synthetic-refresh","scope":"https://www.googleapis.com/auth/drive.appdata"}"#.utf8))
+        }
+        let token = try await authorization.connect(clientID: "synthetic.apps.googleusercontent.com", clientSecret: "synthetic-secret", client: client())
+        XCTAssertEqual(token, "synthetic-access")
+        XCTAssertEqual(saved?.refreshToken, "synthetic-refresh")
+    }
+
+    @MainActor func testCancellingOAuthClosesListenerAndDoesNotPersistCredentials() async {
+        var saved = false
+        let opened = expectation(description: "Browser URL ready")
+        let authorization = GoogleDriveAuthorization(openBrowser: { _ in opened.fulfill(); return true }, saveCredentials: { _ in saved = true })
+        let task = Task { try await authorization.connect(clientID: "synthetic.apps.googleusercontent.com", clientSecret: "", client: client()) }
+        await fulfillment(of: [opened], timeout: 5)
+        task.cancel()
+        do { _ = try await task.value; XCTFail("Should cancel") }
+        catch { XCTAssertTrue(error is CancellationError) }
+        XCTAssertFalse(saved)
+    }
+
+    @MainActor func testSignInExpiryReportsTimeoutAndRejectsLateCallbackWithoutSavingCredentials() async throws {
+        var callback: URL?, saved = false, attempt = 0
+        let authorization = GoogleDriveAuthorization(openBrowser: { url in
+            let query = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems!
+            let redirect = query.first { $0.name == "redirect_uri" }!.value!
+            let state = query.first { $0.name == "state" }!.value!
+            callback = URL(string: redirect + "?code=synthetic-late-code&state=" + state)
+            attempt += 1
+            if attempt == 2, let url = callback {
+                Task { _ = try? await URLSession.shared.data(from: url) }
+            }
+            return true
+        }, saveCredentials: { _ in saved = true }, signInTimeoutNanoseconds: 100_000_000)
+        do {
+            _ = try await authorization.connect(clientID: "synthetic.apps.googleusercontent.com", clientSecret: "", client: client())
+            XCTFail("Should expire")
+        } catch { XCTAssertEqual(error as? DriveError, .signInTimedOut) }
+        let url = try XCTUnwrap(callback)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 1
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        do { _ = try await session.data(from: url); XCTFail("Expired listener must be closed") }
+        catch { XCTAssertEqual((error as? URLError)?.code, .cannotConnectToHost) }
+        XCTAssertFalse(saved)
+        DriveHTTP.handler = { _ in
+            (200, Data(#"{"access_token":"synthetic-retry-access","refresh_token":"synthetic-retry-refresh","scope":"https://www.googleapis.com/auth/drive.appdata"}"#.utf8))
+        }
+        let token = try await authorization.connect(clientID: "synthetic.apps.googleusercontent.com", clientSecret: "", client: client())
+        XCTAssertEqual(token, "synthetic-retry-access")
+        XCTAssertTrue(saved)
+    }
+}

@@ -10,8 +10,8 @@ val keyAliasValue = providers.environmentVariable("KEY_ALIAS")
 val keyPasswordValue = providers.environmentVariable("KEY_PASSWORD")
 val storePasswordValue = providers.environmentVariable("STORE_PASSWORD")
 val releaseStore = layout.buildDirectory.file("keystore/opendictate-release.jks")
-val appVersionName = providers.gradleProperty("appVersionName").orElse("0.11.0-rc.6")
-val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(50)
+val appVersionName = providers.gradleProperty("appVersionName").orElse("0.11.0-rc.7")
+val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(51)
 val previewVersionSuffix = providers.gradleProperty("previewVersionSuffix").orElse("-preview")
 
 if (signingKey.isPresent) {
@@ -100,6 +100,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("com.squareup.okhttp3:okhttp:5.5.0")
+    implementation("com.google.android.gms:play-services-auth:22.0.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

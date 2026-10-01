@@ -26,13 +26,16 @@ data class ReplacementDocument(val rules: List<WordReplacement> = emptyList(), v
     companion object {
         fun fromJson(json: String): ReplacementDocument {
             val value = JSONObject(json)
+            val version = value.get("schemaVersion")
+            require(version is Number && version.toDouble() == 1.0)
             val entries = value.getJSONArray("rules")
             require(entries.length() <= 500)
             return ReplacementDocument((0 until entries.length()).map { index ->
                 val rule = entries.getJSONObject(index)
+                require(listOf("id", "source", "replacement").all { rule.get(it) is String } && rule.get("enabled") is Boolean)
                 WordReplacement(rule.getString("id"), rule.getString("source"), rule.getString("replacement"),
                     rule.getBoolean("enabled"))
-            }, value.getInt("schemaVersion")).also { require(it.isValid) }
+            }).also { require(it.isValid) }
         }
     }
 }

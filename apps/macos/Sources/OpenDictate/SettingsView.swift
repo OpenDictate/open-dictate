@@ -158,6 +158,8 @@ struct SettingsView: View {
                      : t("Text arrives when you finish. Best when accuracy matters.", "Текст появляется после записи. Когда важна точность."))
                     .font(.callout).foregroundStyle(.secondary)
             }
+            modelField(t("Live model", "Модель Live"), $preferences.liveModel)
+            modelField(t("Accurate model", "Модель Accurate"), $preferences.accurateModel)
             HStack {
                 Text(t("Speech language", "Язык речи"))
                 Spacer()
@@ -172,6 +174,14 @@ struct SettingsView: View {
                        "Для голосовой правки выделите текст. Без выделения изменится всё поле."))
                     .font(.caption).foregroundStyle(.secondary).padding(.top, 3)
             }
+        }
+    }
+
+    private func modelField(_ title: String, _ binding: Binding<String>) -> some View {
+        HStack {
+            Text(title); Spacer()
+            Text(binding.wrappedValue).font(.system(.callout, design: .monospaced))
+                .foregroundStyle(.secondary).textSelection(.enabled)
         }
     }
 
@@ -322,7 +332,7 @@ struct SettingsView: View {
                 HStack {
                     Text(t("Voice editing model", "Модель голосовой правки")); Spacer()
                     Picker(t("Voice editing model", "Модель голосовой правки"), selection: $preferences.textModel) {
-                        Text("GPT-6 Luna").tag("gpt-6-luna"); Text("GPT-6 Sol").tag("gpt-6-sol")
+                        ForEach(Array(Set(["gpt-6-luna", "gpt-6-sol", preferences.textModel])).sorted(), id: \.self) { id in Text(id).tag(id) }
                     }.labelsHidden().frame(width: 180)
                 }
                 HStack {
@@ -346,6 +356,8 @@ struct SettingsView: View {
                 }
                 Button(t("Add application…", "Добавить приложение…"), action: addExcludedApp)
             }
+            Divider()
+            GoogleDriveSettingsView(sync: model.driveSync, preferences: preferences)
             Divider()
             VStack(alignment: .leading, spacing: 12) {
                 Text(t("Privacy", "Приватность")).fontWeight(.medium)

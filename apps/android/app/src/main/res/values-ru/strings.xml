@@ -228,8 +228,20 @@
     <string name="replacements_invalid">Введите уникальную фразу до 256 символов и замену до 2048. Максимум 500 правил.</string>
     <string name="replacements_storage_error">Не удалось прочитать или сохранить автозамены. Данные сохранены. Восстановите настройки перед редактированием.</string>
     <string name="replacements_empty">Пока нет замен. Например: опен диктейт → OpenDictate.</string>
-    <string name="replacements_note">Целые слова и фразы без учёта регистра. Написание замены сохраняется как введено. Правила хранятся на этом устройстве и не отправляются в OpenAI. Команды голосовой правки не меняются.</string>
+    <string name="replacements_note">Целые слова и фразы без учёта регистра. Написание замены сохраняется как введено. Подключите Google Drive для синхронизации правил между устройствами. Правила не отправляются в OpenAI. Команды голосовой правки не меняются.</string>
     <string name="replacements_edit_rule">Изменить замену для %1$s</string>
     <string name="replacements_delete_rule">Удалить замену для %1$s</string>
     <string name="replacements_toggle_rule">Включить замену для %1$s</string>
+    <string name="drive_sync_description">Синхронизация словаря, автозамен, режима диктовки и выбранных моделей между Android и macOS.</string>
+    <string name="drive_sync_authorizing">Ожидание входа в Google…</string>
+    <string name="drive_sync_busy">Синхронизация…</string>
+    <string name="drive_sync_sign_in_again">Войдите снова, чтобы возобновить синхронизацию.</string>
+    <string name="drive_sync_failed">Не удалось синхронизировать. Локальные настройки сохранены. Проверьте соединение и повторите.</string>
+    <string name="drive_sync_off">Не подключено</string>
+    <string name="drive_sync_done">Настройки синхронизированы. Изменения синхронизируются автоматически, пока приложение работает.</string>
+    <string name="drive_sync_waiting">Ожидание синхронизации</string>
+    <string name="drive_sync_now">Синхронизировать</string>
+    <string name="drive_sync_connect">Подключить Google Drive</string>
+    <string name="drive_sync_disconnect">Отключить</string>
+    <string name="drive_sync_privacy">В Google отправляются только эти настройки. API-ключи, звук и история не синхронизируются. Отключение сохраняет локальные и облачные настройки.</string>
 </resources>

@@ -6,10 +6,13 @@ import OpenDictateCore
 final class ReplacementStore: ObservableObject {
     enum Status { case local, invalid, storageError }
     @Published private(set) var document: ReplacementDocument
-    @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "wordReplacementEnabled") } }
+    @Published var enabled: Bool {
+        didSet { defaults.set(enabled, forKey: "wordReplacementEnabled"); onChange?() }
+    }
     @Published private(set) var status: Status = .local
     private let defaults: UserDefaults
     private var storageAvailable = true
+    var onChange: (() -> Void)?
     var rules: [WordReplacement] { document.rules.sorted { $0.source.localizedCaseInsensitiveCompare($1.source) == .orderedAscending } }
 
     init(defaults: UserDefaults = .standard) {
@@ -47,5 +50,33 @@ final class ReplacementStore: ObservableObject {
     private func persist(_ next: ReplacementDocument) {
         guard let data = try? JSONEncoder().encode(next) else { status = .storageError; return }
         defaults.set(data, forKey: "wordReplacementDocument"); document = next
+        onChange?()
+    }
+    var syncValues: [String: String] {
+        get throws {
+            guard storageAvailable else { throw SyncFormatError.invalid }
+            let data = defaults.data(forKey: "wordReplacementDocument") ?? Data(#"{"schemaVersion":1,"rules":[]}"#.utf8)
+            let saved = try JSONDecoder().decode(ReplacementDocument.self, from: data)
+            guard saved.isValid, let json = String(data: data, encoding: .utf8) else { throw SyncFormatError.invalid }
+            return ["wordReplacements": json, "wordReplacementsEnabled": enabled ? "true" : "false"]
+        }
+    }
+    /// Validate before any preference is changed. Preserve incoming JSON to avoid restamping it.
+    func validateSync(json: String?) throws {
+        guard storageAvailable else { throw SyncFormatError.invalid }
+        if let json {
+            let document = try JSONDecoder().decode(ReplacementDocument.self, from: Data(json.utf8))
+            guard document.isValid else { throw SyncFormatError.invalid }
+        }
+    }
+    func applySync(json: String?, enabled nextEnabled: Bool?) throws {
+        try validateSync(json: json)
+        if let json {
+            let data = Data(json.utf8)
+            let next = try JSONDecoder().decode(ReplacementDocument.self, from: data)
+            defaults.set(data, forKey: "wordReplacementDocument"); document = next
+        }
+        if let nextEnabled, enabled != nextEnabled { enabled = nextEnabled }
+        status = .local
     }
 }

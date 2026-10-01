@@ -29,6 +29,8 @@ no backend, analytics or account to create.
 - English/Russian settings, automatic speech language detection and language hints.
 - Focus guards prevent delayed text from being inserted in another field or app.
 - Encrypted credentials: Android Keystore on Android, Keychain on macOS.
+- Optional Google Drive sync for the dictionary, word replacements, dictation
+  mode and selected models. [Setup and conflict behavior](docs/google-drive-sync.md).
 
 ## Install on macOS
 
@@ -148,5 +150,5 @@ individual rules, or turn replacements off. Live and Accurate dictation apply
 the same case-insensitive, whole-word rules; longer phrases win and replacements
 do not cascade. Changes take effect with the next recording. Android retry also
 applies the current rules. Voice editing is unchanged. Rules are separate from
-the recognition dictionary and are not sent to OpenAI. Device synchronization
-is deferred until Google Drive integration is available.
+the recognition dictionary and are not sent to OpenAI. Connecting Google Drive
+syncs the rule list, each rule’s enabled state and the master switch across devices.

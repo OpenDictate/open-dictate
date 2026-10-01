@@ -289,6 +289,9 @@ internal fun SettingsScreen(
                     }
                 }
 
+                SectionTitle("Google Drive")
+                SettingsGroup { GoogleDriveSyncSettings() }
+
                 val testFieldLabel = stringResource(R.string.test_field_label)
                 SectionTitle(testFieldLabel)
                 var testText by remember { mutableStateOf("") }

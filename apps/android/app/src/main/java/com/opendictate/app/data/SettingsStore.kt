@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import androidx.core.content.edit
 import com.opendictate.app.model.AppTheme
+import java.util.UUID
 import com.opendictate.app.model.DictationLanguage
 import com.opendictate.app.model.ModelCatalog
 import com.opendictate.app.model.TextTransformationModel
@@ -13,6 +14,7 @@ import com.opendictate.app.model.preferredModelId
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+    private val replacementPrefs = context.getSharedPreferences("word_replacements", Context.MODE_PRIVATE)
 
     var theme: AppTheme
         get() = AppTheme.fromStored(prefs.getString(KEY_THEME, null))
@@ -20,7 +22,7 @@ class SettingsStore(context: Context) {
 
     var model: TranscriptionModel
         get() = TranscriptionModel.fromStored(prefs.getString(KEY_MODEL, null))
-        set(value) = prefs.edit { putString(KEY_MODEL, value.name) }
+        set(value) = saveSynced { putString(KEY_MODEL, value.name) }
 
     var transformationModel: TextTransformationModel
         get() = TextTransformationModel.fromStored(
@@ -34,7 +36,7 @@ class SettingsStore(context: Context) {
             modelCatalog.live,
             ModelCatalog.DEFAULT.live,
         )
-        set(value) = prefs.edit { putString(KEY_LIVE_MODEL_ID, value) }
+        set(value) = saveSynced { putString(KEY_LIVE_MODEL_ID, value) }
 
     var accurateModelId: String
         get() = preferredModelId(
@@ -42,7 +44,7 @@ class SettingsStore(context: Context) {
             modelCatalog.accurate,
             ModelCatalog.DEFAULT.accurate,
         )
-        set(value) = prefs.edit { putString(KEY_ACCURATE_MODEL_ID, value) }
+        set(value) = saveSynced { putString(KEY_ACCURATE_MODEL_ID, value) }
 
     var transformationModelId: String
         get() = preferredModelId(
@@ -51,7 +53,7 @@ class SettingsStore(context: Context) {
             modelCatalog.text,
             ModelCatalog.DEFAULT.text,
         )
-        set(value) = prefs.edit { putString(KEY_TRANSFORMATION_MODEL_ID, value) }
+        set(value) = saveSynced { putString(KEY_TRANSFORMATION_MODEL_ID, value) }
 
     var modelCatalog: ModelCatalog
         get() = ModelCatalog.fromCachedJson(prefs.getString(KEY_MODEL_CATALOG_V2, null))
@@ -87,7 +89,7 @@ class SettingsStore(context: Context) {
 
     var prompt: String
         get() = normalizeDictionaryTerms(prefs.getString(KEY_PROMPT, DEFAULT_PROMPT).orEmpty())
-        set(value) = prefs.edit { putString(KEY_PROMPT, normalizeDictionaryTerms(value).trim()) }
+        set(value) = saveSynced { putString(KEY_PROMPT, normalizeDictionaryTerms(value).trim()) }
 
     var keepTrailingPeriod: Boolean
         get() = prefs.getBoolean(KEY_KEEP_TRAILING_PERIOD, true)
@@ -114,7 +116,82 @@ class SettingsStore(context: Context) {
             prefs.edit { putInt(KEY_TRANSCRIPTION_RESPONSE_TIMEOUT, value ?: 0) }
         }
 
+    var driveSyncEnabled: Boolean
+        get() = prefs.getBoolean("drive_sync_enabled", false)
+        set(value) = prefs.edit { putBoolean("drive_sync_enabled", value) }
+
+    val syncDeviceId: String
+        get() = synchronized(SYNC_LOCK) {
+            prefs.getString("sync_device_id", null) ?: UUID.randomUUID().toString().also {
+                prefs.edit { putString("sync_device_id", it) }
+            }
+        }
+
+    private fun syncValues(): Map<String, String> {
+        val replacements = replacementPrefs.getString("document", null) ?: "{\"schemaVersion\":1,\"rules\":[]}"
+        ReplacementDocument.fromJson(replacements)
+        return mapOf(
+        "dictionary" to prefs.getString(KEY_PROMPT, DEFAULT_PROMPT).orEmpty(), "mode" to model.name.lowercase(),
+        "liveModel" to prefs.getString(KEY_LIVE_MODEL_ID, ModelCatalog.DEFAULT.live.first()).orEmpty(),
+        "accurateModel" to prefs.getString(KEY_ACCURATE_MODEL_ID, ModelCatalog.DEFAULT.accurate.first()).orEmpty(),
+        "textModel" to prefs.getString(KEY_TRANSFORMATION_MODEL_ID, transformationModel.apiName).orEmpty(),
+        "wordReplacements" to replacements,
+        "wordReplacementsEnabled" to replacementPrefs.getBoolean("enabled", true).toString(),
+        ).also { values -> require(values.values.all { it.toByteArray().size <= 262_144 }) }
+    }
+
+    fun syncDocument(): SettingsSyncDocument = synchronized(SYNC_LOCK) {
+        val stored = prefs.getString("sync_document", null)
+        val document = stored?.let(SettingsSyncDocument::fromJson) ?: SettingsSyncDocument()
+        document.record(syncValues().filterKeys { it !in document.entries }, syncDeviceId, 0, seed = true).also {
+            prefs.edit { putString("sync_document", it.toJson()) }
+        }
+    }
+
+    private fun saveSynced(update: android.content.SharedPreferences.Editor.() -> Unit) = synchronized(SYNC_LOCK) {
+        // A damaged sync journal must not prevent ordinary local settings edits.
+        val previous = runCatching {
+            prefs.getString("sync_document", null)?.let(SettingsSyncDocument::fromJson) ?: syncDocument()
+        }.getOrNull()
+        prefs.edit { update() }
+        if (previous != null) {
+            runCatching {
+                val document = previous.record(syncValues(), syncDeviceId, System.currentTimeMillis())
+                SettingsSyncDocument.fromJson(document.toJson())
+                prefs.edit { putString("sync_document", document.toJson()) }
+            }
+        }
+    }
+
+    /** Called after all downloads succeed. Includes edits made while the network was suspended. */
+    fun recordReplacementChange() { saveSynced {} }
+
+    fun mergeSyncDocument(remote: SettingsSyncDocument, replacements: ReplacementStore): SettingsSyncDocument = synchronized(SYNC_LOCK) {
+        val merged = syncDocument().merge(remote).promoteSeeds(syncDeviceId, System.currentTimeMillis())
+        SettingsSyncDocument.fromJson(merged.toJson())
+        val values = merged.entries
+        require(values["mode"]?.value in listOf(null, "live", "accurate"))
+        listOf("liveModel", "accurateModel", "textModel").forEach { key ->
+            values[key]?.value?.let { require(it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"))) }
+        }
+        val replacementJSON = values["wordReplacements"]?.value
+        replacementJSON?.let(ReplacementDocument::fromJson)
+        val enabled = values["wordReplacementsEnabled"]?.value
+        require(enabled in listOf(null, "true", "false"))
+        if (replacementJSON != null || enabled != null) replacements.applySync(replacementJSON, enabled?.toBooleanStrict())
+        prefs.edit {
+            values["dictionary"]?.let { putString(KEY_PROMPT, it.value) }
+            values["mode"]?.let { putString(KEY_MODEL, it.value.uppercase()) }
+            values["liveModel"]?.let { putString(KEY_LIVE_MODEL_ID, it.value) }
+            values["accurateModel"]?.let { putString(KEY_ACCURATE_MODEL_ID, it.value) }
+            values["textModel"]?.let { putString(KEY_TRANSFORMATION_MODEL_ID, it.value) }
+            putString("sync_document", merged.toJson())
+        }
+        merged
+    }
+
     companion object {
+        private val SYNC_LOCK = Any()
         private const val FILE_NAME = "opendictate_settings"
         private const val KEY_THEME = "theme"
         private const val KEY_MODEL = "model"

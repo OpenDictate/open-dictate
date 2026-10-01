@@ -26,6 +26,7 @@ final class AppModel: ObservableObject {
     let preferences: Preferences
     let history: HistoryStore
     let replacements: ReplacementStore
+    let driveSync: GoogleDriveSync
     private let localOnly: Bool
     let hotKeys = HotKeys()
     private let client = OpenAIClient()
@@ -74,9 +75,10 @@ final class AppModel: ObservableObject {
 
     init(localOnly: Bool = false) {
         self.localOnly = localOnly
-        preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
         replacements = ReplacementStore(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
+        preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard, replacements: replacements)
         history = HistoryStore(inMemory: localOnly)
+        driveSync = GoogleDriveSync(preferences: preferences, localOnly: localOnly)
         refreshPermissions()
         loginEnabled = SMAppService.mainApp.status == .enabled
         hotKeys.onAction = { [weak self] action in
