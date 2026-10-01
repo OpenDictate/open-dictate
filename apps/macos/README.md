@@ -39,9 +39,14 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
 - `OpenAIClient` uses ephemeral HTTPS sessions. Voice edits and explicit AI
   history searches use structured Responses output with `store: false`.
 - `RecordingIndicator` owns a nonactivating panel that cannot become key/main.
-  From preparation through recording it shows a microphone and red finish button
-  (44 × 22 pt); processing shows only a native spinner (22 × 22 pt). Clicking the
-  red button calls the same stop/submit path as the shortcut without moving focus.
+  Settings choose Microphone (the existing 44 × 22 pt finish control) or Waveform
+  (a black 50 × 22 pt capsule with ten white level bars). New input appears on
+  the right and older levels move left, using the existing 40 ms microphone
+  level callbacks. Only ten normalized RMS levels live in memory and are cleared
+  on every session exit. The HUD alone observes those updates, without rebuilding
+  menu state. Click the red button or waveform capsule to stop/submit without
+  moving focus. Preparation already offers the finish action; processing shows
+  a native spinner (22 × 22 pt for Microphone, 50 × 22 pt for Waveform).
 - The HUD never takes keyboard focus. Changing fields, typing, changing the
   caret, revoking Accessibility or sleeping detaches/stops a recording.
   Final results remain available to copy, without insertion into a new field.
@@ -108,7 +113,10 @@ It uses a separate preference domain. These checks are absent from release build
 
 For a network-free indicator preview, also pass `--hud-preview`. It shows the
 production panel alone; clicking its finish button switches the preview to the
-spinner. Debug menu actions can show either state. Previewing never records audio.
+spinner. Debug menu actions can show either state in the selected indicator style.
+Previewing never records audio. The explicit two-second microphone check also
+feeds the production level meter so the waveform can be checked without OpenAI;
+its captured audio is discarded in memory.
 
 Use a disposable editor document to check cumulative insertion, Escape rollback,
 cursor movement, switching fields/apps, secure fields and clipboard fallback.

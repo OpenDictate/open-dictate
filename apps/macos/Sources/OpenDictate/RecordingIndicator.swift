@@ -21,10 +21,12 @@ final class RecordingIndicator {
         panel.contentView = content
     }
 
-    func show(phase: AppModel.Phase, isRussian: Bool, finish: @escaping () -> Void) {
+    func show(phase: AppModel.Phase, style: RecordingIndicatorStyle, audioLevels: RecordingAudioLevels,
+              isRussian: Bool, finish: @escaping () -> Void) {
         guard phase != .idle else { hide(); return }
-        content.rootView = RecordingStatusView(phase: phase, isRussian: isRussian, finish: finish)
-        let size = NSSize(width: phase.showsFinishControl ? 44 : 22, height: 22)
+        content.rootView = RecordingStatusView(phase: phase, style: style, audioLevels: audioLevels,
+                                              isRussian: isRussian, finish: finish)
+        let size = RecordingStatusView.size(phase: phase, style: style)
         content.sizingOptions = []
         panel.setContentSize(size)
         panel.ignoresMouseEvents = !phase.showsFinishControl
@@ -44,14 +46,29 @@ private final class IndicatorPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
+@MainActor
 struct RecordingStatusView: View {
     let phase: AppModel.Phase
+    let style: RecordingIndicatorStyle
     let isRussian: Bool
     let finish: () -> Void
+    @ObservedObject private var audioLevels: RecordingAudioLevels
+
+    init(phase: AppModel.Phase, style: RecordingIndicatorStyle = .compact,
+         audioLevels: RecordingAudioLevels? = nil, isRussian: Bool, finish: @escaping () -> Void) {
+        self.phase = phase; self.style = style; self.isRussian = isRussian; self.finish = finish
+        self.audioLevels = audioLevels ?? RecordingAudioLevels()
+    }
+
+    static func size(phase: AppModel.Phase, style: RecordingIndicatorStyle) -> NSSize {
+        NSSize(width: style == .waveform ? 50 : (phase.showsFinishControl ? 44 : 22), height: 22)
+    }
 
     var body: some View {
         Group {
-            if phase.showsFinishControl {
+            if style == .waveform {
+                waveform
+            } else if phase.showsFinishControl {
                 HStack(spacing: 6) {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 9, weight: .medium)).frame(width: 10)
@@ -76,7 +93,46 @@ struct RecordingStatusView: View {
                     .accessibilityLabel(isRussian ? "Распознавание" : "Transcribing")
             }
         }
-        .background(Color(nsColor: .windowBackgroundColor), in: Capsule())
+        .background(style == .waveform ? Color.black : Color(nsColor: .windowBackgroundColor), in: Capsule())
+        .overlay {
+            if style == .waveform { Capsule().strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5).allowsHitTesting(false) }
+        }
         .preferredColorScheme(.dark)
+    }
+
+    private var waveform: some View {
+        Group {
+            if phase.showsFinishControl {
+                Button(action: finish) {
+                    WaveformBars(samples: audioLevels.history.samples)
+                        .frame(width: 50, height: 22)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(isRussian ? "Завершить и отправить" : "Finish and submit")
+                .accessibilityLabel(isRussian ? "Завершить диктовку" : "Finish dictation")
+                .accessibilityIdentifier("finishDictation")
+            } else {
+                ProgressView().progressViewStyle(.circular).controlSize(.mini)
+                    .frame(width: 50, height: 22)
+                    .accessibilityLabel(isRussian ? "Распознавание" : "Transcribing")
+            }
+        }
+    }
+}
+
+struct WaveformBars: View {
+    let samples: [Float]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 1.5) {
+            ForEach(samples.indices, id: \.self) { index in
+                Capsule().fill(Color.white)
+                    .frame(width: 1.5, height: 2 + 8 * CGFloat(sqrt(samples[index])))
+            }
+        }
+        .animation(reduceMotion ? nil : .linear(duration: 0.04), value: samples)
+        .accessibilityHidden(true)
     }
 }

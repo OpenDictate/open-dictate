@@ -20,6 +20,9 @@ final class Preferences: ObservableObject {
     @Published var timeout: Int { didSet { defaults.set(timeout, forKey: "timeout") } }
     @Published var excludedApps: [String] { didSet { defaults.set(excludedApps, forKey: "excludedApps") } }
     @Published var showStatus: Bool { didSet { defaults.set(showStatus, forKey: "showStatus") } }
+    @Published var indicatorStyle: RecordingIndicatorStyle {
+        didSet { defaults.set(indicatorStyle.rawValue, forKey: "indicatorStyle") }
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -41,6 +44,7 @@ final class Preferences: ObservableObject {
         timeout = [30, 60, 120].contains(defaults.integer(forKey: "timeout")) ? defaults.integer(forKey: "timeout") : 60
         excludedApps = defaults.stringArray(forKey: "excludedApps") ?? []
         showStatus = defaults.object(forKey: "showStatus") as? Bool ?? true
+        indicatorStyle = RecordingIndicatorStyle(rawValue: defaults.string(forKey: "indicatorStyle") ?? "") ?? .compact
     }
 
     var isRussian: Bool {

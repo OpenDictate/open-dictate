@@ -151,14 +151,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.toolTip = "OpenDictate · \(model.stateLabel) · \(model.preferences.shortcutLabel)"
         #if DEBUG
         if let phase = hudPreviewPhase {
-            recordingIndicator.show(phase: phase, isRussian: model.preferences.isRussian) { [weak self] in
+            recordingIndicator.show(phase: phase, style: model.preferences.indicatorStyle,
+                                    audioLevels: model.audioLevels, isRussian: model.preferences.isRussian) { [weak self] in
                 self?.hudPreviewPhase = .processing; self?.updateState()
             }
             return
         }
         #endif
         if model.isActive && model.preferences.showStatus {
-            recordingIndicator.show(phase: model.phase, isRussian: model.preferences.isRussian) { [weak model] in model?.stop() }
+            recordingIndicator.show(phase: model.phase, style: model.preferences.indicatorStyle,
+                                    audioLevels: model.audioLevels, isRussian: model.preferences.isRussian) { [weak model] in model?.stop() }
         } else { recordingIndicator.hide() }
     }
 
@@ -197,7 +199,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func settings() { openSettings() }
     @objc private func quit() { NSApp.terminate(nil) }
     #if DEBUG
-    @objc private func checkMicrophone() { localChecks?.record() }
+    @objc private func checkMicrophone() {
+        hudPreviewPhase = .recording; updateState(); localChecks?.record()
+    }
     @objc private func previewRecording() { hudPreviewPhase = .recording; updateState() }
     @objc private func previewProcessing() { hudPreviewPhase = .processing; updateState() }
     @objc private func checkInsertion() {

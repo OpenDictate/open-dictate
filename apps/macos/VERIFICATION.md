@@ -1,5 +1,34 @@
 # macOS verification
 
+## 0.2.0-rc.6 — selectable waveform indicator
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- All 52 Swift tests pass. New coverage verifies saved style choices and legacy/
+  unknown-value fallback, bounded chronological levels, silence/invalid samples,
+  clearing on reset, observable delivery to the HUD and production-view pixels:
+  ten bars in a 50 × 22 pt capsule, with newest input changing the rightmost bar.
+- A production NSPanel test verifies preparation/processing/idle behavior,
+  unchanged foreground process/key window, nonactivation, exact content size and
+  processing mouse-event exclusion.
+- In the isolated native debug app, selected Waveform in Settings and inspected
+  the new row/copy in English and Russian. The capsule showed the silence bars;
+  clicking it replaced the finish action with the native processing spinner.
+- The explicit two-second microphone check captured 24 kHz PCM through the real
+  recorder and fed the HUD meter, then discarded audio and levels in memory.
+  No OpenAI request was made, and no API key/history was read. Offscreen production
+  view captures confirmed a synthetic speech envelope and reset-to-silence state.
+- Android debug tests/lint/assembly and release lint/assembly pass.
+- Stable/RC version checks, universal arm64/x86_64 packaging, ad-hoc signature,
+  DMG integrity and SHA-256 pass. Numeric bundle version is 0.2.0, build 7;
+  displayed release version is 0.2.0-rc.6. The release is not notarized.
+
+Native preview checks exercise the production component and callback, rather
+than actual OpenAI submission. Provider access, physical hotkeys, third-party
+insertion and the hardware/permissions/Spaces limitations below remain manual
+compatibility checks. The recorder's chunks, RMS calculation and network flow
+are unchanged; level history uses only ten floats in memory and clears on exit.
+
 ## 0.2.0-rc.4 — indicator and insertion caret
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-09-30.

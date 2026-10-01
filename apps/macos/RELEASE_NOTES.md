@@ -1,6 +1,15 @@
-OpenDictate for macOS **0.2.0-rc.5** adds a theme switcher to the top-right
-corner of Settings. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.6** adds a choice of recording indicators,
+including a live microphone-volume waveform. Requires macOS 14+ on Apple Silicon or Intel.
 
+- In **Settings → Recording indicator**, choose **Microphone** or **Waveform**.
+  The choice is saved; existing installations keep the microphone indicator.
+- The new waveform is a small black capsule with ten white bars showing recent
+  microphone volume, from oldest on the left to newest on the right. Silence
+  produces short bars; louder input produces taller bars. This is real input
+  level history, not an artificial animation.
+- Click anywhere on the waveform capsule or use your dictation shortcut to
+  finish. It shows a spinner during processing and never takes keyboard focus.
+  Escape cancels as usual. Hide either style using **Show recording status**.
 - Choose **System**, **Light** or **Dark** appearance from the theme button.
   The choice applies to all settings pages and is saved across restarts.
   Existing installations retain their dark appearance until you choose another theme.
@@ -36,7 +45,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.5-universal.dmg`, open it and drag OpenDictate
+Download `OpenDictate-macOS-0.2.0-rc.6-universal.dmg`, open it and drag OpenDictate
 to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks

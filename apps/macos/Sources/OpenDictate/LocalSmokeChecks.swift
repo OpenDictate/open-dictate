@@ -48,13 +48,17 @@ final class LocalSmokeChecks {
         Task {
             let recorder = AudioRecorder()
             do {
-                try await recorder.start(keepAudio: true, onChunk: { _ in }, onLevel: { _ in }, onError: { _ in })
+                model.audioLevels.reset()
+                try await recorder.start(keepAudio: true, onChunk: { _ in }, onLevel: { [weak model] level in
+                    Task { @MainActor in model?.audioLevels.append(level) }
+                }, onError: { _ in })
                 try await Task.sleep(nanoseconds: 2_000_000_000)
                 let (data, bytes) = await recorder.stop()
                 model.present(CheckMessage(bytes > 48_000 && data.count == bytes
                     ? "LOCAL CHECK: microphone captured 24 kHz PCM; discarded in memory"
                     : "LOCAL CHECK: microphone check failed"))
             } catch { _ = await recorder.stop(); model.present(error) }
+            model.audioLevels.reset()
         }
     }
     private struct CheckMessage: LocalizedError {
