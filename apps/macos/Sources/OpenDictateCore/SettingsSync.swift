@@ -13,7 +13,7 @@ public struct SettingsSyncDocument: Codable, Equatable, Sendable {
     public var schemaVersion = 1
     public var entries: [String: Entry] = [:]
     public init() {}
-    public static let keys = ["dictionary", "mode", "liveModel", "accurateModel", "textModel", "wordReplacements", "wordReplacementsEnabled"]
+    public static let keys = ["dictionary", "mode", "liveModel", "accurateModel", "textModel", "wordReplacements", "wordReplacementsEnabled", "accuratePunctuationEnabled"]
     public static let maximumBytes = 1_048_576
 
     public static func decode(_ data: Data) throws -> Self {

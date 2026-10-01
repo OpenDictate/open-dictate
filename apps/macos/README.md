@@ -85,6 +85,16 @@ save immediately and apply to the next Live or Accurate session; selection is
 disabled during dictation. Existing single-language and Russian + English
 preferences migrate automatically. Language hints remain local preferences.
 
+### Optional punctuation correction
+
+Settings → Dictation → **Correct punctuation in Accurate** is off by default.
+When enabled, only ordinary Accurate dictation sends its recognized text to
+`gpt-6-luna` for punctuation/capitalization through Responses (`store: false`,
+`reasoning.effort: none`). Live and voice editing skip this step. Local word
+replacements and the final-period preference apply afterward. Invalid edits or
+request failures retain the original transcription; cancellation prevents delivery.
+The switch syncs with Android through the existing Google Drive connection.
+
 ### Word replacements
 
 Settings → Word replacements manages local “recognized phrase → replacement”
@@ -175,7 +185,7 @@ provider access and transcription accuracy; mock tests cannot establish either.
 ## Google Drive synchronization
 
 Connect Google Drive in Settings to sync the dictionary, word replacements, dictation
-mode and selected models with Android. It uses a Desktop OAuth client from the same
+mode, the Accurate punctuation switch and selected models with Android. It uses a Desktop OAuth client from the same
 Google Cloud project as the Android client, browser sign-in with PKCE and a
 temporary loopback callback listener. OAuth secrets/refresh tokens stay in a
 separate device-only Keychain item. Sync runs while the app is running and never

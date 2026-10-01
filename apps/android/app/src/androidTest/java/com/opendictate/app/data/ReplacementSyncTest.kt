@@ -28,6 +28,28 @@ class ReplacementSyncTest {
         } finally { names.forEach { base.getSharedPreferences(it, Context.MODE_PRIVATE).edit().clear().commit() } }
     }
 
+    @Test fun punctuationDefaultsOffPersistsAndSyncsWithoutEchoOrResurrection() = scoped { context, settings, store ->
+        val prefs = context.getSharedPreferences("opendictate_settings", Context.MODE_PRIVATE)
+        assertFalse(settings.accuratePunctuationEnabled)
+        assertEquals(0L, settings.syncDocument().entries["accuratePunctuationEnabled"]?.modifiedAt)
+        val remote = SettingsSyncDocument(mapOf("accuratePunctuationEnabled" to SettingsSyncEntry("true", 42, "mac")))
+        settings.mergeSyncDocument(remote, store)
+        assertTrue(settings.accuratePunctuationEnabled)
+        assertTrue(SettingsStore(context).accuratePunctuationEnabled)
+        assertEquals(0L, prefs.getLong("sync_local_revision", 0))
+        settings.accuratePunctuationEnabled = false
+        assertEquals(1L, prefs.getLong("sync_local_revision", 0))
+        settings.mergeSyncDocument(remote, store)
+        assertFalse(settings.accuratePunctuationEnabled)
+        val before = settings.syncDocument()
+        val invalid = SettingsSyncDocument(mapOf(
+            "accuratePunctuationEnabled" to SettingsSyncEntry("invalid", Long.MAX_VALUE - 10, "mac"),
+            "dictionary" to SettingsSyncEntry("Must not apply", Long.MAX_VALUE - 10, "mac")))
+        assertThrows(Exception::class.java) { settings.mergeSyncDocument(invalid, store) }
+        assertEquals(before, settings.syncDocument())
+        assertEquals("false", before.entries["accuratePunctuationEnabled"]?.value)
+    }
+
     private fun remote(): SettingsSyncDocument {
         val rule = WordReplacement(id = "00000000-0000-0000-0000-000000000001", source = "cat", replacement = "dog")
         val json = """{"rules":[{"replacement":"dog","source":"cat","enabled":true,"id":"${rule.id}"}],"schemaVersion":1}"""

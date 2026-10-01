@@ -46,6 +46,29 @@ final class HTTPTests: XCTestCase {
         }
     }
 
+    func testPunctuationUsesDirectLunaRequestAndRejectsRewriteOrFailedResponse() async throws {
+        let client = client()
+        for (status, body, expected) in [
+            (200, #"{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"{\"transformed_text\":\"Привет, мир!\",\"message\":null}"}]}]}"#, "Привет, мир!"),
+            (200, #"{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"{\"transformed_text\":\"Другой текст.\",\"message\":null}"}]}]}"#, "привет мир"),
+            (200, #"{"status":"incomplete","output":[]}"#, "привет мир"),
+            (429, #"{"error":{"message":"private provider payload"}}"#, "привет мир")
+        ] {
+            MockHTTP.handler = { request in
+                XCTAssertEqual(request.url, OpenAIRequest.responsesURL)
+                XCTAssertEqual(request.timeoutInterval, 10)
+                return (status, Data(body.utf8))
+            }
+            let result = try await client.correctPunctuation(source: "привет мир", key: "synthetic-test-key", enabled: true, mode: .accurate)
+            XCTAssertEqual(result, expected)
+        }
+        MockHTTP.handler = { _ in XCTFail("Disabled/Live must not request punctuation"); return (500, Data()) }
+        for (enabled, mode) in [(false, DictationMode.accurate), (true, .live)] {
+            let result = try await client.correctPunctuation(source: "привет мир", key: "synthetic-test-key", enabled: enabled, mode: mode)
+            XCTAssertEqual(result, "привет мир")
+        }
+    }
+
     func testStructuredTransformationParsesOnlyCompletedOutput() async throws {
         MockHTTP.handler = { request in
             XCTAssertEqual(request.url, OpenAIRequest.responsesURL)

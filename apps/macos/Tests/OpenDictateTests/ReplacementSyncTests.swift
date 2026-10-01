@@ -25,6 +25,35 @@ final class ReplacementSyncTests: XCTestCase {
         XCTAssertEqual(events, 4)
     }
 
+    @MainActor func testPunctuationDefaultsOffPersistsAndSyncsWithoutEchoOrResurrection() throws {
+        let suite = "punctuation-sync-\(UUID().uuidString)", defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        XCTAssertFalse(preferences.accuratePunctuationEnabled)
+        XCTAssertEqual(try preferences.syncDocument().entries["accuratePunctuationEnabled"]?.modifiedAt, 0)
+        var events = 0
+        let subscription = preferences.syncChanges.sink { events += 1 }
+        defer { subscription.cancel() }
+        var remote = SettingsSyncDocument()
+        remote.entries["accuratePunctuationEnabled"] = .init(value: "true", modifiedAt: 42, deviceId: "android")
+        _ = try preferences.mergeSync(remote)
+        XCTAssertTrue(preferences.accuratePunctuationEnabled)
+        XCTAssertTrue(Preferences(defaults: defaults).accuratePunctuationEnabled)
+        XCTAssertEqual(events, 0)
+        preferences.accuratePunctuationEnabled = false
+        XCTAssertEqual(events, 1)
+        _ = try preferences.mergeSync(remote)
+        XCTAssertFalse(preferences.accuratePunctuationEnabled)
+        XCTAssertEqual(try preferences.syncDocument().entries["accuratePunctuationEnabled"]?.value, "false")
+        var invalid = SettingsSyncDocument()
+        invalid.entries["accuratePunctuationEnabled"] = .init(value: "invalid", modifiedAt: Int64.max - 10, deviceId: "android")
+        invalid.entries["dictionary"] = .init(value: "Must not apply", modifiedAt: Int64.max - 10, deviceId: "android")
+        let before = try preferences.syncDocument()
+        XCTAssertThrowsError(try preferences.mergeSync(invalid))
+        XCTAssertEqual(try preferences.syncDocument(), before)
+        XCTAssertEqual(preferences.dictionary, "OpenDictate")
+    }
+
     private func fixture() throws -> SettingsSyncDocument {
         var root = URL(fileURLWithPath: #filePath)
         for _ in 0..<5 { root.deleteLastPathComponent() }

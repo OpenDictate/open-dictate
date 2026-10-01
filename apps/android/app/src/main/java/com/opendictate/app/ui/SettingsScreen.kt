@@ -219,6 +219,10 @@ internal fun SettingsScreen(
                         onSelect = if (live) viewModel::selectLiveModel else viewModel::selectAccurateModel,
                     )
                     SettingsDivider()
+                    ToggleRow(Icons.Outlined.AutoFixHigh, stringResource(R.string.accurate_punctuation_title),
+                        stringResource(R.string.accurate_punctuation_subtitle), state.accuratePunctuationEnabled,
+                        viewModel::setAccuratePunctuationEnabled, enabled = !dictation.isActive)
+                    SettingsDivider()
                     ActionRow(Icons.Outlined.Language, stringResource(R.string.dictation_languages_title),
                         state.languages.summary(), { languagesOpen = true })
                     SettingsDivider()

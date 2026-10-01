@@ -9,10 +9,17 @@ text, and never alter the captured original field or voice-edit instructions.
 Rules are applied on-device. Optional Drive sync uses the same app-data scope
 for the rule list and enabled states.
 
+Optional Accurate punctuation correction sends only recognized text directly to
+OpenAI with Responses storage disabled. It is off by default, never runs on Live
+or voice-edit instructions, and rejects output that changes word boundaries,
+spelling, order, numbers or address contents beyond allowed capitalization.
+Failures retain the original transcript; cancellation still prevents delivery.
+The enabled switch, but no text, is on the Drive sync allowlist.
+
 ## Optional Google Drive synchronization
 
 Sync uses Google's HTTPS endpoints without a backend, requests only
-`drive.appdata` and exports an allowlist of dictionary, replacement, mode and model settings.
+`drive.appdata` and exports an allowlist of dictionary, replacement, mode, model and Accurate punctuation settings.
 API keys, audio and history are excluded. Tokens, dictionary/replacement contents and raw
 provider payloads are never logged. Drive clients disable redirects, cookies and
 persistent caches. Remote data is bounded and validated before application;

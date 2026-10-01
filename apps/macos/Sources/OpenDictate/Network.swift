@@ -87,6 +87,17 @@ actor OpenAIClient {
         return (text, (result["message"] as? String).map { String($0.prefix(1000)) })
     }
 
+    func correctPunctuation(source: String, key: String, enabled: Bool, mode: DictationMode) async throws -> String {
+        try await PunctuationCorrection.apply(source: source, enabled: enabled, mode: mode) {
+            let response = try await self.response(OpenAIRequest.punctuation(source: source), key: key, timeout: 10)
+            guard let data = OpenAIRequest.responseText(response).data(using: .utf8),
+                  let result = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  result["message"] is NSNull,
+                  let text = result["transformed_text"] as? String else { throw DictationError.invalidResponse }
+            return text
+        }
+    }
+
     func search(query: String, entries: [HistoryEntry], key: String, model: String) async throws -> [UUID] {
         var matches = [UUID]()
         let allowed = Set(entries.map(\.id))
@@ -103,8 +114,8 @@ actor OpenAIClient {
         return matches
     }
 
-    private func response(_ body: [String: Any], key: String) async throws -> [String: Any] {
-        var request = authorized(OpenAIRequest.responsesURL, key: key, timeout: 30)
+    private func response(_ body: [String: Any], key: String, timeout: Int = 30) async throws -> [String: Any] {
+        var request = authorized(OpenAIRequest.responsesURL, key: key, timeout: timeout)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return try await send(request)
