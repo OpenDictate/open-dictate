@@ -4,7 +4,11 @@ import OpenDictateCore
 enum DriveError: Error { case authorization, signInTimedOut, network, configuration, invalidData }
 
 actor GoogleDriveClient {
-    struct Remote { let document: SettingsSyncDocument; let ownFileID: String? }
+    struct Remote {
+        let document: SettingsSyncDocument
+        let ownFileID: String?
+        func needsUpload(_ merged: SettingsSyncDocument) -> Bool { ownFileID == nil || merged != document }
+    }
     private let session: URLSession
     init(session: URLSession? = nil) {
         let config = URLSessionConfiguration.ephemeral

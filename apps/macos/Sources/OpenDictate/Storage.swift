@@ -31,6 +31,7 @@ final class Preferences: ObservableObject {
     @Published var driveClientID: String { didSet { defaults.set(driveClientID, forKey: "driveClientID") } }
     let syncDeviceID: String
     private var applyingSync = false
+    let syncChanges = PassthroughSubject<Void, Never>()
     private(set) var syncStorageFailed = false
 
     init(defaults: UserDefaults = .standard, replacements: ReplacementStore? = nil) {
@@ -90,10 +91,12 @@ final class Preferences: ObservableObject {
         guard !applyingSync else { return }
         do {
             var document = try defaults.data(forKey: "syncDocument").map(SettingsSyncDocument.decode) ?? SettingsSyncDocument()
+            let previous = document
             document.record(try syncValues, deviceId: syncDeviceID, now: Int64(Date().timeIntervalSince1970 * 1000))
             let data = try JSONEncoder().encode(document)
             _ = try SettingsSyncDocument.decode(data)
             defaults.set(data, forKey: "syncDocument"); syncStorageFailed = false
+            if document != previous { syncChanges.send() }
         } catch { syncStorageFailed = true }
     }
     func mergeSync(_ remote: SettingsSyncDocument) throws -> SettingsSyncDocument {

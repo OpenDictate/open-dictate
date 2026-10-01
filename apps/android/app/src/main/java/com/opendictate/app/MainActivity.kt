@@ -7,6 +7,11 @@ import androidx.appcompat.app.AppCompatActivity
 import com.opendictate.app.ui.OpenDictateApp
 
 class MainActivity : AppCompatActivity() {
+    override fun onResume() {
+        super.onResume()
+        (application as OpenDictateApplication).driveSync.requestSync()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

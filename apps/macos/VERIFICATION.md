@@ -1,5 +1,24 @@
 # macOS verification
 
+## 0.2.0-rc.11 — automatic Google Drive synchronization
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- All 90 Swift tests pass. New deterministic scheduling tests cover typing batches,
+  pulls during editing, edits during download/upload, queued refresh requests and
+  retry after failure. Preference tests ensure remote imports, unchanged assignments
+  and unrelated local settings do not emit upload events. Upload decisions cover
+  unchanged checks, cloud-only changes, local changes and first connection.
+- All 139 Android JVM tests, debug/release lint and assembly pass. Six isolated
+  storage tests pass on an API 36 emulator, including local-change revisions and
+  import suppression; no real Google account is used by these tests.
+- Universal arm64/x86_64 packaging, ad-hoc signature and DMG integrity pass.
+  Release version is 0.2.0-rc.11, numeric bundle version 0.2.0, build 12.
+  The release is not notarized.
+- This revision changes synchronization scheduling and app-opening triggers;
+  audio, Accessibility delivery and OAuth registration are unchanged. The real
+  Google-account and cross-device limitations recorded below still apply.
+
 ## 0.2.0-rc.10 — Google Drive settings and replacement synchronization
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

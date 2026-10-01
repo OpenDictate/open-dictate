@@ -19,6 +19,18 @@ private final class DriveHTTP: URLProtocol, @unchecked Sendable {
 }
 
 final class GoogleDriveTests: XCTestCase {
+    func testUnchangedPollsAndCloudOnlyEditsDoNotUploadButLocalEditsAndFirstLinkDo() {
+        var cloud = SettingsSyncDocument()
+        cloud.record(["dictionary": "Cloud"], deviceId: "android", now: 42)
+        let existing = GoogleDriveClient.Remote(document: cloud, ownFileID: "own-file")
+        XCTAssertFalse(existing.needsUpload(cloud))
+        var imported = SettingsSyncDocument(); imported.merge(cloud)
+        XCTAssertFalse(existing.needsUpload(imported))
+        XCTAssertTrue(GoogleDriveClient.Remote(document: cloud, ownFileID: nil).needsUpload(imported))
+        imported.record(["dictionary": "Local"], deviceId: "mac", now: 50)
+        XCTAssertTrue(existing.needsUpload(imported))
+    }
+
     private func client() -> GoogleDriveClient {
         let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [DriveHTTP.self]
         return GoogleDriveClient(session: URLSession(configuration: config))
