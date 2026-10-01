@@ -9,7 +9,9 @@ final class Preferences: ObservableObject {
     let replacements: ReplacementStore
     @Published var theme: AppTheme { didSet { defaults.set(theme.rawValue, forKey: "theme") } }
     @Published var mode: DictationMode { didSet { defaults.set(mode.rawValue, forKey: "mode"); recordSyncChange() } }
-    @Published var speechLanguage: String { didSet { defaults.set(speechLanguage, forKey: "speechLanguage") } }
+    @Published var speechLanguages: Set<String> {
+        didSet { defaults.set(SpeechLanguage.normalize(speechLanguages), forKey: "speechLanguages") }
+    }
     @Published var interfaceLanguage: String { didSet { defaults.set(interfaceLanguage, forKey: "interfaceLanguage") } }
     @Published var dictionary: String { didSet { defaults.set(dictionary, forKey: "dictionary"); recordSyncChange() } }
     @Published var keepTrailingPeriod: Bool { didSet { defaults.set(keepTrailingPeriod, forKey: "keepTrailingPeriod") } }
@@ -45,7 +47,11 @@ final class Preferences: ObservableObject {
         driveSyncEnabled = defaults.bool(forKey: "driveSyncEnabled")
         driveClientID = defaults.string(forKey: "driveClientID") ?? ""
         mode = DictationMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .live
-        speechLanguage = defaults.string(forKey: "speechLanguage") ?? "auto"
+        let languages = SpeechLanguage.restore(
+            stored: defaults.stringArray(forKey: "speechLanguages"),
+            legacy: defaults.string(forKey: "speechLanguage"))
+        speechLanguages = Set(languages)
+        defaults.set(languages, forKey: "speechLanguages")
         interfaceLanguage = defaults.string(forKey: "interfaceLanguage") ?? "auto"
         dictionary = defaults.string(forKey: "dictionary") ?? "OpenDictate"
         keepTrailingPeriod = defaults.object(forKey: "keepTrailingPeriod") as? Bool ?? true
@@ -131,8 +137,8 @@ final class Preferences: ObservableObject {
     }
     func t(_ english: String, _ russian: String) -> String { isRussian ? russian : english }
     var context: TranscriptionContext {
-        let languages = speechLanguage == "ru-en" ? ["ru", "en"] : (speechLanguage == "auto" ? [] : [speechLanguage])
-        var context = TranscriptionContext(languages: languages, dictionary: DictionaryTerms.normalize(dictionary))
+        var context = TranscriptionContext(languages: SpeechLanguage.normalize(speechLanguages),
+                                           dictionary: DictionaryTerms.normalize(dictionary))
         context.liveModel = liveModel; context.accurateModel = accurateModel
         return context
     }

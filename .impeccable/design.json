@@ -157,6 +157,16 @@
         "components": [
           { "name": "Sidebar Navigation", "implementation": "SettingsView.navigation(_:_:_:)", "description": "SF Symbol plus sentence-case label; tonal selection, selected medium weight and separate native keyboard focus." },
           { "name": "Setup and Preferences Controls", "implementation": "SettingsView", "description": "Native secure/search fields, buttons, segmented mode picker, pop-up pickers, switches and confirmation alerts." },
+          {
+            "name": "Speech Language Picker",
+            "implementation": "SpeechLanguagePicker.swift; SettingsView dictation page; OpenDictateCore/SpeechLanguage.swift; Storage.swift",
+            "description": "Scoped Operate refinement: summary button and 340pt SwiftUI/AppKit popover with 64 ISO language choices, native multi-selection checkboxes, localized/native names and stable alphabetical ordering in the interface language.",
+            "geometry": { "units": "points", "width": 340, "padding": 16, "stackSpacing": 12, "listHeight": 280 },
+            "appearance": "Existing system typography, semantic surfaces and native accent/focus; follows saved System/Light/Dark choice. Helper, explicit search caption, native-name captions, count and empty-result text use semantic primary foreground for readable light contrast.",
+            "interaction": "Search English/Russian/native names or ISO codes; multiple choices save immediately without closing. Automatic detection clears selections. Footer count and Done; Enter/Escape dismiss. Disabled and closed during recording.",
+            "accessibility": "Named search field and native checkboxes; summary help and accessibility expose the full selection.",
+            "scope": "Migrates legacy auto/ru/en/uk/ru-en selections to a local language set. Immutable session context supplies both existing transcription paths; no new synced preference, visual tokens or raster assets."
+          },
           { "name": "Dictionary Editor", "implementation": "SettingsView.dictionaryPage", "description": "Native text editor with automatic saving, term count and clean-up action." },
           {
             "name": "Word Replacements",
@@ -205,6 +215,18 @@
             ".impeccable/review/macos-history-en.png"
           ],
           "captureScope": "Settings pages in English/Russian and at minimum content size. The scoped recording-indicator review below adds recording and processing captures.",
+          "speechLanguagePicker": {
+            "verdict": "ship",
+            "basis": "Scoped Operate native refinement in the existing visual world; inspected implementation, actual native interaction and production NSHostingView captures, with no web detector.",
+            "findings": "Both contrast fix batches resolved. Both 340pt captures fit without clipping; sampled Russian light text exceeds 4.5:1 contrast.",
+            "screenshots": [
+              ".impeccable/review/macos-languages-en-dark-retina.png",
+              ".impeccable/review/macos-languages-ru-light-retina.png"
+            ],
+            "captureScope": "Offscreen production NSHostingView renders at 2×, 680px for 340pt. Screenshot paths are ignored review artifacts, not shipping assets.",
+            "interactionEvidence": "Search in English/Russian/native names/codes; multiple selection without closing; automatic reset; Done, Enter and Escape; light/dark appearance; local microphone check.",
+            "limits": "Verdict covers inspected UI quality and flow. Recognition across all 64 catalog languages was not network-tested."
+          },
           "wordReplacements": {
             "verdict": "ship",
             "basis": "Scoped Operate extension of existing native settings; implementation inspection and native captures, with no new visual identity or HTML detector.",

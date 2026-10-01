@@ -64,6 +64,16 @@ Temporary transcript items are marked confidential for compatible clipboard util
 Editors without usable Accessibility metadata need manual Copy last transcript.
 Password fields are deliberately excluded.
 
+### Speech languages
+
+Settings → Dictation → Speech languages opens a searchable list of 64 languages
+with native checkboxes. Select any combination without closing the list. Search
+by English, Russian or native name, or an ISO language code such as `de`.
+Automatic detection clears the selection and sends no language hints. Changes
+save immediately and apply to the next Live or Accurate session; selection is
+disabled during dictation. Existing single-language and Russian + English
+preferences migrate automatically. Language hints remain local preferences.
+
 ### Word replacements
 
 Settings → Word replacements manages local “recognized phrase → replacement”

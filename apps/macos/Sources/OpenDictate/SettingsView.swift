@@ -161,9 +161,9 @@ struct SettingsView: View {
             modelField(t("Live model", "Модель Live"), $preferences.liveModel)
             modelField(t("Accurate model", "Модель Accurate"), $preferences.accurateModel)
             HStack {
-                Text(t("Speech language", "Язык речи"))
+                Text(t("Speech languages", "Языки речи"))
                 Spacer()
-                languagePicker
+                SpeechLanguagePicker(preferences: preferences).disabled(model.isActive)
             }
             Divider()
             VStack(alignment: .leading, spacing: 10) {
@@ -195,15 +195,6 @@ struct SettingsView: View {
             if granted { Label(t("Allowed", "Разрешён"), systemImage: "checkmark").foregroundStyle(.secondary).font(.callout) }
             else { Button(t("Allow…", "Разрешить…"), action: action) }
         }
-    }
-    private var languagePicker: some View {
-        Picker(t("Speech language", "Язык речи"), selection: $preferences.speechLanguage) {
-            Text(t("Automatic", "Автоматически")).tag("auto")
-            Text(t("Russian + English", "Русский + English")).tag("ru-en")
-            Text("Русский").tag("ru")
-            Text("English").tag("en")
-            Text("Українська").tag("uk")
-        }.labelsHidden().frame(width: 190).disabled(model.isActive)
     }
     private func shortcutRow(_ label: String, _ key: String) -> some View {
         HStack {
