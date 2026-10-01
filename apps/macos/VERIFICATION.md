@@ -1,6 +1,6 @@
 # macOS verification
 
-## 0.2.0-rc.14 — waveform height and circular processing indicator
+## 0.2.0-rc.15 — waveform height and circular processing indicator
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
 
@@ -14,8 +14,8 @@ Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
   clicked. No microphone capture or OpenAI request was used for this preview.
 - Android debug tests/lint/assembly and release lint/assembly pass.
 - Universal arm64/x86_64 packaging, ad-hoc signature, DMG integrity and release
-  version validation pass. Displayed version is 0.2.0-rc.14, numeric bundle
-  version 0.2.0, build 15. The release is not notarized.
+  version validation pass. Displayed version is 0.2.0-rc.15, numeric bundle
+  version 0.2.0, build 16. The release is not notarized.
 
 This change only adjusts HUD geometry. Physical global hotkeys, permission
 changes, secure fields, cursor edits, field delivery, provider access, Spaces,

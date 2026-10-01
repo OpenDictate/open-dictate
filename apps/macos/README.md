@@ -170,6 +170,9 @@ includes API keys, audio or history. See [setup and format](../../docs/google-dr
 
 ## Packaging and releases
 
+Both platform icons use the approved [shared application artwork](../../docs/app-icon.md).
+macOS packaging resizes the PNG without adding lighting or shadows.
+
 `scripts/package.sh` emits `dist/macos/OpenDictate.app`, a universal DMG, and a
 SHA-256 checksum. It validates both CPU slices, the bundle signature and the DMG.
 The default uses an ad-hoc signature with a stable identifier requirement so
