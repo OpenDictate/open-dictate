@@ -11,7 +11,7 @@ final class AppModel: ObservableObject {
         var showsFinishControl: Bool { self == .preparing || self == .recording }
     }
     @Published private(set) var phase = Phase.idle
-    @Published private(set) var level: Float = 0
+    let audioLevels = RecordingAudioLevels()
     @Published private(set) var elapsed = 0
     @Published private(set) var partial = ""
     @Published private(set) var lastTranscript = ""
@@ -156,7 +156,7 @@ final class AppModel: ObservableObject {
             let target = try TextTarget.capture(exclusions: preferences.excludedApps, transform: transform)
             target.preserveOriginal()
             let session = Session(target: target, transform: transform, key: key, preferences: preferences)
-            current = session; phase = .preparing; partial = ""; level = 0; elapsed = 0; message = ""
+            current = session; phase = .preparing; partial = ""; audioLevels.reset(); elapsed = 0; message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
         } catch { present(error); showSettings?() }
@@ -185,7 +185,10 @@ final class AppModel: ObservableObject {
                     Task { @MainActor [weak self] in if self?.current?.id == id { self?.fail(DictationError.queueFull, session: session) } }
                 }
             }, onLevel: { [weak self] level in
-                Task { @MainActor in if self?.current?.id == id { self?.level = level } }
+                Task { @MainActor in
+                    guard let self, self.current?.id == id, self.phase.showsFinishControl else { return }
+                    self.audioLevels.append(level)
+                }
             }, onError: { [weak self] error in
                 Task { @MainActor in
                     guard self?.current?.id == id else { return }
@@ -211,7 +214,7 @@ final class AppModel: ObservableObject {
     }
 
     private func beginCompletion(_ session: Session) {
-        phase = .processing; level = 0; onStateChange?()
+        phase = .processing; onStateChange?()
         session.completion = Task { await complete(session) }
     }
 
@@ -279,7 +282,7 @@ final class AppModel: ObservableObject {
 
     private func finish(_ session: Session) {
         guard current?.id == session.id else { return }
-        current = nil; phase = .idle; level = 0; partial = ""
+        current = nil; phase = .idle; audioLevels.reset(); partial = ""
         hotKeys.setCancelEnabled(false); onStateChange?()
         session.continuation?.finish(); session.pump?.cancel()
         Task {

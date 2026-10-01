@@ -108,3 +108,22 @@ The choice is saved in local preferences and applies to all four settings pages.
 Dark preserves the prior default; System follows macOS. Semantic AppKit surfaces
 and foreground colors keep the navigation selection readable in either theme.
 The nonactivating recording indicator retains its dark appearance.
+
+## Waveform indicator choice
+
+Settings saves a choice between Microphone (the existing compact indicator,
+retained by default) and Waveform. The waveform follows the user's image:
+50 × 22pt black capsule, ten centered white bars, and a subtle 0.5pt white border
+at 14% opacity. Bars are 1.5pt wide, separated by 1.5pt; measured input levels
+map from 2pt silence marks to 10pt peaks, with square-root scaling. New input
+appears at the right, and older values move left. Ten normalized levels stay
+in memory and are cleared at the start/end of each session.
+
+The whole waveform capsule is the finish action, including during preparation;
+processing replaces its bars with a mini spinner at the same capsule size.
+The panel never activates or takes editor focus. The existing visibility switch
+hides either style. The native picker and guidance are localized in English and
+Russian. Linear 40ms height interpolation follows audio updates and is disabled
+by Reduce Motion. Production-view raster tests, offscreen native captures,
+actual Settings/preview interaction and a local microphone check ground this
+variant. No captured audio or level history is persisted.

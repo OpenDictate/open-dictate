@@ -290,6 +290,21 @@ struct SettingsView: View {
             VStack(spacing: 16) {
                 settingToggle(t("Launch at login", "Запускать при входе"), Binding(get: { model.loginEnabled }, set: model.setLoginEnabled))
                 settingToggle(t("Show recording status", "Показывать состояние записи"), $preferences.showStatus)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(t("Recording indicator", "Индикатор записи"))
+                        Spacer()
+                        Picker(t("Recording indicator", "Индикатор записи"), selection: $preferences.indicatorStyle) {
+                            ForEach(RecordingIndicatorStyle.allCases, id: \.self) { style in
+                                Text(style.title(russian: preferences.isRussian)).tag(style)
+                            }
+                        }.labelsHidden().frame(width: 180)
+                            .accessibilityIdentifier("recordingIndicatorStyle")
+                    }
+                    Text(t("Waveform bars show recent microphone volume. Click the indicator to finish, or use your shortcut.",
+                           "Полоски показывают изменение громкости микрофона. Нажмите на индикатор или сочетание клавиш, чтобы завершить."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }.disabled(!preferences.showStatus)
                 settingToggle(t("Keep the final period", "Оставлять точку в конце"), $preferences.keepTrailingPeriod)
                 HStack {
                     Text(t("Interface language", "Язык интерфейса")); Spacer()
