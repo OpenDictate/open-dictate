@@ -1,6 +1,7 @@
-OpenDictate for macOS **0.2.0-rc.10** adds optional Google Drive settings synchronization. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.11** improves automatic Google Drive settings synchronization. Requires macOS 14+ on Apple Silicon or Intel.
 
-- Connect **Google Drive** in Settings to sync the dictionary, word replacement rules and enabled states, dictation mode and selected models with Android. Changes sync automatically while the app runs; **Sync now** retries immediately.
+- Connect **Google Drive** in Settings to sync the dictionary, word replacement rules and enabled states, dictation mode and selected models with Android. Changes upload automatically after three seconds without further edits. Cloud settings are checked every minute and whenever Settings opens; unchanged checks skip uploads. **Sync now** remains an optional retry.
+- Edits made during a download or upload remain queued. Remote imports and unrelated local preferences do not trigger upload loops.
 - Rules keep their IDs, spelling and individual enabled states across devices. The master replacement switch syncs independently. Active dictation keeps the settings and rules captured at recording start.
 - Conflicts merge per preference; the latest complete dictionary or replacement list wins. Clearing rules stays cleared when an older device reconnects. Older sync clients preserve the new fields.
 - macOS sign-in uses the system browser with PKCE and a ten-minute timeout. OAuth credentials use a separate device-only Keychain item. Errors keep local settings available, and oversized settings can be corrected without restarting.
@@ -14,7 +15,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.10-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.11-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

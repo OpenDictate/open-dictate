@@ -3,6 +3,28 @@ import OpenDictateCore
 @testable import OpenDictate
 
 final class ReplacementSyncTests: XCTestCase {
+    @MainActor func testSyncEventsIncludeOnlyActualLocalChangesAndNeverRemoteImports() throws {
+        let suite = "sync-events-\(UUID().uuidString)", defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        var events = 0
+        let subscription = preferences.syncChanges.sink { events += 1 }
+        defer { subscription.cancel() }
+        preferences.saveHistory.toggle()
+        preferences.dictionary = preferences.dictionary
+        XCTAssertEqual(events, 0)
+        preferences.dictionary = "Local edit"
+        preferences.mode = preferences.mode == .live ? .accurate : .live
+        XCTAssertTrue(preferences.replacements.save(source: "cat", replacement: "dog"))
+        preferences.replacements.enabled = false
+        XCTAssertEqual(events, 4)
+        var remote = try preferences.syncDocument()
+        remote.entries["dictionary"] = .init(value: "Remote edit", modifiedAt: Int64.max - 10, deviceId: "remote")
+        _ = try preferences.mergeSync(remote)
+        XCTAssertEqual(preferences.dictionary, "Remote edit")
+        XCTAssertEqual(events, 4)
+    }
+
     private func fixture() throws -> SettingsSyncDocument {
         var root = URL(fileURLWithPath: #filePath)
         for _ in 0..<5 { root.deleteLastPathComponent() }

@@ -158,7 +158,11 @@ class SettingsStore(context: Context) {
             runCatching {
                 val document = previous.record(syncValues(), syncDeviceId, System.currentTimeMillis())
                 SettingsSyncDocument.fromJson(document.toJson())
-                prefs.edit { putString("sync_document", document.toJson()) }
+                if (document != previous) prefs.edit {
+                    putString("sync_document", document.toJson())
+                    // Remote imports never increment this counter, so they cannot cause upload loops.
+                    putLong("sync_local_revision", prefs.getLong("sync_local_revision", 0) + 1)
+                }
             }
         }
     }

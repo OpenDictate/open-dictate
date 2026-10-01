@@ -6,8 +6,16 @@ states, Live/Accurate mode and selected Live, Accurate and text model IDs. API k
 and permissions are excluded. Model access still depends on each device's
 OpenAI API key and local model catalogue.
 
-Changes sync after a short delay, at startup and every minute while the app
-process runs. **Sync now** retries immediately. There is no background daemon or
+Local changes upload automatically after three seconds without further edits.
+Typing in the dictionary is batched into one update; saving a replacement rule,
+toggling it or changing a model also triggers synchronization. No button press
+is required. Only changes to synchronized settings trigger an upload.
+
+Cloud settings are checked at startup, every minute while the app process runs,
+and whenever Android resumes or macOS Settings opens. Checks wait for unfinished
+local edits and skip uploading when the merged settings are already in Drive.
+Edits made during a network request remain queued. **Sync now** is an optional
+retry and respects the same editing delay. There is no background daemon or
 Android scheduled worker. Errors preserve local settings for retry.
 
 ## Google Cloud setup
