@@ -54,7 +54,10 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
 Supported editors expose an Accessibility string value and selected text range.
 Writable values receive live updates through selected-text replacement when supported,
 with a verified whole-value fallback. Acknowledged text/caret writes have a bounded 300 ms readback window; no write is repeated. Live delivery is serialized, and focus monitoring excludes the app’s own pending updates. The caret is placed after value readback. Other accessible editors receive a final
-paste using the clipboard. Editors without usable Accessibility metadata need
+paste using the clipboard. T3 Code also uses final clipboard delivery because its
+rich editor acknowledges Accessibility writes without applying them. This applies
+to both Live and Accurate: text appears when recording finishes, after rechecking
+the original process, exact field, text and selection. Editors without usable Accessibility metadata need
 manual Copy last transcript. Password fields are deliberately excluded.
 
 ### Appearance

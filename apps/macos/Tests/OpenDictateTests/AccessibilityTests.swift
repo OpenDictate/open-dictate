@@ -13,6 +13,7 @@ private final class Editor: TextAccessibility {
     var supportsSelectedText = true
     var resetsCaretOnValueRead = false
     var delayedWrites = false
+    var acknowledgesWithoutWriting = false
     var pendingValue: String?
     var valueWrites = 0
     var selectedTextWrites = 0
@@ -29,6 +30,7 @@ private final class Editor: TextAccessibility {
     func selection(_ element: AXUIElement) -> NSRange? { range }
     func setValue(_ text: String, in element: AXUIElement) -> Bool {
         valueWrites += 1
+        if acknowledgesWithoutWriting { return true }
         if resetsCaretOnValueRead { pendingValue = text }
         else { self.text = text; range = NSRange(location: 0, length: 0) }
         return true
@@ -42,6 +44,7 @@ private final class Editor: TextAccessibility {
     func setSelectedText(_ text: String, in element: AXUIElement) -> Bool {
         guard supportsSelectedText else { return false }
         selectedTextWrites += 1
+        if acknowledgesWithoutWriting { return true }
         let replacement = (self.text as NSString).replacingCharacters(in: range, with: text)
         let cursor = NSRange(location: range.location + (text as NSString).length, length: 0)
         if delayedWrites {
@@ -49,9 +52,9 @@ private final class Editor: TextAccessibility {
         } else { self.text = replacement; range = cursor }
         return true
     }
-    func target(_ snapshot: EditableTextSnapshot) -> TextTarget {
+    func target(_ snapshot: EditableTextSnapshot, writable: Bool = true) -> TextTarget {
         TextTarget(element: AXUIElementCreateApplication(getpid()), application: .current,
-                   snapshot: snapshot, writable: true, accessibility: self)
+                   snapshot: snapshot, writable: writable, accessibility: self)
     }
 }
 
@@ -73,6 +76,28 @@ private final class NativeEditor: TextAccessibility {
 final class AccessibilityTests: XCTestCase {
     private func assertResult(_ actual: Bool, _ expected: Bool, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertEqual(actual, expected, file: file, line: line)
+    }
+
+    @MainActor func testT3CodeBypassesAcknowledgedButIneffectiveAXWritesForFinalPaste() async {
+        let snapshot = EditableTextSnapshot(original: "\n", selection: NSRange(location: 0, length: 0))
+        let editor = Editor(snapshot); editor.acknowledgesWithoutWriting = true
+        let writable = TextTarget.supportsDirectInsertion(bundleID: "com.t3tools.t3code", valueSettable: true)
+        let target = editor.target(snapshot, writable: writable)
+        XCTAssertFalse(target.writable)
+        assertResult(await target.apply("transcript"), false)
+        XCTAssertFalse(target.didInsert) // Final clipboard delivery remains available.
+        XCTAssertTrue(target.isCurrent)
+        XCTAssertEqual(editor.selectedTextWrites, 0)
+        XCTAssertEqual(editor.valueWrites, 0)
+        XCTAssertEqual(editor.text, snapshot.original)
+        XCTAssertEqual(editor.range, snapshot.selection)
+    }
+
+    @MainActor func testDirectInsertionRetainsCapabilityChecksForOtherApps() {
+        XCTAssertTrue(TextTarget.supportsDirectInsertion(bundleID: "com.apple.TextEdit", valueSettable: true))
+        XCTAssertTrue(TextTarget.supportsDirectInsertion(bundleID: "", valueSettable: true))
+        XCTAssertFalse(TextTarget.supportsDirectInsertion(bundleID: "com.apple.TextEdit", valueSettable: false))
+        XCTAssertFalse(TextTarget.supportsDirectInsertion(bundleID: "com.t3tools.t3code", valueSettable: false))
     }
 
     @MainActor func testDelayedEditorReadbackDoesNotRejectOrDuplicateTextAndCanRestore() async {
