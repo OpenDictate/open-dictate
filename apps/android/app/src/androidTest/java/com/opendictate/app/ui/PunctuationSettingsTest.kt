@@ -23,7 +23,7 @@ class PunctuationSettingsTest {
         compose.onNodeWithText(title).performScrollTo().assertIsDisplayed().performClick()
         compose.waitForIdle()
         assertTrue(settings.accuratePunctuationEnabled)
-        assertEquals("true", settings.syncDocument().entries["accuratePunctuationEnabled"]?.value)
+        assertNull(settings.syncDocument().entries["accuratePunctuationEnabled"])
         val screenshot = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         File(context.getExternalFilesDir(null), "punctuation-phone.png").outputStream().use {
             screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)

@@ -2,9 +2,9 @@
 
 Connect Google Drive in Settings on Android and macOS, using the same Google
 account. Sync transfers the dictionary, word replacement rules and enabled
-states, Live/Accurate mode, the optional Accurate punctuation switch and selected
-Live, Accurate and text model IDs. API keys, audio, transcripts/history, app exclusions
-and permissions are excluded. Model access still depends on each device's
+states, Live/Accurate mode and selected Live, Accurate and text model IDs.
+The Accurate punctuation switch is saved only on each device and never synced.
+API keys, audio, transcripts/history, app exclusions and permissions are excluded. Model access still depends on each device's
 OpenAI API key and local model catalogue.
 
 Local changes upload automatically after three seconds without further edits.
@@ -109,8 +109,8 @@ Delete hidden app data.
 ## Extending the format
 
 Version 1 has an `entries` map whose keys currently are `dictionary`, `mode`,
-`liveModel`, `accurateModel`, `textModel`, `wordReplacements`,
-`wordReplacementsEnabled` and `accuratePunctuationEnabled`:
+`liveModel`, `accurateModel`, `textModel`, `wordReplacements` and
+`wordReplacementsEnabled`:
 
 ```json
 {
@@ -131,13 +131,14 @@ Unsupported schema versions fail closed rather than being overwritten. Values
 are strings; structured future sections can encode JSON inside their value.
 The `wordReplacements` value contains the shared version-1 replacement JSON
 (`schemaVersion` and `rules` with `id`, `source`, `replacement`, `enabled`).
-`wordReplacementsEnabled` and `accuratePunctuationEnabled` are the strings `true` or `false`.
-Accurate punctuation defaults to `false`; missing fields seed at timestamp zero
-and yield to an existing cloud value. Invalid boolean values reject the import
-before any setting is applied. Existing five-field
-journals seed these additions at timestamp zero so new defaults yield to cloud
-values. Imported JSON is preserved verbatim to avoid platform-specific encoding
-creating a new edit. Remote rules are validated before any settings are applied.
+`wordReplacementsEnabled` is the string `true` or `false`. Invalid boolean
+values reject the import before any setting is applied. Existing five-field
+journals seed replacement settings at timestamp zero so new defaults yield to
+cloud values. The former `accuratePunctuationEnabled` sync field is discarded
+from local journals and incoming replicas, and excluded from uploads. Its
+existing local value is preserved. Older app versions may still sync that field
+among themselves until updated. Imported replacement JSON is preserved verbatim
+to avoid platform-specific encoding creating a new edit. Remote rules are validated before any settings are applied.
 
 Clearing needs an explicit value, because removing a key leaves older replicas intact.
 

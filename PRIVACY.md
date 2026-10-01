@@ -14,14 +14,14 @@ An explicit AI history search may send that saved text to OpenAI.
 enabled, Accurate sends only the recognized transcript directly to OpenAI's
 `gpt-6-luna` through the Responses API with `store: false`, before local word
 replacements. It adds a separate processing step; failures keep the original
-transcript. Live and voice editing do not use this step. The switch can sync
-through Google Drive; the transcript is never included in sync.
+transcript. Live and voice editing do not use this step. The switch is saved
+only on the current device and is excluded from Google Drive sync; the transcript is never included in sync.
 
 ## Optional Google Drive synchronization
 
 If you connect Google Drive in Settings, the dictionary, word replacement rules and
-enabled states, the Accurate punctuation switch, dictation mode and selected model IDs are sent directly to Google and stored in your account's
-hidden app-data folder. Sync requests only `drive.appdata`, without access to
+enabled states, dictation mode and selected model IDs are sent directly to
+Google and stored in your account's hidden app-data folder. Sync requests only `drive.appdata`, without access to
 ordinary Drive files. API keys, audio, transcripts/history, exclusions and
 permissions are excluded; other preferences remain local.
 
