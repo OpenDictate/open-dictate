@@ -117,6 +117,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settings.target = self; applicationMenu.addItem(settings)
         #if DEBUG
         if localChecks != nil {
+            let focusRecording = NSMenuItem(title: "Local check: start recording in 3 seconds", action: #selector(checkFocusRecording), keyEquivalent: "")
+            focusRecording.target = self; applicationMenu.addItem(focusRecording)
             let microphone = NSMenuItem(title: "Local check: record microphone (2 seconds)", action: #selector(checkMicrophone), keyEquivalent: "")
             microphone.target = self; applicationMenu.addItem(microphone)
             let insertion = NSMenuItem(title: "Local check: insert in 3 seconds", action: #selector(checkInsertion), keyEquivalent: "")
@@ -219,6 +221,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     @objc private func quit() { NSApp.terminate(nil) }
     #if DEBUG
+    @objc private func checkFocusRecording() {
+        hudPreviewPhase = nil
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); model.toggleLocalRecording() }
+    }
     @objc private func checkRecordingSession() {
         hudPreviewPhase = nil
         Task { try? await Task.sleep(nanoseconds: 5_000_000_000); model.toggleLocalRecording(autoStop: true) }

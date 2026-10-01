@@ -92,10 +92,12 @@ be reviewed separately.
 `AppModel` owns one session UUID and immutable settings; `AudioRecorder` owns
 a serial audio worker; `LiveTranscriptionSession` serializes socket sends.
 `TextTarget` rechecks process, exact focused element, value and UTF-16 selection
-before every insertion. Cumulative partials replace the original selection.
-Cancellation restores only an unchanged target. Focus changes detach delivery
-and stop recording; final results remain available to copy. The status HUD
-never activates. Use registered hotkeys, without Input Monitoring.
+before final clipboard insertion. Both modes deliver once after recording stops.
+Cancellation restores only an unchanged target. Ordinary dictation continues
+across focus changes and captures its delivery field when stopped. Focus changes
+after stopping detach delivery; voice editing remains bound to the original
+source and stops when it changes. Final results remain available to copy.
+The status HUD never activates. Use registered hotkeys, without Input Monitoring.
 
 macOS audio remains in memory for both paths and is discarded on all exits.
 Keep audio and request encoding off the main actor. History is an existing

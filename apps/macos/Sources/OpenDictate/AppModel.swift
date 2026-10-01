@@ -28,6 +28,9 @@ final class AppModel: ObservableObject {
     let replacements: ReplacementStore
     let driveSync: GoogleDriveSync
     private let localOnly: Bool
+    private let captureTarget: @MainActor ([String], Bool) throws -> TextTarget
+    private let makeRecorder: () -> any AudioRecording
+    private let accessibilityTrust: () -> Bool
     let hotKeys = HotKeys()
     private let client = OpenAIClient()
     private var current: Session?
@@ -43,7 +46,9 @@ final class AppModel: ObservableObject {
     @MainActor private final class Session {
         let id = UUID()
         let target: TextTarget
-        let recorder = AudioRecorder()
+        let exclusions: [String]
+        var deliveryTarget: TextTarget?
+        let recorder: any AudioRecording
         let mode: DictationMode
         let transform: Bool
         let key: String
@@ -63,8 +68,10 @@ final class AppModel: ObservableObject {
         var pump: Task<Void, Never>?
         var setup: Task<Void, Never>?
         var completion: Task<Void, Never>?
-        init(target: TextTarget, transform: Bool, key: String, preferences: Preferences, replacements: WordReplacementEngine) {
+        init(target: TextTarget, transform: Bool, key: String, preferences: Preferences, replacements: WordReplacementEngine, recorder: any AudioRecording) {
+            self.recorder = recorder
             self.replacements = replacements
+            self.exclusions = preferences.excludedApps
             self.target = target; self.transform = transform; self.key = key
             mode = transform ? .accurate : preferences.mode
             context = preferences.context; textModel = preferences.textModel
@@ -73,7 +80,13 @@ final class AppModel: ObservableObject {
         }
     }
 
-    init(localOnly: Bool = false) {
+    init(localOnly: Bool = false,
+         captureTarget: @escaping @MainActor ([String], Bool) throws -> TextTarget = { try TextTarget.capture(exclusions: $0, transform: $1) },
+         makeRecorder: @escaping () -> any AudioRecording = { AudioRecorder() },
+         accessibilityTrust: @escaping () -> Bool = { AXIsProcessTrusted() }) {
+        self.captureTarget = captureTarget
+        self.makeRecorder = makeRecorder
+        self.accessibilityTrust = accessibilityTrust
         self.localOnly = localOnly
         replacements = ReplacementStore(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
         preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard, replacements: replacements)
@@ -119,7 +132,7 @@ final class AppModel: ObservableObject {
 
     func refreshPermissions() {
         microphoneAllowed = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
-        accessibilityAllowed = AXIsProcessTrusted()
+        accessibilityAllowed = accessibilityTrust()
         guard !localOnly else { hasKey = false; return }
         do { hasKey = try APIKeyStore.load()?.isEmpty == false }
         catch { present(error) }
@@ -187,8 +200,8 @@ final class AppModel: ObservableObject {
         do {
             guard let key = try APIKeyStore.load(), !key.isEmpty else { throw DictationError.missingKey }
             guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { throw DictationError.microphone }
-            let target = try TextTarget.capture(exclusions: preferences.excludedApps, transform: transform)
-            let session = Session(target: target, transform: transform, key: key, preferences: preferences, replacements: replacements.engine())
+            let target = try captureTarget(preferences.excludedApps, transform)
+            let session = Session(target: target, transform: transform, key: key, preferences: preferences, replacements: replacements.engine(), recorder: makeRecorder())
             current = session; phase = .preparing; partial = ""; audioLevels.reset(); elapsed = 0; message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
@@ -197,13 +210,13 @@ final class AppModel: ObservableObject {
 
     #if DEBUG
     /// Exercises production capture, focus monitoring, stop and delivery without credentials/network.
-    func toggleLocalRecording(autoStop: Bool = false) {
+    func toggleLocalRecording(autoStop: Bool = false, transform: Bool = false) {
         guard localOnly else { return }
         if isActive { stop(); return }
         do {
             preferences.mode = .accurate
-            let target = try TextTarget.capture(exclusions: [])
-            let session = Session(target: target, transform: false, key: "", preferences: preferences, replacements: replacements.engine())
+            let target = try captureTarget(preferences.excludedApps, transform)
+            let session = Session(target: target, transform: transform, key: "", preferences: preferences, replacements: replacements.engine(), recorder: makeRecorder())
             current = session; phase = .preparing; audioLevels.reset(); message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
@@ -259,6 +272,11 @@ final class AppModel: ObservableObject {
 
     func stop() {
         guard let session = current else { return }
+        guard phase == .preparing || phase == .recording else { return }
+        // The explicit finish action chooses the ordinary dictation destination.
+        // Freeze it before recorder shutdown or network processing can suspend.
+        session.deliveryTarget = session.transform ? session.target :
+            try? captureTarget(session.exclusions, false)
         if phase == .preparing {
             session.stopRequested = true
             phase = .processing; onStateChange?()
@@ -299,7 +317,7 @@ final class AppModel: ObservableObject {
                 guard current?.id == session.id else { return }
             } else { corrected = transcript }
             var result = TranscriptFormatter.format(corrected, keepTrailingPeriod: session.keepTrailingPeriod)
-            if session.transform {
+            if session.transform && !localOnly {
                 guard !result.isEmpty else { throw DictationError.tooShort }
                 let (transformed, responseMessage) = try await client.transform(source: session.target.snapshot.selectedText,
                     instruction: result, key: session.key, model: session.textModel)
@@ -317,15 +335,15 @@ final class AppModel: ObservableObject {
             guard current?.id == session.id else { return }
             var delivered = false
             if !session.detached {
-                delivered = await session.target.paste(result)
+                delivered = await session.deliveryTarget?.paste(result) ?? false
             }
             try Task.checkCancellation()
             guard current?.id == session.id else { return }
             lastTranscript = result
             if preferences.saveHistory { history.add(result, mode: session.transform ? "edit" : session.mode.rawValue) }
             message = delivered ? preferences.t("Text inserted.", "Текст вставлен.") :
-                preferences.t("Focus changed or the editor refused the update. Your text is ready to copy from the menu.",
-                              "Фокус изменился или редактор отклонил вставку. Скопируйте текст из меню.")
+                preferences.t("No eligible field at stop, focus changed, or the editor refused the paste. Your text is ready to copy from the menu.",
+                              "При остановке не было подходящего поля, изменился фокус или редактор отклонил вставку. Скопируйте текст из меню.")
             finish(session)
         } catch { if current?.id == session.id { fail(error, session: session) } }
     }
@@ -377,18 +395,20 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func tick() {
+    func tick() {
         if let session = current {
             if phase == .recording { elapsed = Int(Date().timeIntervalSince(session.started)) }
-            if !session.detached && !session.target.isUpdating && !session.target.isCurrent {
+            let guardedTarget = session.transform ? session.target : session.deliveryTarget
+            if let target = guardedTarget, !session.detached && !target.isUpdating && !target.isCurrent {
                 session.detached = true
                 if phase == .recording { stop() }
                 else if phase == .preparing { stop() }
             }
         }
-        let allowed = AXIsProcessTrusted()
+        let allowed = accessibilityTrust()
         if accessibilityAllowed != allowed {
             accessibilityAllowed = allowed
+            if !allowed { cancel() }
             if !recordingShortcut { configureHotKeys() }
         }
     }

@@ -56,9 +56,10 @@ Google Account. See [setup and conflict behavior](docs/google-drive-sync.md).
   using the existing Accessibility permission. These monitors never read typed
   characters, log keystrokes or require Input Monitoring permission. Recording
   a shortcut reads its label only inside the focused settings control and ends
-  when focus changes. Changing fields prevents further automatic insertion.
-  Ordinary dictation continues during typing and inserts at the latest selection
-  in the original field; voice editing requires the source to remain unchanged.
+  when focus changes. Ordinary dictation continues during typing and switching
+  windows. Stopping captures the active eligible field and inserts at its latest selection. Changing
+  fields after stopping prevents automatic insertion; voice editing requires
+  the original source to remain unchanged.
   A completed result remains available
   to copy explicitly from the menu.
 - All macOS editors receive a final clipboard paste. Only the transcript is

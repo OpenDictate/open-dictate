@@ -44,13 +44,15 @@ files. It never logs keys, audio, transcripts, field contents or raw provider
 responses. Provider errors are mapped to safe status messages rather than
 displayed verbatim. Text Responses requests disable storage.
 
-Accessibility insertion checks the original process and exact element, current
+Accessibility insertion checks the captured process and exact element, current
 text, selection and secure-field subrole before every write. UUID session guards
-discard stale callbacks. Ordinary dictation captures the latest text and selection
-in the original field immediately before delivery, preserving user edits. Voice
-editing retains the original source guard. Text/selection changes during clipboard
-staging reject delivery. Final clipboard delivery is directed at the original process
-and rechecks the field before posting Paste. No AX text writes or app-specific
+discard stale callbacks. Ordinary dictation continues across focus changes and
+captures an eligible active field at stop, rechecking Accessibility, secure fields and the session
+exclusion list. Delivery captures its latest text and selection, preserving user
+edits. Voice editing retains the original source guard. Text/selection changes during clipboard
+staging reject delivery. Final clipboard delivery is directed at the captured
+process (the original process for voice editing) and rechecks the field before
+posting Paste. No AX text writes or app-specific
 exceptions are used. Each paste is posted once and verified by text/caret readback.
 Clipboard restoration is skipped
 if another action changed the clipboard. Cancellation before final delivery leaves the original field unchanged. Secure fields and user-excluded apps are rejected before capture.
