@@ -1,5 +1,30 @@
 # macOS verification
 
+## 0.2.0-rc.17 — golden proportions around the waveform
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- All 98 Swift tests pass. Production-view raster coverage verifies ten bars
+  at maximum height, a 38.63 pt waveform span centered in the 62.5 pt capsule,
+  and approximately 5.41 pt vertical insets around 17.5 pt bars. Capsule height
+  / maximum bar height and capsule width / waveform width both equal the golden
+  ratio. The production SwiftUI capture matches the selected third variant's
+  capsule dimensions, with slightly wider spacing between bars.
+- Native panel tests cover preparation → processing → recording → idle,
+  unchanged foreground process/key window, finish mouse handling, and the
+  existing circular processing indicator with mouse events ignored.
+- Android debug tests/lint/assembly and release lint/assembly pass in this
+  worktree; subsequent refinements change only macOS HUD geometry.
+- Universal arm64/x86_64 packaging, ad-hoc signature, DMG integrity and release
+  version validation pass. Displayed version is 0.2.0-rc.17, numeric bundle
+  version 0.2.0, build 18. The release is not notarized.
+
+No microphone capture or provider request was used for these HUD checks.
+Physical global hotkeys, permission changes, secure fields, cursor edits, field
+insertion, Spaces, full-screen apps and Intel/macOS 14 hardware were not
+re-exercised; the earlier smoke-check evidence and compatibility limits below
+still apply.
+
 ## 0.2.0-rc.16 — original Android application icon on both platforms
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

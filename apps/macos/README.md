@@ -40,8 +40,11 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   history searches use structured Responses output with `store: false`.
 - `RecordingIndicator` owns a nonactivating panel that cannot become key/main.
   Settings choose Microphone (the existing 55 × 27.5 pt finish control) or Waveform
-  (a black 62.5 × 22.5 pt capsule with ten white level bars, ranging from
-  2.5 pt in silence to 17.5 pt at full level, with 2.5 pt vertical insets). New input appears on
+  (a black 62.5 × 28.32 pt capsule with ten white level bars, ranging from
+  2.5 pt in silence to 17.5 pt at full level). At full level, the waveform
+  spans 38.63 × 17.5 pt; capsule width / waveform width and capsule height /
+  waveform height both equal the golden ratio, with 5.41 pt vertical insets.
+  New input appears on
   the right and older levels move left, using the existing 40 ms microphone
   level callbacks. Only ten normalized RMS levels live in memory and are cleared
   on every session exit. The HUD alone observes those updates, without rebuilding

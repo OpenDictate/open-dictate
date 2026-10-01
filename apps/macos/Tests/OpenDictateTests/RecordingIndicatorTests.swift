@@ -16,7 +16,7 @@ final class RecordingIndicatorTests: XCTestCase {
             let panel = try XCTUnwrap(application.windows.first {
                 $0.title == "OpenDictate recording indicator" && $0.isVisible
             } as? NSPanel)
-            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 23))
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 29))
             XCTAssertFalse(panel.canBecomeKey)
             XCTAssertFalse(panel.canBecomeMain)
             XCTAssertFalse(panel.ignoresMouseEvents)
@@ -28,7 +28,7 @@ final class RecordingIndicatorTests: XCTestCase {
             XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 28, height: 28))
             indicator.show(phase: .recording, style: .waveform, audioLevels: RecordingAudioLevels(),
                            isRussian: false, finish: {})
-            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 23))
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 29))
             XCTAssertFalse(panel.ignoresMouseEvents)
             XCTAssertTrue(application.keyWindow === originalKeyWindow)
             XCTAssertEqual(NSWorkspace.shared.frontmostApplication?.processIdentifier, originalProcess)
@@ -84,7 +84,7 @@ final class RecordingIndicatorTests: XCTestCase {
             let levels = RecordingAudioLevels()
             let quiet = try render(.preparing, style: .waveform, levels: levels)
             XCTAssertEqual(quiet.pixelsWide, 63)
-            XCTAssertEqual(quiet.pixelsHigh, 23)
+            XCTAssertEqual(quiet.pixelsHigh, 29)
             XCTAssertNil(redBounds(quiet))
             let quietBars = whiteBars(quiet)
             XCTAssertEqual(quietBars.count, 10)
@@ -96,8 +96,25 @@ final class RecordingIndicatorTests: XCTestCase {
             let loudBar = try XCTUnwrap(loudBars.last)
             XCTAssertGreaterThan(loudBar.height, try XCTUnwrap(quietBars.last).height + 12)
             XCTAssertEqual(loudBar.height, 17.5, accuracy: 1)
-            XCTAssertEqual(loudBar.minY, 2.5, accuracy: 1)
-            XCTAssertEqual(CGFloat(loud.pixelsHigh) - loudBar.maxY, 2.5, accuracy: 1)
+            XCTAssertEqual(loudBar.minY, 5.41, accuracy: 1)
+            XCTAssertEqual(CGFloat(loud.pixelsHigh) - loudBar.maxY, 5.41, accuracy: 1)
+            for _ in 1..<10 { levels.append(1) }
+            let fullLevel = try render(.recording, style: .waveform, levels: levels)
+            let fullLevelBars = whiteBars(fullLevel)
+            XCTAssertEqual(fullLevelBars.count, 10)
+            for bar in fullLevelBars {
+                XCTAssertEqual(bar.height, 17.5, accuracy: 1)
+                XCTAssertEqual(bar.minY, 5.41, accuracy: 1)
+                XCTAssertEqual(CGFloat(fullLevel.pixelsHigh) - bar.maxY, 5.41, accuracy: 1)
+            }
+            let waveformBounds = try XCTUnwrap(fullLevelBars.reduce(nil as CGRect?) { $0?.union($1) ?? $1 })
+            XCTAssertEqual(waveformBounds.width, 38.63, accuracy: 1)
+            // Fractional bar edges are antialiased before the capture is rounded to whole pixels.
+            XCTAssertEqual(waveformBounds.minX, 11.94, accuracy: 1.5)
+            XCTAssertEqual(CGFloat(fullLevel.pixelsWide) - waveformBounds.maxX, 11.94, accuracy: 1.5)
+            let size = RecordingStatusView.size(phase: .recording, style: .waveform)
+            XCTAssertEqual(size.height / 17.5, (1 + sqrt(5)) / 2, accuracy: 0.001)
+            XCTAssertEqual(size.width / waveformBounds.width, (1 + sqrt(5)) / 2, accuracy: 0.05)
         }
     }
 

@@ -1,4 +1,5 @@
 import AppKit
+import OpenDictateCore
 import SwiftUI
 
 /// Keeps recording controls above the editor without activating or focusing the app.
@@ -63,7 +64,7 @@ struct RecordingStatusView: View {
     }
 
     static let scale: CGFloat = 1.25
-    private static let waveformSize = NSSize(width: 50, height: 18)
+    private static let waveformSize = WaveformGeometry.capsuleSize
     private static let spinnerSize = NSSize(width: 22, height: 22)
 
     static func size(phase: AppModel.Phase, style: RecordingIndicatorStyle) -> NSSize {
@@ -128,15 +129,28 @@ struct RecordingStatusView: View {
     }
 }
 
+enum WaveformGeometry {
+    static let goldenRatio: CGFloat = (1 + sqrt(5)) / 2
+    static let barWidth: CGFloat = 1.5
+    static let minimumBarHeight: CGFloat = 2
+    static let maximumBarHeight: CGFloat = 14
+    static let capsuleSize = NSSize(width: 50, height: maximumBarHeight * goldenRatio)
+    static let barSpacing = (capsuleSize.width / goldenRatio - CGFloat(AudioLevelHistory.count) * barWidth)
+        / CGFloat(AudioLevelHistory.count - 1)
+}
+
 struct WaveformBars: View {
     let samples: [Float]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 1.5) {
+        HStack(spacing: WaveformGeometry.barSpacing) {
             ForEach(samples.indices, id: \.self) { index in
                 Capsule().fill(Color.white)
-                    .frame(width: 1.5, height: 2 + 12 * CGFloat(sqrt(samples[index])))
+                    .frame(width: WaveformGeometry.barWidth,
+                           height: WaveformGeometry.minimumBarHeight
+                               + (WaveformGeometry.maximumBarHeight - WaveformGeometry.minimumBarHeight)
+                               * CGFloat(sqrt(samples[index])))
             }
         }
         .animation(reduceMotion ? nil : .linear(duration: 0.04), value: samples)

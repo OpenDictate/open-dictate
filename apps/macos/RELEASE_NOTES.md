@@ -1,11 +1,17 @@
-OpenDictate for macOS **0.2.0-rc.16** restores the original Android application icon on both platforms. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.17** uses the golden ratio for the spacing around the recording waveform. Requires macOS 14+ on Apple Silicon or Intel.
+
+- **Waveform proportions:** the capsule is approximately 62.5 × 28.32 pt, surrounding a 38.63 × 17.5 pt waveform at full level. Both capsule height / waveform height and capsule width / waveform width equal the golden ratio (≈1.618).
+- The maximum bar height stays 17.5 pt, with approximately 5.41 pt above and below. The ten bars spread slightly farther apart to balance horizontal spacing.
+- Processing retains the compact circular spinner introduced in rc.15.
+
+Includes the original Android application icon restored in rc.16:
 
 - Android uses its original vector icon again: a white outlined microphone with a hollow center on a black background.
 - macOS renders that same Android vector directly into its iconset, with no added shadows, gradients or bevels.
 
 Includes the waveform improvements from rc.15:
 
-- **Waveform indicator:** louder audio produces taller bars, with a 50% larger height range and tighter vertical padding during preparation and recording.
+- **Waveform indicator:** louder audio produces taller bars, with a 50% larger height range than before rc.15.
 - **Transcription indicator:** the waveform capsule shrinks to a circle around the native spinner, restoring its original vertical spacing.
 
 Includes the multilingual picker from rc.13:
@@ -28,7 +34,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.16-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.17-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
