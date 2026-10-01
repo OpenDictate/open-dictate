@@ -53,8 +53,6 @@ final class AppModel: ObservableObject {
         let timeout: Int
         let replacements: WordReplacementEngine
         let started = Date()
-        var deliveryTask: Task<Void, Never>?
-        var pendingPartial: String?
         var acceptsPartials = true
         var cancelling = false
         var detached = false
@@ -188,7 +186,6 @@ final class AppModel: ObservableObject {
             guard let key = try APIKeyStore.load(), !key.isEmpty else { throw DictationError.missingKey }
             guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { throw DictationError.microphone }
             let target = try TextTarget.capture(exclusions: preferences.excludedApps, transform: transform)
-            target.preserveOriginal()
             let session = Session(target: target, transform: transform, key: key, preferences: preferences, replacements: replacements.engine())
             current = session; phase = .preparing; partial = ""; audioLevels.reset(); elapsed = 0; message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
@@ -204,7 +201,6 @@ final class AppModel: ObservableObject {
         do {
             preferences.mode = .accurate
             let target = try TextTarget.capture(exclusions: [])
-            target.preserveOriginal()
             let session = Session(target: target, transform: false, key: "", preferences: preferences, replacements: replacements.engine())
             current = session; phase = .preparing; audioLevels.reset(); message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
@@ -308,13 +304,11 @@ final class AppModel: ObservableObject {
             if !session.transform { result = session.replacements.apply(result) }
             guard !result.isEmpty else { throw DictationError.tooShort }
             session.acceptsPartials = false
-            await session.deliveryTask?.value
             try Task.checkCancellation()
             guard current?.id == session.id else { return }
             var delivered = false
             if !session.detached {
-                delivered = await session.target.apply(result)
-                if !delivered && !Task.isCancelled { delivered = session.target.paste(result) }
+                delivered = await session.target.paste(result)
             }
             try Task.checkCancellation()
             guard current?.id == session.id else { return }
@@ -331,17 +325,6 @@ final class AppModel: ObservableObject {
         guard let session = current, session.id == id, !session.transform, session.acceptsPartials else { return }
         let text = session.replacements.apply(text, final: false)
         partial = text
-        guard !session.detached, session.target.writable, !text.isEmpty else { return }
-        session.pendingPartial = text
-        guard session.deliveryTask == nil else { return }
-        session.deliveryTask = Task { [weak self] in
-            defer { session.deliveryTask = nil }
-            while let text = session.pendingPartial, !Task.isCancelled {
-                session.pendingPartial = nil
-                guard self?.current?.id == id else { return }
-                if !(await session.target.apply(text)) { session.detached = true; return }
-            }
-        }
     }
 
     func cancel() {
@@ -354,16 +337,14 @@ final class AppModel: ObservableObject {
     private func terminate(_ session: Session, error: Error?) {
         guard current?.id == session.id, !session.cancelling else { return }
         session.cancelling = true; session.acceptsPartials = false
-        session.setup?.cancel(); session.completion?.cancel(); session.deliveryTask?.cancel()
+        session.setup?.cancel(); session.completion?.cancel()
         session.continuation?.finish(); session.pump?.cancel()
         phase = .processing; onStateChange?()
         Task {
             await session.setup?.value
             _ = await session.recorder.stop()
             await session.live?.close()
-            await session.deliveryTask?.value
             await session.completion?.value
-            await session.target.restore()
             guard current?.id == session.id else { return }
             finish(session)
             if let error {
@@ -379,7 +360,7 @@ final class AppModel: ObservableObject {
         guard current?.id == session.id else { return }
         current = nil; phase = .idle; audioLevels.reset(); partial = ""
         hotKeys.setCancelEnabled(false); onStateChange?()
-        session.continuation?.finish(); session.pump?.cancel(); session.deliveryTask?.cancel()
+        session.continuation?.finish(); session.pump?.cancel()
         Task {
             await session.setup?.value
             _ = await session.recorder.stop()
@@ -450,7 +431,7 @@ final class AppModel: ObservableObject {
             let text = lastTranscript
             pasteTask = Task {
                 defer { pasteTask = nil }
-                if !(await target.apply(text)) && !target.paste(text) { present(DictationError.noField) }
+                if !(await target.paste(text)) { present(DictationError.noField) }
             }
         } catch { present(error) }
     }

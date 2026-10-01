@@ -1,5 +1,34 @@
 # macOS verification
 
+## 0.2.0-rc.12 — universal final clipboard insertion
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- All 91 Swift tests pass. Delivery coverage exercises one final paste, delayed
+  readback, ignored paste without retries, UTF-16 selection replacement, whole-field
+  voice edits, focus/caret/user-edit guards, cancellation before delivery and
+  cancellation while an acknowledged selection update is still pending.
+  Clipboard tests verify preserved formats, confidential transcript items and
+  protection of a newer user copy.
+- A local-only debug bundle inserted synthetic text in Google Chrome's 2ch.org
+  comment field. The complete Accurate microphone/start/stop/delivery path also
+  passed there. Nothing was posted to the site or sent to OpenAI by these checks.
+- The disposable AppKit editor received a final clipboard paste. Secure-field
+  capture was rejected; cancelling before paste left the field unchanged, and
+  changing to another field rejected final delivery. The fixture now has a standard
+  Edit menu so it can handle Command+V like an ordinary native editor.
+- Both modes now deliver only after recording stops. No AX text-write fallback or
+  per-application exception remains. Paste events still target the original process;
+  every delivery validates the original exact element, text and caret.
+- Android debug tests/lint/assembly and release lint/assembly pass after merging
+  automatic Drive synchronization. Universal arm64/x86_64 packaging, ad-hoc
+  signature, DMG integrity and checksum verification pass. Version is 0.2.0-rc.12,
+  numeric bundle version 0.2.0, build 13; the release is not notarized.
+
+No provider request was made during native smoke checks. Physical global hotkeys,
+permission denial/revocation, Spaces, full-screen apps, actual OpenAI access and
+Intel/macOS 14 hardware retain the manual-check limitations described below.
+
 ## 0.2.0-rc.11 — automatic Google Drive synchronization
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

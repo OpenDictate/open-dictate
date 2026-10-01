@@ -154,7 +154,7 @@ struct SettingsView: View {
                     Text("Accurate").tag(DictationMode.accurate)
                 }.pickerStyle(.segmented).labelsHidden().disabled(model.isActive)
                 Text(preferences.mode == .live
-                     ? t("Text appears as you speak. Best for a quick thought.", "Текст появляется во время речи. Для быстрых заметок.")
+                     ? t("Recognition streams as you speak; text is pasted when you finish.", "Речь распознаётся сразу; текст вставляется после остановки.")
                      : t("Text arrives when you finish. Best when accuracy matters.", "Текст появляется после записи. Когда важна точность."))
                     .font(.callout).foregroundStyle(.secondary)
             }
@@ -169,7 +169,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 shortcutRow(t("Start / finish dictation", "Начать / завершить диктовку"), preferences.shortcutLabel)
                 shortcutRow(t("Edit selected text by voice", "Изменить выделение голосом"), preferences.editShortcutLabel)
-                shortcutRow(t("Cancel and restore text", "Отменить и вернуть текст"), "Esc")
+                shortcutRow(t("Cancel dictation", "Отменить диктовку"), "Esc")
                 Text(t("For voice edits, select text first. With no selection, the whole field is edited.",
                        "Для голосовой правки выделите текст. Без выделения изменится всё поле."))
                     .font(.caption).foregroundStyle(.secondary).padding(.top, 3)
@@ -361,8 +361,8 @@ struct SettingsView: View {
             Divider()
             VStack(alignment: .leading, spacing: 12) {
                 Text(t("Privacy", "Приватность")).fontWeight(.medium)
-                Text(t("No backend or analytics. Audio stays in memory and is discarded after transcription. Password fields are excluded. Some editors use the clipboard briefly for insertion; its previous contents are restored if unchanged.",
-                       "Без сервера и аналитики. Звук хранится в памяти и удаляется после распознавания. Поля паролей исключены. Для некоторых редакторов кратко используется буфер обмена; прежнее содержимое восстанавливается, если оно не изменилось."))
+                Text(t("No backend or analytics. Audio stays in memory and is discarded after transcription. Password fields are excluded. Insertion briefly uses the clipboard; its previous contents are restored if unchanged.",
+                       "Без сервера и аналитики. Звук хранится в памяти и удаляется после распознавания. Поля паролей исключены. Для вставки кратко используется буфер обмена; прежнее содержимое восстанавливается, если оно не изменилось."))
                     .font(.callout).foregroundStyle(.secondary)
                 HStack {
                     Link(t("Privacy policy", "Политика приватности"), destination: URL(string: "https://github.com/OpenDictate/open-dictate/blob/main/PRIVACY.md")!)

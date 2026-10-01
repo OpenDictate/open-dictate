@@ -1,24 +1,19 @@
-OpenDictate for macOS **0.2.0-rc.11** improves automatic Google Drive settings synchronization. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.12** uses clipboard insertion in every supported editor. Requires macOS 14+ on Apple Silicon or Intel.
 
-- Connect **Google Drive** in Settings to sync the dictionary, word replacement rules and enabled states, dictation mode and selected models with Android. Changes upload automatically after three seconds without further edits. Cloud settings are checked every minute and whenever Settings opens; unchanged checks skip uploads. **Sync now** remains an optional retry.
-- Edits made during a download or upload remain queued. Remote imports and unrelated local preferences do not trigger upload loops.
-- Rules keep their IDs, spelling and individual enabled states across devices. The master replacement switch syncs independently. Active dictation keeps the settings and rules captured at recording start.
-- Conflicts merge per preference; the latest complete dictionary or replacement list wins. Clearing rules stays cleared when an older device reconnects. Older sync clients preserve the new fields.
-- macOS sign-in uses the system browser with PKCE and a ten-minute timeout. OAuth credentials use a separate device-only Keychain item. Errors keep local settings available, and oversized settings can be corrected without restarting.
-- Only selected settings go to Google’s hidden app-data folder. OpenAI API keys, audio and history stay out of sync. Disconnect keeps local/cloud settings. Replacement rules remain separate from recognition dictionary hints.
+- Accurate, Live, voice editing and **Paste last transcript** now use one final clipboard paste in all applications, including Google Chrome and T3 Code. Editors that acknowledge Accessibility text writes without applying them no longer prevent clipboard delivery.
+- Live continues streaming recognition while you speak; text is inserted into the field after recording stops. Cancellation before delivery leaves the field unchanged.
+- Delivery rechecks the original application, exact field, text and UTF-16 selection. Focus changes or user edits prevent insertion. Password fields and excluded applications remain protected.
+- Paste is sent once and verified by reading back text and caret. If the editor refuses the paste, the completed transcript remains available to copy from the menu.
+- Previous clipboard items and formats are restored if unchanged. Temporary transcript items are marked confidential for compatible clipboard utilities.
 
-### Google Drive setup
-
-Use a Desktop OAuth client from the same Google Cloud project as the Android app. Enter its client ID and secret in Settings, then connect the same Google account on both devices. See [setup and conflict behavior](https://github.com/OpenDictate/open-dictate/blob/main/docs/google-drive-sync.md). The configured OpenDictate project currently uses **Testing** with the owner’s account registered as a test user.
+- Includes the automatic Google Drive synchronization from rc.11: completed settings edits upload after three seconds without further changes, with periodic cloud checks. [Setup and conflict behavior](https://github.com/OpenDictate/open-dictate/blob/main/docs/google-drive-sync.md).
 
 This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.11-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.12-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
 Audio stays in memory and goes directly to OpenAI. There is no backend or analytics. No Input Monitoring permission is requested. API usage is billed separately by OpenAI. Check the `.sha256` attachment to verify the installer.
-
-Android releases retain their existing `v*` tags. macOS releases use `macos-v*`.

@@ -22,8 +22,8 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
 - `AppModel` owns a single session, immutable settings, cancellation, permissions
   and result delivery. Session UUIDs discard late callbacks.
 - `TextTarget` captures the focused Accessibility element, process, value and
-  UTF-16 selection. Every insertion rechecks focus, text and caret. Partials
-  replace the original selection. Cancel restores only an untouched target.
+  UTF-16 selection. Every insertion rechecks focus, text and caret. Both modes
+  paste one final result into the original selection. Cancel before delivery leaves the field untouched.
 - `HotKeys` uses exclusive Carbon registration for ordinary key combinations.
   Globe/Fn combinations and modifier-only taps use AppKit event monitors with
   the existing Accessibility permission, without requesting Input Monitoring.
@@ -52,13 +52,17 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   Final results remain available to copy, without insertion into a new field.
 
 Supported editors expose an Accessibility string value and selected text range.
-Writable values receive live updates through selected-text replacement when supported,
-with a verified whole-value fallback. Acknowledged text/caret writes have a bounded 300 ms readback window; no write is repeated. Live delivery is serialized, and focus monitoring excludes the app’s own pending updates. The caret is placed after value readback. Other accessible editors receive a final
-paste using the clipboard. T3 Code also uses final clipboard delivery because its
-rich editor acknowledges Accessibility writes without applying them. This applies
-to both Live and Accurate: text appears when recording finishes, after rechecking
-the original process, exact field, text and selection. Editors without usable Accessibility metadata need
-manual Copy last transcript. Password fields are deliberately excluded.
+All applications receive one final clipboard paste, including Chrome, native editors
+and T3 Code. Live still streams recognition immediately, but delivery to the field
+happens when recording finishes, just like Accurate. Accessibility is used to
+validate the original process, exact field, value and UTF-16 selection, and to select
+the whole field for voice editing when no text was selected. No AX text writes or
+application-specific insertion exceptions remain. Paste is posted once to the original
+process and verified with a bounded 800 ms readback window; unacknowledged pastes
+are never retried. The previous clipboard items and types are restored if unchanged.
+Temporary transcript items are marked confidential for compatible clipboard utilities.
+Editors without usable Accessibility metadata need manual Copy last transcript.
+Password fields are deliberately excluded.
 
 ### Word replacements
 
@@ -137,8 +141,8 @@ Previewing never records audio. The explicit two-second microphone check also
 feeds the production level meter so the waveform can be checked without OpenAI;
 its captured audio is discarded in memory.
 
-Use a disposable editor document to check cumulative insertion, Escape rollback,
-cursor movement, switching fields/apps, secure fields and clipboard fallback.
+Use a disposable editor document to check final clipboard insertion, cancellation before
+delivery, cursor movement, switching fields/apps, secure fields and clipboard restoration.
 Test permissions granted/denied, startup, menu actions, both languages, Spaces,
 full-screen windows and logout/login. A real OpenAI key is required to validate
 provider access and transcription accuracy; mock tests cannot establish either.

@@ -12,40 +12,33 @@ final class LocalSmokeChecks {
 
     func toggle() async {
         if let target {
-            let accepted = await target.apply(replacements?.apply("Проверка 🙂") ?? "Проверка 🙂")
-            model.present(CheckMessage(accepted ? "LOCAL CHECK: cumulative final inserted" : "LOCAL CHECK: focus guard rejected final"))
+            let accepted = await target.paste(replacements?.apply("Проверка 🙂") ?? "Проверка 🙂")
+            model.present(CheckMessage(accepted ? "LOCAL CHECK: final clipboard insertion verified" : "LOCAL CHECK: focus guard rejected final"))
             self.target = nil; replacements = nil; model.hotKeys.setCancelEnabled(false)
         } else {
             do {
                 let target = try TextTarget.capture(exclusions: [])
-                target.preserveOriginal()
                 let replacements = model.replacements.engine()
-                guard await target.apply(replacements.apply("Проверка", final: false)) else { throw DictationError.noField }
                 self.target = target; self.replacements = replacements
                 model.hotKeys.setCancelEnabled(true)
-                model.present(CheckMessage("LOCAL CHECK: partial inserted; press shortcut again or Escape"))
+                model.present(CheckMessage("LOCAL CHECK: original captured; press shortcut again to paste or Escape"))
             } catch { model.present(error) }
         }
     }
     func cancel() async {
-        await target?.restore(); target = nil; replacements = nil; model.hotKeys.setCancelEnabled(false)
-        model.present(CheckMessage("LOCAL CHECK: cancellation restored unchanged field"))
+        target = nil; replacements = nil; model.hotKeys.setCancelEnabled(false)
+        model.present(CheckMessage("LOCAL CHECK: cancelled before paste; field unchanged"))
     }
-    func verifyInsertionAndRollback() async {
+    func verifyClipboardInsertion() async {
         do {
             let target = try TextTarget.capture(exclusions: [])
             let original = target.snapshot
             let replacements = model.replacements.engine()
-            target.preserveOriginal()
-            guard await target.apply(replacements.apply("Проверка", final: false)) else { throw CheckMessage("LOCAL CHECK: partial delivery rejected") }
+            guard target.isCurrent else { throw DictationError.noField }
             try await Task.sleep(nanoseconds: 100_000_000)
-            guard await target.apply(replacements.apply("Проверка 🙂")) else { throw CheckMessage("LOCAL CHECK: cumulative delivery rejected") }
-            try await Task.sleep(nanoseconds: 100_000_000)
-            await target.restore()
-            try await Task.sleep(nanoseconds: 100_000_000)
-            let restored = try TextTarget.capture(exclusions: []).snapshot
-            guard restored == original else { throw CheckMessage("LOCAL CHECK: original selection was not restored") }
-            model.present(CheckMessage("LOCAL CHECK: cumulative insertion and cancellation verified; original restored"))
+            guard target.isCurrent, target.snapshot == original else { throw CheckMessage("LOCAL CHECK: original target changed") }
+            guard await target.paste(replacements.apply("Проверка 🙂")) else { throw CheckMessage("LOCAL CHECK: clipboard delivery rejected") }
+            model.present(CheckMessage("LOCAL CHECK: final clipboard insertion verified in \(target.applicationName)"))
         } catch { model.present(error) }
     }
     func record() {
