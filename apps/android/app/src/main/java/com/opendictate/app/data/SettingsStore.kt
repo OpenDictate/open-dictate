@@ -93,7 +93,7 @@ class SettingsStore(context: Context) {
 
     var accuratePunctuationEnabled: Boolean
         get() = prefs.getBoolean(KEY_ACCURATE_PUNCTUATION_ENABLED, false)
-        set(value) = saveSynced { putBoolean(KEY_ACCURATE_PUNCTUATION_ENABLED, value) }
+        set(value) = prefs.edit { putBoolean(KEY_ACCURATE_PUNCTUATION_ENABLED, value) }
 
     var keepTrailingPeriod: Boolean
         get() = prefs.getBoolean(KEY_KEEP_TRAILING_PERIOD, true)
@@ -139,7 +139,6 @@ class SettingsStore(context: Context) {
         "liveModel" to prefs.getString(KEY_LIVE_MODEL_ID, ModelCatalog.DEFAULT.live.first()).orEmpty(),
         "accurateModel" to prefs.getString(KEY_ACCURATE_MODEL_ID, ModelCatalog.DEFAULT.accurate.first()).orEmpty(),
         "textModel" to prefs.getString(KEY_TRANSFORMATION_MODEL_ID, transformationModel.apiName).orEmpty(),
-        "accuratePunctuationEnabled" to accuratePunctuationEnabled.toString(),
         "wordReplacements" to replacements,
         "wordReplacementsEnabled" to replacementPrefs.getBoolean("enabled", true).toString(),
         ).also { values -> require(values.values.all { it.toByteArray().size <= 262_144 }) }
@@ -187,8 +186,6 @@ class SettingsStore(context: Context) {
         replacementJSON?.let(ReplacementDocument::fromJson)
         val enabled = values["wordReplacementsEnabled"]?.value
         require(enabled in listOf(null, "true", "false"))
-        val punctuationEnabled = values["accuratePunctuationEnabled"]?.value
-        require(punctuationEnabled in listOf(null, "true", "false"))
         if (replacementJSON != null || enabled != null) replacements.applySync(replacementJSON, enabled?.toBooleanStrict())
         prefs.edit {
             values["dictionary"]?.let { putString(KEY_PROMPT, it.value) }
@@ -196,7 +193,6 @@ class SettingsStore(context: Context) {
             values["liveModel"]?.let { putString(KEY_LIVE_MODEL_ID, it.value) }
             values["accurateModel"]?.let { putString(KEY_ACCURATE_MODEL_ID, it.value) }
             values["textModel"]?.let { putString(KEY_TRANSFORMATION_MODEL_ID, it.value) }
-            punctuationEnabled?.let { putBoolean(KEY_ACCURATE_PUNCTUATION_ENABLED, it.toBooleanStrict()) }
             putString("sync_document", merged.toJson())
         }
         merged

@@ -162,8 +162,8 @@ struct SettingsView: View {
             modelField(t("Accurate model", "Модель Accurate"), $preferences.accurateModel)
             VStack(alignment: .leading, spacing: 6) {
                 settingToggle(t("Correct punctuation in Accurate", "Исправлять пунктуацию в Accurate"), $preferences.accuratePunctuationEnabled)
-                Text(t("Sends recognized text to OpenAI after recording and adds processing time. Synced through Google Drive.",
-                       "После записи отправляет распознанный текст в OpenAI и добавляет время обработки. Синхронизируется через Google Drive."))
+                Text(t("Sends recognized text to OpenAI after recording and adds processing time. Saved only on this device.",
+                       "После записи отправляет распознанный текст в OpenAI и добавляет время обработки. Сохраняется только на этом устройстве."))
                     .font(.caption).foregroundStyle(.secondary)
             }.disabled(model.isActive)
             HStack {

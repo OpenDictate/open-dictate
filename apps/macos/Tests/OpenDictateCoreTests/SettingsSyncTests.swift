@@ -7,18 +7,26 @@ final class SettingsSyncTests: XCTestCase {
         result.entries[key] = .init(value: value, modifiedAt: time, deviceId: device)
         return result
     }
-    func testSharedPunctuationToggleSeedsAndExplicitDisableDefeatsStaleReplica() throws {
+    func testPunctuationIsExcludedFromSeedsLegacyJournalsMergesAndExports() throws {
         var root = URL(fileURLWithPath: #filePath)
         for _ in 0..<5 { root.deleteLastPathComponent() }
         let remote = try SettingsSyncDocument.decode(Data(contentsOf: root.appendingPathComponent("shared/settings-sync-punctuation.json")))
-        var merged = SettingsSyncDocument()
-        merged.record(["accuratePunctuationEnabled": "false"], deviceId: "mac", now: 0, seed: true)
-        merged.merge(remote)
-        XCTAssertEqual(merged.entries["accuratePunctuationEnabled"]?.value, "true")
-        merged.record(["accuratePunctuationEnabled": "false"], deviceId: "mac", now: 50)
-        merged.merge(remote)
-        XCTAssertEqual(merged.entries["accuratePunctuationEnabled"]?.value, "false")
-        XCTAssertEqual(merged.entries["future.preference"]?.value, "preserved")
+        XCTAssertNil(remote.entries["accuratePunctuationEnabled"])
+        XCTAssertEqual(remote.entries["future.preference"]?.value, "preserved")
+        var seed = SettingsSyncDocument()
+        seed.record(["accuratePunctuationEnabled": "true"], deviceId: "mac", now: 0, seed: true)
+        XCTAssertTrue(seed.entries.isEmpty)
+        let legacy = document("accuratePunctuationEnabled", "invalid", 1000, "mac")
+        XCTAssertFalse(String(decoding: try JSONEncoder().encode(legacy), as: UTF8.self).contains("accuratePunctuationEnabled"))
+        var promoted = legacy; promoted.promoteSeeds(deviceId: "mac", now: 1)
+        XCTAssertNil(promoted.entries["accuratePunctuationEnabled"])
+        var left = legacy; left.merge(remote)
+        var right = remote; right.merge(legacy)
+        XCTAssertEqual(left, remote)
+        XCTAssertEqual(right, remote)
+        var edited = legacy; edited.record(["dictionary": "Local"], deviceId: "mac", now: 50)
+        XCTAssertNil(edited.entries["accuratePunctuationEnabled"])
+        XCTAssertEqual(edited.entries["dictionary"]?.modifiedAt, 50)
     }
 
     func testIndependentChangesAndConcurrentConflictsConverge() {

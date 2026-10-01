@@ -25,33 +25,37 @@ final class ReplacementSyncTests: XCTestCase {
         XCTAssertEqual(events, 4)
     }
 
-    @MainActor func testPunctuationDefaultsOffPersistsAndSyncsWithoutEchoOrResurrection() throws {
+    @MainActor func testPunctuationDefaultsOffPersistsLocallyAndIgnoresLegacySync() throws {
         let suite = "punctuation-sync-\(UUID().uuidString)", defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let preferences = Preferences(defaults: defaults)
         XCTAssertFalse(preferences.accuratePunctuationEnabled)
-        XCTAssertEqual(try preferences.syncDocument().entries["accuratePunctuationEnabled"]?.modifiedAt, 0)
+        XCTAssertNil(try preferences.syncDocument().entries["accuratePunctuationEnabled"])
         var events = 0
         let subscription = preferences.syncChanges.sink { events += 1 }
         defer { subscription.cancel() }
         var remote = SettingsSyncDocument()
         remote.entries["accuratePunctuationEnabled"] = .init(value: "true", modifiedAt: 42, deviceId: "android")
         _ = try preferences.mergeSync(remote)
-        XCTAssertTrue(preferences.accuratePunctuationEnabled)
+        XCTAssertFalse(preferences.accuratePunctuationEnabled)
+        preferences.accuratePunctuationEnabled = true
         XCTAssertTrue(Preferences(defaults: defaults).accuratePunctuationEnabled)
         XCTAssertEqual(events, 0)
-        preferences.accuratePunctuationEnabled = false
-        XCTAssertEqual(events, 1)
+        // Simulate a journal left by the previous app version.
+        defaults.set(Data(#"{"schemaVersion":1,"entries":{"accuratePunctuationEnabled":{"value":"true","modifiedAt":42,"deviceId":"android"}}}"#.utf8), forKey: "syncDocument")
+        let restored = Preferences(defaults: defaults)
+        XCTAssertTrue(restored.accuratePunctuationEnabled)
+        XCTAssertNil(try restored.syncDocument().entries["accuratePunctuationEnabled"])
+        remote.entries["accuratePunctuationEnabled"] = .init(value: "invalid", modifiedAt: Int64.max - 10, deviceId: "android")
+        remote.entries["dictionary"] = .init(value: "Cloud", modifiedAt: 100, deviceId: "android")
         _ = try preferences.mergeSync(remote)
-        XCTAssertFalse(preferences.accuratePunctuationEnabled)
-        XCTAssertEqual(try preferences.syncDocument().entries["accuratePunctuationEnabled"]?.value, "false")
-        var invalid = SettingsSyncDocument()
-        invalid.entries["accuratePunctuationEnabled"] = .init(value: "invalid", modifiedAt: Int64.max - 10, deviceId: "android")
-        invalid.entries["dictionary"] = .init(value: "Must not apply", modifiedAt: Int64.max - 10, deviceId: "android")
-        let before = try preferences.syncDocument()
-        XCTAssertThrowsError(try preferences.mergeSync(invalid))
-        XCTAssertEqual(try preferences.syncDocument(), before)
-        XCTAssertEqual(preferences.dictionary, "OpenDictate")
+        XCTAssertTrue(preferences.accuratePunctuationEnabled)
+        XCTAssertEqual(preferences.dictionary, "Cloud")
+        preferences.accuratePunctuationEnabled = false
+        _ = try preferences.mergeSync(remote)
+        XCTAssertFalse(Preferences(defaults: defaults).accuratePunctuationEnabled)
+        XCTAssertNil(try preferences.syncDocument().entries["accuratePunctuationEnabled"])
+        XCTAssertEqual(events, 0)
     }
 
     private func fixture() throws -> SettingsSyncDocument {

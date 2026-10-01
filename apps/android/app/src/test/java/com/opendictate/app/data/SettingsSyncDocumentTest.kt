@@ -4,15 +4,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SettingsSyncDocumentTest {
-    @Test fun `shared punctuation toggle seeds and explicit disable defeats stale replicas`() {
+    @Test fun `punctuation is excluded from seeds legacy journals merges and exports`() {
         val root = generateSequence(java.io.File(requireNotNull(System.getProperty("user.dir")))) { it.parentFile }
             .first { java.io.File(it, "shared/settings-sync-punctuation.json").isFile }
         val remote = SettingsSyncDocument.fromJson(java.io.File(root, "shared/settings-sync-punctuation.json").readText())
-        val merged = SettingsSyncDocument().record(mapOf("accuratePunctuationEnabled" to "false"), "mac", 0, seed = true).merge(remote)
-        assertEquals("true", merged.entries["accuratePunctuationEnabled"]?.value)
-        val disabled = merged.record(mapOf("accuratePunctuationEnabled" to "false"), "mac", 50).merge(remote)
-        assertEquals("false", disabled.entries["accuratePunctuationEnabled"]?.value)
-        assertEquals("preserved", disabled.entries["future.preference"]?.value)
+        assertNull(remote.entries["accuratePunctuationEnabled"])
+        assertEquals("preserved", remote.entries["future.preference"]?.value)
+        val seed = SettingsSyncDocument().record(mapOf("accuratePunctuationEnabled" to "true"), "mac", 0, seed = true)
+        assertTrue(seed.entries.isEmpty())
+        val legacy = SettingsSyncDocument(mapOf("accuratePunctuationEnabled" to SettingsSyncEntry("invalid", 1000, "mac")))
+        assertFalse(legacy.toJson().contains("accuratePunctuationEnabled"))
+        assertNull(legacy.promoteSeeds("mac", 1).entries["accuratePunctuationEnabled"])
+        assertEquals(remote, legacy.merge(remote))
+        assertEquals(remote, remote.merge(legacy))
+        val edited = legacy.record(mapOf("dictionary" to "Local"), "mac", 50)
+        assertNull(edited.entries["accuratePunctuationEnabled"])
+        assertEquals(50L, edited.entries["dictionary"]?.modifiedAt)
     }
 
     @Test fun `shared replacement document imports IDs flags and Unicode and clearing defeats stale replicas`() {

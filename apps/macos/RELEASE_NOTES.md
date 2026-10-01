@@ -1,15 +1,15 @@
-OpenDictate for macOS **0.2.0-rc.22** fixes dictation when switching windows. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.23** makes Accurate punctuation correction a per-device preference. Requires macOS 14+ on Apple Silicon or Intel.
 
-- Ordinary Live and Accurate dictation keep recording when you switch fields, windows or apps. Press the shortcut again or click the recording control to stop; the active eligible field at that moment becomes the destination.
-- Switching focus during processing prevents automatic insertion into a different field. If the field is unavailable, secure or in an excluded app, the completed text remains available through Copy last transcript.
-- Voice editing remains bound to its original text and selection. Escape cancels; revoking Accessibility or sleeping also cancels recording.
-- Includes optional Accurate punctuation correction, typing/cursor fixes, clipboard delivery and the waveform indicator.
+- Correct punctuation in Accurate is saved only on this Mac and no longer syncs with Android through Google Drive.
+- Your existing choice is preserved. Older cloud replicas cannot change it; changing the switch does not trigger an upload.
+- Settings now explain that this preference stays on the current device.
+- Retains dictation across window changes, final clipboard delivery and the waveform indicator.
 
 This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.22-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.23-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

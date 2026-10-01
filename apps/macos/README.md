@@ -95,7 +95,7 @@ When enabled, only ordinary Accurate dictation sends its recognized text to
 `reasoning.effort: none`). Live and voice editing skip this step. Local word
 replacements and the final-period preference apply afterward. Invalid edits or
 request failures retain the original transcription; cancellation prevents delivery.
-The switch syncs with Android through the existing Google Drive connection.
+The switch is saved only on this Mac and does not sync through Google Drive.
 
 ### Word replacements
 
@@ -190,7 +190,7 @@ provider access and transcription accuracy; mock tests cannot establish either.
 ## Google Drive synchronization
 
 Connect Google Drive in Settings to sync the dictionary, word replacements, dictation
-mode, the Accurate punctuation switch and selected models with Android. It uses a Desktop OAuth client from the same
+mode and selected models with Android. It uses a Desktop OAuth client from the same
 Google Cloud project as the Android client, browser sign-in with PKCE and a
 temporary loopback callback listener. OAuth secrets/refresh tokens stay in a
 separate device-only Keychain item. Sync runs while the app is running and never

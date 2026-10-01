@@ -2,13 +2,15 @@ package com.opendictate.app.data
 
 import org.json.JSONObject
 
-/** Shared with macOS. Unknown keys survive merges; only allowlisted preferences are exported. */
+/** Shared with macOS. Unknown keys survive except preferences explicitly made device-local. */
 data class SettingsSyncEntry(val value: String, val modifiedAt: Long, val deviceId: String)
 
 data class SettingsSyncDocument(val entries: Map<String, SettingsSyncEntry> = emptyMap()) {
+    private fun syncEntries() = entries.filterKeys { it !in DEVICE_LOCAL_KEYS }
+
     fun merge(other: SettingsSyncDocument): SettingsSyncDocument {
-        val result = entries.toMutableMap()
-        other.entries.forEach { (key, incoming) ->
+        val result = syncEntries().toMutableMap()
+        other.syncEntries().forEach { (key, incoming) ->
             val existing = result[key]
             if (existing == null || compareValuesBy(incoming, existing,
                     SettingsSyncEntry::modifiedAt, SettingsSyncEntry::deviceId, SettingsSyncEntry::value) > 0) {
@@ -19,8 +21,8 @@ data class SettingsSyncDocument(val entries: Map<String, SettingsSyncEntry> = em
     }
 
     fun record(values: Map<String, String>, deviceId: String, now: Long, seed: Boolean = false): SettingsSyncDocument {
-        val result = entries.toMutableMap()
-        val clock = maxOf(now, (entries.values.maxOfOrNull { it.modifiedAt } ?: 0L) + 1)
+        val result = syncEntries().toMutableMap()
+        val clock = maxOf(now, (result.values.maxOfOrNull { it.modifiedAt } ?: 0L) + 1)
         KEYS.forEach { key ->
             val value = values[key] ?: return@forEach
             if (result[key]?.value != value) result[key] = SettingsSyncEntry(value, if (seed) 0 else clock, if (seed) "" else deviceId)
@@ -29,19 +31,22 @@ data class SettingsSyncDocument(val entries: Map<String, SettingsSyncEntry> = em
     }
 
     fun promoteSeeds(deviceId: String, now: Long): SettingsSyncDocument {
-        val clock = maxOf(now, (entries.values.maxOfOrNull { it.modifiedAt } ?: 0L) + 1)
-        return SettingsSyncDocument(entries.mapValues { (key, entry) ->
+        val synced = syncEntries()
+        val clock = maxOf(now, (synced.values.maxOfOrNull { it.modifiedAt } ?: 0L) + 1)
+        return SettingsSyncDocument(synced.mapValues { (key, entry) ->
             if (key in KEYS && entry.modifiedAt == 0L) entry.copy(modifiedAt = clock, deviceId = deviceId) else entry
         })
     }
 
     fun toJson(): String = JSONObject().put("schemaVersion", 1).put("entries", JSONObject().also { objectEntries ->
-        entries.forEach { (key, entry) -> objectEntries.put(key, JSONObject()
+        syncEntries().forEach { (key, entry) -> objectEntries.put(key, JSONObject()
             .put("value", entry.value).put("modifiedAt", entry.modifiedAt).put("deviceId", entry.deviceId)) }
     }).toString()
 
     companion object {
-        val KEYS = setOf("dictionary", "mode", "liveModel", "accurateModel", "textModel", "wordReplacements", "wordReplacementsEnabled", "accuratePunctuationEnabled")
+        val KEYS = setOf("dictionary", "mode", "liveModel", "accurateModel", "textModel", "wordReplacements", "wordReplacementsEnabled")
+        // Remove the former synced field from old journals and replicas without touching its local value.
+        private val DEVICE_LOCAL_KEYS = setOf("accuratePunctuationEnabled")
         const val MAXIMUM_BYTES = 1_048_576L
         fun fromJson(json: String): SettingsSyncDocument {
             require(json.toByteArray().size <= MAXIMUM_BYTES)
@@ -60,7 +65,7 @@ data class SettingsSyncDocument(val entries: Map<String, SettingsSyncEntry> = em
                 val time = timestamp.toLong()
                 require(timestamp.toDouble() == time.toDouble() && time >= 0 && time < Long.MAX_VALUE - 1)
                 SettingsSyncEntry(value, time, device)
-            })
+            }.filterKeys { it !in DEVICE_LOCAL_KEYS })
         }
     }
 }
