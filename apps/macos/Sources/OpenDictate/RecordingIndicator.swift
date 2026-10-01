@@ -73,9 +73,9 @@ struct RecordingStatusView: View {
             if style == .waveform {
                 waveform
             } else if phase.showsFinishControl {
-                HStack(spacing: 6) {
+                HStack(spacing: 0) {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 9, weight: .medium)).frame(width: 10)
+                        .font(.system(size: 9, weight: .medium)).frame(width: 22, height: 22)
                         .accessibilityHidden(true)
                     ZStack {
                         Circle().fill(Color.red).frame(width: 14, height: 14)
@@ -83,10 +83,9 @@ struct RecordingStatusView: View {
                     }
                     .frame(width: 16, height: 16)
                     .overlay { finishControl }
+                    .frame(width: 22, height: 22)
                 }
                 .fixedSize()
-                .padding(.horizontal, 6)
-                .frame(height: 22)
             } else {
                 ProgressView().progressViewStyle(.circular).controlSize(.mini)
                     .frame(width: 22, height: 22)

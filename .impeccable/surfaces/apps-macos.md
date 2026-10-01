@@ -39,8 +39,9 @@ text-field and editor shortcuts.
 
 RECORDING INDICATOR: The pinned compact treatment shows only a microphone and
 red finish control from preparation through recording. Its dark capsule is
-44 × 22pt; the SF `mic.fill` symbol is 9pt medium in a 10pt frame, with 6pt
-spacing before the 14pt red circle and explicit 6pt horizontal content insets.
+44 × 22pt; the SF `mic.fill` symbol is 9pt medium and the red circle is 14pt.
+Each is centered in a 22 × 22pt half of the capsule, keeping the finish circle
+concentric with the right end and its top, bottom and trailing insets equal at 4pt.
 The centered white stop square is 4.5pt with a 1pt corner, inside a 16pt circular
 hit area. Processing shows only a centered native circular `ProgressView` at
 mini control size on a 22 × 22pt capsule; idle is

@@ -57,15 +57,19 @@ final class RecordingIndicatorTests: XCTestCase {
         }
     }
 
-    func testRecordingFinishCircleHasExplicitTrailingInset() async throws {
+    func testFinishCircleHasEqualTopBottomAndTrailingInsets() async throws {
         try await MainActor.run {
-            let image = try render(.recording)
-            XCTAssertEqual(image.pixelsWide, 55)
-            XCTAssertEqual(image.pixelsHigh, 28)
-            let bounds = try XCTUnwrap(redBounds(image))
-            XCTAssertEqual(CGFloat(image.pixelsWide) - bounds.maxX, 8.75, accuracy: 1)
-            XCTAssertEqual(bounds.width, 17.5, accuracy: 2)
-            XCTAssertEqual(bounds.midY, 13.75, accuracy: 1)
+            for phase in [AppModel.Phase.preparing, .recording] {
+                let image = try render(phase)
+                XCTAssertEqual(image.pixelsWide, 55)
+                XCTAssertEqual(image.pixelsHigh, 28)
+                let bounds = try XCTUnwrap(redBounds(image))
+                let trailingInset = CGFloat(image.pixelsWide) - bounds.maxX
+                XCTAssertEqual(trailingInset, 5, accuracy: 1)
+                XCTAssertEqual(bounds.minY, trailingInset, accuracy: 1)
+                XCTAssertEqual(CGFloat(image.pixelsHigh) - bounds.maxY, trailingInset, accuracy: 1)
+                XCTAssertEqual(bounds.width, 17.5, accuracy: 2)
+            }
         }
     }
 
