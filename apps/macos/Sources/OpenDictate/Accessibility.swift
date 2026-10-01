@@ -60,16 +60,33 @@ final class TextTarget {
     var snapshot: EditableTextSnapshot { replacementSnapshot ?? capturedSnapshot }
 
     var isCurrent: Bool {
+        guard let current = currentSnapshot else { return false }
+        // Ordinary dictation follows edits/caret movement in the same field.
+        // Voice edits must still replace exactly the source sent to the model.
+        return replacementSnapshot == nil || delivery.accepts(text: current.original, selection: current.selection)
+    }
+
+    private var currentSnapshot: EditableTextSnapshot? {
         guard accessibility.isFocused(element, pid: pid),
-              let text = accessibility.value(element), let selection = accessibility.selection(element) else { return false }
-        return delivery.accepts(text: text, selection: selection)
+              let text = accessibility.value(element), let selection = accessibility.selection(element) else { return nil }
+        let length = (text as NSString).length
+        guard selection.location >= 0, selection.length >= 0,
+              selection.location <= length, selection.length <= length - selection.location else { return nil }
+        return EditableTextSnapshot(original: text, selection: selection)
     }
 
     private(set) var isUpdating = false
 
     /// All editors receive one final paste, after validating the original target.
     func paste(_ transcript: String) async -> Bool {
-        guard !isUpdating, isCurrent, !Task.isCancelled else { return false }
+        guard !isUpdating, !Task.isCancelled, let current = currentSnapshot else { return false }
+        if replacementSnapshot != nil {
+            guard delivery.accepts(text: current.original, selection: current.selection) else { return false }
+        }
+        // Freeze the latest ordinary dictation destination for this paste. All
+        // subsequent checks stay strict, including changes during staging/readback.
+        let snapshot = replacementSnapshot ?? current
+        let delivery = TextDeliveryGuard(snapshot: replacementSnapshot == nil ? current : capturedSnapshot)
         isUpdating = true
         defer { isUpdating = false }
         let selection = snapshot.selection

@@ -23,7 +23,8 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   and result delivery. Session UUIDs discard late callbacks.
 - `TextTarget` captures the focused Accessibility element, process, value and
   UTF-16 selection. Every insertion rechecks focus, text and caret. Both modes
-  paste one final result into the original selection. Cancel before delivery leaves the field untouched.
+  paste one final result into the latest selection in the original field. Voice
+  editing retains its captured source selection. Cancel before delivery leaves the field untouched.
 - `HotKeys` uses exclusive Carbon registration for ordinary key combinations.
   Globe/Fn combinations and modifier-only taps use AppKit event monitors with
   the existing Accessibility permission, without requesting Input Monitoring.
@@ -52,16 +53,21 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   moving focus. Preparation already offers the finish action; processing shows
   a native spinner in a 27.5 × 27.5 pt circle for either style, restoring
   the original vertical spacing around the spinner.
-- The HUD never takes keyboard focus. Changing fields, typing, changing the
-  caret, revoking Accessibility or sleeping detaches/stops a recording.
+- The HUD never takes keyboard focus. Ordinary dictation continues while typing
+  or moving the caret in the original field and pastes at its latest selection.
+  Voice editing still requires the original text and selection to remain unchanged.
+  Changing fields, revoking Accessibility or sleeping detaches/stops a recording.
   Final results remain available to copy, without insertion into a new field.
 
 Supported editors expose an Accessibility string value and selected text range.
 All applications receive one final clipboard paste, including Chrome, native editors
 and T3 Code. Live still streams recognition immediately, but delivery to the field
 happens when recording finishes, just like Accurate. Accessibility is used to
-validate the original process, exact field, value and UTF-16 selection, and to select
-the whole field for voice editing when no text was selected. No AX text writes or
+validate the original process and exact field, capture the latest value and UTF-16
+selection for ordinary dictation, and to select
+the whole field for voice editing when no text was selected. Voice editing validates
+the unchanged source text and selection. Once clipboard delivery begins, any further
+text or selection change rejects the paste. No AX text writes or
 application-specific insertion exceptions remain. Paste is posted once to the original
 process and verified with a bounded 800 ms readback window; unacknowledged pastes
 are never retried. The previous clipboard items and types are restored if unchanged.

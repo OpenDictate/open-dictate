@@ -39,7 +39,10 @@ displayed verbatim. Text Responses requests disable storage.
 
 Accessibility insertion checks the original process and exact element, current
 text, selection and secure-field subrole before every write. UUID session guards
-discard stale callbacks. Final clipboard delivery is directed at the original process
+discard stale callbacks. Ordinary dictation captures the latest text and selection
+in the original field immediately before delivery, preserving user edits. Voice
+editing retains the original source guard. Text/selection changes during clipboard
+staging reject delivery. Final clipboard delivery is directed at the original process
 and rechecks the field before posting Paste. No AX text writes or app-specific
 exceptions are used. Each paste is posted once and verified by text/caret readback.
 Clipboard restoration is skipped

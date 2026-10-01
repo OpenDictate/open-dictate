@@ -90,11 +90,39 @@ final class AccessibilityTests: XCTestCase {
         XCTAssertEqual(paste.restores, 1)
     }
 
-    @MainActor func testFocusCaretAndUserEditsRejectPasteBeforeClipboardChanges() async {
+    @MainActor func testTypingLettersDigitsAndSpacesKeepsDictationTargetAndPastesAtLatestCaret() async {
+        let snapshot = EditableTextSnapshot(original: "before old after", selection: NSRange(location: 7, length: 3))
+        let editor = Editor(snapshot), paste = Paste(editor)
+        let target = editor.target(snapshot, clipboard: paste)
+        for text in ["a", "7", " ", "🙂"] {
+            editor.insert(text)
+            // AppModel.tick uses this exact check to decide whether to stop/detach.
+            XCTAssertTrue(target.isCurrent)
+        }
+        let result = await target.paste("spoken words")
+        XCTAssertTrue(result)
+        XCTAssertEqual(editor.text, "before a7 🙂spoken words after")
+        XCTAssertEqual(paste.sends, 1)
+        XCTAssertEqual(editor.selectionWrites, 0)
+    }
+
+    @MainActor func testDictationUsesLatestSelectionEvenWithoutPollingBeforePaste() async {
+        let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
+        let editor = Editor(snapshot), paste = Paste(editor)
+        let target = editor.target(snapshot, clipboard: paste)
+        editor.insert("typed 🙂 text")
+        editor.range = NSRange(location: 6, length: 2)
+        let result = await target.paste("spoken")
+        XCTAssertTrue(result)
+        XCTAssertEqual(editor.text, "typed spoken text")
+        XCTAssertEqual(paste.sends, 1)
+    }
+
+    @MainActor func testVoiceEditFocusCaretAndUserEditsRejectPasteBeforeClipboardChanges() async {
         let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
         for change in 0..<3 {
             let editor = Editor(snapshot), paste = Paste(editor)
-            let target = editor.target(snapshot, clipboard: paste)
+            let target = editor.target(snapshot, clipboard: paste, transform: true)
             if change == 0 { editor.focused = false }
             if change == 1 { editor.range = NSRange(location: 3, length: 0) }
             if change == 2 { editor.text = "user edit" }
@@ -103,6 +131,33 @@ final class AccessibilityTests: XCTestCase {
             XCTAssertEqual(paste.stages, 0)
             XCTAssertEqual(paste.sends, 0)
         }
+    }
+
+    @MainActor func testDictationFocusLossAndInvalidSelectionRejectDelivery() async {
+        let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 3, length: 0))
+        for change in 0..<4 {
+            let editor = Editor(snapshot), paste = Paste(editor)
+            let target = editor.target(snapshot, clipboard: paste)
+            if change == 0 { editor.focused = false }
+            if change == 1 { editor.range = NSRange(location: NSNotFound, length: 0) }
+            if change == 2 { editor.range = NSRange(location: 2, length: 2) }
+            if change == 3 { editor.range = NSRange(location: 0, length: -1) }
+            XCTAssertFalse(target.isCurrent)
+            let result = await target.paste("new")
+            XCTAssertFalse(result)
+            XCTAssertEqual(paste.stages, 0)
+        }
+    }
+
+    @MainActor func testTypingDuringClipboardStagingRejectsPasteWithoutOverwritingUserText() async {
+        let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 3, length: 0))
+        let editor = Editor(snapshot), paste = Paste(editor)
+        paste.beforeSend = { editor.insert("7 ") }
+        let result = await editor.target(snapshot, clipboard: paste).paste("new")
+        XCTAssertFalse(result)
+        XCTAssertEqual(editor.text, "old7 ")
+        XCTAssertEqual(paste.sends, 0)
+        XCTAssertEqual(paste.restores, 1)
     }
 
     @MainActor func testFocusChangeDuringClipboardStagingPreventsPasteAndRestoresClipboard() async {
