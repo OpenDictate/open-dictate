@@ -29,7 +29,7 @@ if [[ -n "${APP_BUILD:-}" ]]; then
 fi
 cp -R "$macos_root/Resources/en.lproj" "$macos_root/Resources/ru.lproj" "$app/Contents/Resources/"
 cp "$repo_root/LICENSE" "$app/Contents/Resources/LICENSE.txt"
-swift "$macos_root/scripts/generate-icon.swift" "$macos_root/.build/AppIcon.iconset"
+swift "$macos_root/scripts/generate-icon.swift" "$repo_root/docs/app-icon.png" "$macos_root/.build/AppIcon.iconset"
 iconutil -c icns "$macos_root/.build/AppIcon.iconset" -o "$app/Contents/Resources/AppIcon.icns"
 
 if [[ "$signing_identity" == "-" ]]; then

@@ -1,4 +1,9 @@
-OpenDictate for macOS **0.2.0-rc.13** adds a searchable, multilingual dictation picker. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.14** adopts the new shared application icon for macOS and Android. Requires macOS 14+ on Apple Silicon or Intel.
+
+- The application icon now uses the approved flat, filled white microphone on a black rounded square, with no baked-in shadows, gradients or bevels. The same artwork ships on Android.
+- The macOS icon is resized directly from the shared PNG, preserving the approved shape.
+
+Includes the multilingual picker from rc.13:
 
 - **Speech languages** now offers 64 languages with checkboxes. Select several without closing the list, search by English, Russian or native name (or language code), and choose **Automatic detection** to clear all hints.
 - Language choices save automatically, apply to both Live and Accurate, and preserve the previous Automatic, Russian, English, Ukrainian and Russian + English settings on upgrade.
@@ -18,7 +23,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.13-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.14-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
