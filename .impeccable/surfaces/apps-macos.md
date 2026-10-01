@@ -127,3 +127,7 @@ Russian. Linear 40ms height interpolation follows audio updates and is disabled
 by Reduce Motion. Production-view raster tests, offscreen native captures,
 actual Settings/preview interaction and a local microphone check ground this
 variant. No captured audio or level history is persisted.
+
+## RC7 refinement
+
+Both indicator styles and processing spinners scale uniformly by 1.25, including icons, bars, borders, spacing and hit targets. Nominal compact size is 55 × 27.5pt and waveform size is 62.5 × 27.5pt. Native panel bounds round fractional points as needed. Finish uses an accessibility-labelled native NSView that refuses first responder and dispatches the action after mouse-up. The panel remains nonactivating. Escape in the shortcut recorder clears and persists the binding; disabled shortcuts are skipped by global registration.

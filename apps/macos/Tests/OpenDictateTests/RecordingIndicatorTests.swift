@@ -16,7 +16,7 @@ final class RecordingIndicatorTests: XCTestCase {
             let panel = try XCTUnwrap(application.windows.first {
                 $0.title == "OpenDictate recording indicator" && $0.isVisible
             } as? NSPanel)
-            XCTAssertEqual(panel.contentView?.frame.size, NSSize(width: 50, height: 22))
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 28))
             XCTAssertFalse(panel.canBecomeKey)
             XCTAssertFalse(panel.canBecomeMain)
             XCTAssertFalse(panel.ignoresMouseEvents)
@@ -25,18 +25,34 @@ final class RecordingIndicatorTests: XCTestCase {
             indicator.show(phase: .processing, style: .waveform, audioLevels: RecordingAudioLevels(),
                            isRussian: false, finish: {})
             XCTAssertTrue(panel.ignoresMouseEvents)
-            XCTAssertEqual(panel.contentView?.frame.size, NSSize(width: 50, height: 22))
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 28))
             indicator.show(phase: .idle, style: .waveform, audioLevels: RecordingAudioLevels(),
                            isRussian: false, finish: {})
             XCTAssertFalse(panel.isVisible)
         }
     }
 
-    func testPreparingAlreadyShowsFinishControlAtHalfSize() async throws {
+    @MainActor func testFinishControlCannotTakeFocusAndDefersActionUntilAfterClick() async throws {
+        let view = IndicatorFinishView(frame: NSRect(x: 0, y: 0, width: 20, height: 20))
+        let originalWindow = NSApplication.shared.keyWindow
+        let originalProcess = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        let finished = expectation(description: "Finish runs after the mouse event")
+        var called = false
+        view.finish = { called = true; finished.fulfill() }
+        XCTAssertFalse(view.acceptsFirstResponder)
+        XCTAssertTrue(view.acceptsFirstMouse(for: nil))
+        XCTAssertTrue(view.accessibilityPerformPress())
+        XCTAssertFalse(called)
+        await fulfillment(of: [finished], timeout: 1)
+        XCTAssertTrue(NSApplication.shared.keyWindow === originalWindow)
+        XCTAssertEqual(NSWorkspace.shared.frontmostApplication?.processIdentifier, originalProcess)
+    }
+
+    func testPreparingAlreadyShowsFinishControlAtLargerSize() async throws {
         try await MainActor.run {
             let image = try render(.preparing)
-            XCTAssertEqual(image.pixelsWide, 44)
-            XCTAssertEqual(image.pixelsHigh, 22)
+            XCTAssertEqual(image.pixelsWide, 55)
+            XCTAssertEqual(image.pixelsHigh, 28)
             XCTAssertNotNil(redBounds(image))
         }
     }
@@ -44,12 +60,12 @@ final class RecordingIndicatorTests: XCTestCase {
     func testRecordingFinishCircleHasExplicitTrailingInset() async throws {
         try await MainActor.run {
             let image = try render(.recording)
-            XCTAssertEqual(image.pixelsWide, 44)
-            XCTAssertEqual(image.pixelsHigh, 22)
+            XCTAssertEqual(image.pixelsWide, 55)
+            XCTAssertEqual(image.pixelsHigh, 28)
             let bounds = try XCTUnwrap(redBounds(image))
-            XCTAssertEqual(CGFloat(image.pixelsWide) - bounds.maxX, 7, accuracy: 1)
-            XCTAssertEqual(bounds.width, 14, accuracy: 1)
-            XCTAssertEqual(bounds.midY, 11, accuracy: 1)
+            XCTAssertEqual(CGFloat(image.pixelsWide) - bounds.maxX, 8.75, accuracy: 1)
+            XCTAssertEqual(bounds.width, 17.5, accuracy: 2)
+            XCTAssertEqual(bounds.midY, 13.75, accuracy: 1)
         }
     }
 
@@ -57,8 +73,8 @@ final class RecordingIndicatorTests: XCTestCase {
         try await MainActor.run {
             let levels = RecordingAudioLevels()
             let quiet = try render(.preparing, style: .waveform, levels: levels)
-            XCTAssertEqual(quiet.pixelsWide, 50)
-            XCTAssertEqual(quiet.pixelsHigh, 22)
+            XCTAssertEqual(quiet.pixelsWide, 63)
+            XCTAssertEqual(quiet.pixelsHigh, 28)
             XCTAssertNil(redBounds(quiet))
             let quietBars = whiteBars(quiet)
             XCTAssertEqual(quietBars.count, 10)
@@ -68,23 +84,38 @@ final class RecordingIndicatorTests: XCTestCase {
             XCTAssertEqual(loudBars.count, 10)
             XCTAssertEqual(Array(loudBars.dropLast()), Array(quietBars.dropLast()))
             XCTAssertGreaterThan(try XCTUnwrap(loudBars.last).height, try XCTUnwrap(quietBars.last).height + 5)
-            XCTAssertEqual(RecordingStatusView.size(phase: .processing, style: .waveform), NSSize(width: 50, height: 22))
+            XCTAssertEqual(RecordingStatusView.size(phase: .processing, style: .waveform), NSSize(width: 62.5, height: 27.5))
         }
     }
 
     @MainActor private func render(_ phase: AppModel.Phase, style: RecordingIndicatorStyle = .compact,
                                    levels: RecordingAudioLevels? = nil) throws -> NSBitmapImageRep {
-        let renderer = ImageRenderer(content: RecordingStatusView(phase: phase, style: style, audioLevels: levels,
-                                                                  isRussian: false, finish: {}))
-        renderer.scale = 1
-        return NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
+        let size = RecordingStatusView.size(phase: phase, style: style)
+        let view = NSHostingView(rootView: RecordingStatusView(phase: phase, style: style, audioLevels: levels,
+                                                              isRussian: false, finish: {}))
+        view.appearance = NSAppearance(named: .darkAqua)
+        view.frame = NSRect(origin: .zero, size: size)
+        view.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        let source = try XCTUnwrap(bitmap.cgImage)
+        let width = Int(ceil(size.width)), height = Int(ceil(size.height))
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                                             bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let result = NSBitmapImageRep(cgImage: try XCTUnwrap(context.makeImage()))
+        if ProcessInfo.processInfo.environment["OPENDICTATE_RENDER_TESTS"] == "1", let png = result.representation(using: .png, properties: [:]) {
+            try png.write(to: URL(fileURLWithPath: "/tmp/opendictate-\(style.rawValue)-\(phase).png"))
+        }
+        return result
     }
 
     private func whiteBars(_ image: NSBitmapImageRep) -> [CGRect] {
         var bars = [CGRect]()
-        for x in 0..<image.pixelsWide {
+        for x in 10..<(image.pixelsWide - 10) {
             var column: CGRect?
-            for y in 0..<image.pixelsHigh {
+            for y in 5..<(image.pixelsHigh - 5) {
                 guard let color = image.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
                       min(color.redComponent, color.greenComponent, color.blueComponent) > 0.5 else { continue }
                 let pixel = CGRect(x: x, y: y, width: 1, height: 1)

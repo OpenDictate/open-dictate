@@ -9,8 +9,10 @@ struct KeyboardShortcut: Codable, Equatable {
 
     static let modifierMask: NSEvent.ModifierFlags = [.control, .option, .shift, .command, .function]
     var flags: NSEvent.ModifierFlags { NSEvent.ModifierFlags(rawValue: modifiers).intersection(Self.modifierMask) }
-    var usesEventMonitor: Bool { keyCode == nil || flags.contains(.function) }
-    var isValid: Bool { keyCode != nil || !flags.isEmpty }
+    static let disabled = Self(keyCode: nil, flags: [])
+    var isEnabled: Bool { keyCode != nil || !flags.isEmpty }
+    var usesEventMonitor: Bool { isEnabled && (keyCode == nil || flags.contains(.function)) }
+    var isValid: Bool { isEnabled || keyLabel.isEmpty }
     var label: String {
         let symbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"),
             (.shift, "⇧"), (.command, "⌘"), (.function, "Fn/🌐")]
@@ -78,7 +80,7 @@ struct ShortcutBindings: Codable, Equatable {
         return Self(dictate: .init(keyCode: code, flags: flags, keyLabel: label),
                     transform: .init(keyCode: code, flags: flags.union(.shift), keyLabel: label))
     }
-    var isValid: Bool { dictate.isValid && transform.isValid && !dictate.matches(transform) }
+    var isValid: Bool { dictate.isValid && transform.isValid && (!dictate.isEnabled || !transform.isEnabled || !dictate.matches(transform)) }
 }
 
 /// Modifier-only shortcuts fire on release, only if no other key was used.
@@ -93,6 +95,7 @@ struct ShortcutGesture {
 
     mutating func handle(type: NSEvent.EventType, keyCode: UInt16, flags: NSEvent.ModifierFlags,
                          isRepeat: Bool = false, shortcut: KeyboardShortcut) -> Bool {
+        guard shortcut.isEnabled else { return false }
         if let code = shortcut.keyCode {
             if type == .keyUp && keyCode == code { down = false }
             guard type == .keyDown, keyCode == code,

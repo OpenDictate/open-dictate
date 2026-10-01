@@ -31,12 +31,31 @@ final class ShortcutTests: XCTestCase {
         XCTAssertTrue(KeyboardShortcut.recorded(event(0, flags: .function, text: "a")).usesEventMonitor)
     }
 
-    func testDuplicateDetectionIgnoresLabelsAndRejectsEmptyModifierShortcut() {
+    func testDuplicateDetectionIgnoresLabelsAndAllowsDisabledShortcuts() {
         let a = KeyboardShortcut(keyCode: 0, flags: .command, keyLabel: "A")
         let b = KeyboardShortcut(keyCode: 0, flags: .command, keyLabel: "Ф")
         XCTAssertFalse(ShortcutBindings(dictate: a, transform: b).isValid)
-        XCTAssertFalse(KeyboardShortcut(keyCode: nil, flags: []).isValid)
+        XCTAssertTrue(KeyboardShortcut.disabled.isValid)
+        XCTAssertFalse(KeyboardShortcut.disabled.isEnabled)
+        XCTAssertFalse(KeyboardShortcut.disabled.usesEventMonitor)
+        XCTAssertTrue(ShortcutBindings(dictate: .disabled, transform: .disabled).isValid)
         XCTAssertTrue(ShortcutBindings.defaults.isValid)
+    }
+
+    @MainActor func testDisabledBindingsPersistAndDoNotRegisterModifierGestures() async throws {
+        let domain = "com.opendictate.disabled-tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let disabled = ShortcutBindings(dictate: .disabled, transform: .disabled)
+        Preferences(defaults: defaults).shortcuts = disabled
+        XCTAssertEqual(Preferences(defaults: defaults).shortcuts, disabled)
+        let keys = HotKeys()
+        defer { keys.shutdown() }
+        try keys.configure(disabled)
+        var gesture = ShortcutGesture()
+        XCTAssertFalse(gesture.handle(type: .flagsChanged, keyCode: 58, flags: .option, shortcut: .disabled))
+        XCTAssertFalse(gesture.handle(type: .flagsChanged, keyCode: 58, flags: [], shortcut: .disabled))
+        keys.setCancelEnabled(true); keys.setCancelEnabled(false)
     }
 
     func testFnTapFiresOnceOnReleaseAndAnotherTapCanFire() {

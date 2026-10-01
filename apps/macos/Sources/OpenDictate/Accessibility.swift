@@ -74,45 +74,80 @@ final class TextTarget {
     }
 
     private var insertedRange: NSRange?
+    private(set) var isUpdating = false
 
     /// Cumulative partials replace exactly the original selection; never append previous partials.
-    func apply(_ transcript: String) -> Bool {
-        guard writable, isCurrent else { return false }
+    func apply(_ transcript: String) async -> Bool {
+        guard !isUpdating, writable, isCurrent, !Task.isCancelled else { return false }
+        isUpdating = true
+        defer { isUpdating = false }
         let cursor = snapshot.cursor(after: transcript)
-        guard replace(transcript, range: insertedRange ?? snapshot.selection,
+        guard await replace(transcript, range: insertedRange ?? snapshot.selection,
                       composed: snapshot.compose(transcript), selection: cursor) else { return false }
         insertedRange = NSRange(location: snapshot.selection.location, length: (transcript as NSString).length)
         return true
     }
 
-    func restore() {
-        guard didInsert, isCurrent, let insertedRange else { return }
-        if replace(snapshot.selectedText, range: insertedRange,
+    func restore() async {
+        guard !isUpdating, didInsert, isCurrent, let insertedRange else { return }
+        isUpdating = true
+        defer { isUpdating = false }
+        if await replace(snapshot.selectedText, range: insertedRange,
                    composed: deliveryOriginal.original, selection: deliveryOriginal.selection) {
             didInsert = false; self.insertedRange = nil
         }
     }
 
-    private func replace(_ text: String, range: NSRange, composed: String, selection: NSRange) -> Bool {
-        // Native selection replacement preserves the editor's caret/formatting instead of resetting AXValue.
-        guard setSelection(range), accessibility.isFocused(element, pid: pid),
-              accessibility.value(element) == delivery.expectedText,
-              accessibility.selection(element) == range else { return false }
+    private func replace(_ text: String, range: NSRange, composed: String, selection: NSRange) async -> Bool {
+        let original = delivery.expectedText
+        let originalSelection = delivery.expectedSelection
+        guard setSelection(range), await settle(text: original, selection: range, previousText: original,
+                                                previousSelection: originalSelection, finishAcknowledgedWrite: true) else { return false }
+        if Task.isCancelled {
+            if accessibility.isFocused(element, pid: pid), accessibility.value(element) == original,
+               accessibility.selection(element) == range, setSelection(originalSelection) {
+                _ = await settle(text: original, selection: originalSelection, previousText: original,
+                                 previousSelection: range, finishAcknowledgedWrite: true)
+            }
+            return false
+        }
         if !accessibility.setSelectedText(text, in: element) {
-            // Value-only editors can acknowledge a write before their text/caret update has completed.
             guard accessibility.isFocused(element, pid: pid),
-                  accessibility.value(element) == delivery.expectedText,
-                  accessibility.selection(element) == range,
+                  accessibility.value(element) == original, accessibility.selection(element) == range,
                   accessibility.setValue(composed, in: element) else { return false }
         }
-        didInsert = true
-        // Read back the changed value BEFORE placing the caret, then verify both and the exact focus.
-        guard accessibility.value(element) == composed, accessibility.isFocused(element, pid: pid),
-              setSelection(selection), accessibility.value(element) == composed,
-              accessibility.selection(element) == selection,
-              accessibility.isFocused(element, pid: pid) else { return false }
+        didInsert = true // An acknowledged write may complete on the editor's next run-loop turn.
+        guard await settle(text: composed, previousText: original, finishAcknowledgedWrite: true),
+              let previousSelection = accessibility.selection(element),
+              setSelection(selection),
+              await settle(text: composed, selection: selection, previousText: composed,
+                           previousSelection: previousSelection, finishAcknowledgedWrite: true) else { return false }
         delivery = TextDeliveryGuard(snapshot: EditableTextSnapshot(original: composed, selection: selection))
         return true
+    }
+
+    /// AX setters can acknowledge before editor text/caret updates are readable.
+    /// Retry only the readback, never the write; reject focus changes or unrelated edits.
+    private func settle(text: String, selection: NSRange? = nil, previousText: String,
+                        previousSelection: NSRange? = nil, finishAcknowledgedWrite: Bool = false) async -> Bool {
+        let deadline = ContinuousClock.now.advanced(by: .milliseconds(300))
+        while finishAcknowledgedWrite || !Task.isCancelled {
+            guard accessibility.isFocused(element, pid: pid) else { return false }
+            let actual = accessibility.value(element)
+            guard actual == text || actual == previousText else { return false }
+            let range = accessibility.selection(element)
+            if actual == text && (selection == nil || range == selection) { return true }
+            if let selection, let range, range != selection && range != previousSelection { return false }
+            guard ContinuousClock.now < deadline else { return false }
+            if finishAcknowledgedWrite {
+                await withCheckedContinuation { continuation in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { continuation.resume() }
+                }
+            } else {
+                do { try await Task.sleep(for: .milliseconds(10)) } catch { return false }
+            }
+        }
+        return false
     }
 
     private var deliveryOriginal: EditableTextSnapshot { originalSnapshot ?? snapshot }
