@@ -1,5 +1,27 @@
 # macOS verification
 
+## 0.2.0-rc.16 — original Android application icon on both platforms
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- The Android launcher vector is byte-for-byte identical to the original asset
+  before rc.9. Its paths also match `docs/mark.svg`; adaptive and themed icons
+  both use that vector directly.
+- The macOS icon exporter reads those paths and their original group transform.
+  All ten PNG sizes have the expected dimensions and transparent outer corners;
+  pixel checks preserve the white contour and black hollow center. The universal
+  application displays the outlined microphone in Finder's native preview.
+- All 98 Swift tests, release-version checks, Android debug tests/lint/assembly
+  and release lint/assembly pass. No Android icon lint findings remain.
+- Universal arm64/x86_64 packaging, ad-hoc signature and DMG integrity pass.
+  Displayed version is 0.2.0-rc.16, numeric bundle version 0.2.0, build 17.
+  The application includes the microphone's third-party license notice.
+  The release is not notarized.
+
+This change affects application artwork and packaging only. Audio, permissions,
+hotkeys and Accessibility delivery were not re-exercised; the existing runtime
+smoke-check evidence and hardware/provider limitations below still apply.
+
 ## 0.2.0-rc.15 — waveform height and circular processing indicator
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

@@ -29,7 +29,8 @@ if [[ -n "${APP_BUILD:-}" ]]; then
 fi
 cp -R "$macos_root/Resources/en.lproj" "$macos_root/Resources/ru.lproj" "$app/Contents/Resources/"
 cp "$repo_root/LICENSE" "$app/Contents/Resources/LICENSE.txt"
-swift "$macos_root/scripts/generate-icon.swift" "$repo_root/docs/app-icon.png" "$macos_root/.build/AppIcon.iconset"
+cp "$macos_root/Resources/THIRD_PARTY_NOTICES.md" "$app/Contents/Resources/THIRD_PARTY_NOTICES.md"
+swift "$macos_root/scripts/generate-icon.swift" "$repo_root/apps/android/app/src/main/res/drawable/ic_launcher_foreground.xml" "$macos_root/.build/AppIcon.iconset"
 iconutil -c icns "$macos_root/.build/AppIcon.iconset" -o "$app/Contents/Resources/AppIcon.icns"
 
 if [[ "$signing_identity" == "-" ]]; then

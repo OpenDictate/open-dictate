@@ -1,32 +1,25 @@
 # Application icon
 
-`app-icon.png` is the approved shared source for the Android and macOS application
-icons. Preserve its filled microphone, symmetric cradle, short stem and rounded
-foot. Do not add shadows, gradients, highlights or bevels during export. System
-launchers may apply their own presentation or adaptive mask.
+Both applications use the original Android outlined microphone from
+`apps/android/app/src/main/res/drawable/ic_launcher_foreground.xml`. Android uses
+that vector directly for both adaptive and themed launcher icons, with the
+existing `#080808` background. Its original paths and group transform are unchanged.
 
-The PNG was created with the built-in image generation tool and approved on
-2026-10-01. Final generation request: preserve the filled microphone's silhouette,
-placement and spacing; use flat white on a flat near-black rounded square with a
-transparent exterior; remove all shadows, gradients, bevels, highlights, reflective
-rims, outlines, glow, textures and three-dimensional effects.
+macOS packaging reads the same vector paths, viewport and group transform and
+renders them directly into all ten iconset sizes on a black rounded-square tile.
+It adds no shadows, gradients, highlights or bevels. System launchers may apply
+their own presentation or adaptive mask. There is no generated bitmap source.
 
-macOS packaging resizes this source into an iconset and assembles `AppIcon.icns`:
+To export the macOS icon on macOS:
 
 ```bash
-swift apps/macos/scripts/generate-icon.swift docs/app-icon.png /tmp/OpenDictate.iconset
+swift apps/macos/scripts/generate-icon.swift apps/android/app/src/main/res/drawable/ic_launcher_foreground.xml /tmp/OpenDictate.iconset
 iconutil -c icns /tmp/OpenDictate.iconset
 ```
 
-Android resources are checked in so Linux builds do not need AppKit. After changing
-the source, regenerate them on macOS:
+The path reader supports the absolute `M`, `L`, `C`, `H`, `V` and `Z` commands
+used by this asset. Unsupported commands fail export rather than silently
+changing the shape. The original microphone uses OpenAI Apps SDK UI's MicLgDictate
+icon under the MIT license; notices are included in each application's resources.
 
-```bash
-swift apps/android/scripts/generate-icons.swift docs/app-icon.png apps/android/app/src/main/res
-```
-
-The exporter preserves the complete artwork for square legacy launcher icons and
-uses a circular background for their round variant. Adaptive and themed icons use
-the same microphone alpha mask on the launcher's background.
-The glyph is extracted from the PNG, rather than redrawn with different geometry.
-The white/dark threshold removes background pixels while retaining edge antialiasing.
+`docs/mark.svg` contains the same original paths for the website and repository mark.
