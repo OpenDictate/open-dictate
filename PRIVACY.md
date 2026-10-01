@@ -7,6 +7,10 @@ OpenDictate does not operate a backend and does not include analytics or ads.
 - Your OpenAI API key is stored in a non-synchronizing, device-only Keychain
   item, available while your login keychain is unlocked. It is never saved in
   preferences, the app bundle, logs or release artifacts.
+- The API key copy button places the entered key, or the saved Keychain key
+  when the field is empty, on the system clipboard only when you click it.
+  The clipboard item is marked confidential for compatible clipboard utilities.
+  Other software on the Mac can still access clipboard data.
 - Dictation sends microphone audio directly to OpenAI. Live streams 24 kHz
   PCM in memory; Accurate uploads a WAV constructed in memory. Audio is
   discarded after completion, failure or cancellation and is never written to disk.

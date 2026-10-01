@@ -150,6 +150,29 @@ final class AppModel: ObservableObject {
         catch { present(error) }
     }
 
+    func copyKey(_ enteredKey: String, to pasteboard: NSPasteboard = .general) {
+        do {
+            var key = enteredKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            if key.isEmpty {
+                guard !localOnly else { return }
+                guard let savedKey = try APIKeyStore.load(), !savedKey.isEmpty else {
+                    hasKey = false
+                    throw DictationError.missingKey
+                }
+                key = savedKey
+            }
+            let item = NSPasteboardItem()
+            item.setString(key, forType: .string)
+            item.setData(Data(), forType: NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType"))
+            pasteboard.clearContents()
+            if pasteboard.writeObjects([item]) {
+                message = preferences.t("API key copied to clipboard.", "Ключ API скопирован в буфер обмена.")
+            } else {
+                message = preferences.t("Couldn't copy the API key. Try again.", "Не удалось скопировать ключ API. Попробуйте ещё раз.")
+            }
+        } catch { present(error) }
+    }
+
     func toggle(transform: Bool) {
         guard !localOnly else { return }
         if phase == .preparing { stop(); return }

@@ -126,6 +126,10 @@ struct SettingsView: View {
                     SecureField(model.hasKey ? t("Enter a replacement key", "Введите новый ключ") : "sk-…", text: $apiKey)
                         .textFieldStyle(.roundedBorder).onSubmit(saveKey)
                         .accessibilityLabel(t("OpenAI API key", "Ключ API OpenAI"))
+                    Button { model.copyKey(apiKey) } label: { Image(systemName: "doc.on.doc") }
+                        .help(t("Copy API key", "Скопировать ключ API"))
+                        .accessibilityLabel(t("Copy API key", "Скопировать ключ API"))
+                        .disabled(!model.hasKey && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Button(t("Save", "Сохранить"), action: saveKey).disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isActive)
                 }
                 Text(t("Stored in your Mac's Keychain. Audio goes directly to OpenAI.",
