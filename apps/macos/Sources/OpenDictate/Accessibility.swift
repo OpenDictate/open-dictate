@@ -31,7 +31,15 @@ final class TextTarget {
         applicationName = application.localizedName ?? "App"
         bundleID = application.bundleIdentifier ?? ""
         capturedSnapshot = snapshot
-        delivery = TextDeliveryGuard(snapshot: snapshot); self.writable = writable
+        delivery = TextDeliveryGuard(snapshot: snapshot)
+        self.writable = Self.supportsDirectInsertion(bundleID: bundleID, valueSettable: writable)
+    }
+
+    static func supportsDirectInsertion(bundleID: String, valueSettable: Bool) -> Bool {
+        // T3 Code's rich editor advertises writable AX attributes and acknowledges writes
+        // without applying them. Choose final paste before any partial can mark delivery
+        // as inserted or detach it. The same focus/text/selection guards still apply.
+        valueSettable && bundleID != "com.t3tools.t3code"
     }
 
     static func capture(exclusions: [String], transform: Bool = false) throws -> TextTarget {
