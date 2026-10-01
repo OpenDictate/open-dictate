@@ -1,12 +1,12 @@
-OpenDictate for macOS **0.2.0-rc.15** makes the waveform recording indicator more expressive and compacts the transcription spinner. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.16** restores the original Android application icon on both platforms. Requires macOS 14+ on Apple Silicon or Intel.
+
+- Android uses its original vector icon again: a white outlined microphone with a hollow center on a black background.
+- macOS renders that same Android vector directly into its iconset, with no added shadows, gradients or bevels.
+
+Includes the waveform improvements from rc.15:
 
 - **Waveform indicator:** louder audio produces taller bars, with a 50% larger height range and tighter vertical padding during preparation and recording.
 - **Transcription indicator:** the waveform capsule shrinks to a circle around the native spinner, restoring its original vertical spacing.
-
-Includes the shared application icon from rc.14:
-
-- The application icon now uses the approved flat, filled white microphone on a black rounded square, with no baked-in shadows, gradients or bevels. The same artwork ships on Android.
-- The macOS icon is resized directly from the shared PNG, preserving the approved shape.
 
 Includes the multilingual picker from rc.13:
 
@@ -28,7 +28,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.15-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.16-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
