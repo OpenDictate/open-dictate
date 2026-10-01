@@ -103,6 +103,10 @@ the previous default; System follows macOS. The recording indicator remains dark
 
 ### Keyboard shortcuts
 
+Command-W closes the current settings window. Command-Shift-W closes all regular
+application windows while preserving the recording indicator. Reopen Settings
+from the menu bar or with Command-comma while the app is active.
+
 In Settings, click either shortcut and press the desired combination. Letters,
 symbols, navigation, numpad and F1–F20 keys work with any combination of Control,
 Option, Shift and Command, or without modifiers. Dictation and voice editing are
