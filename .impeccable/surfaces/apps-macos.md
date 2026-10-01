@@ -17,7 +17,7 @@ accent is blue; this is a native control state, not an added brand color.
 
 STORY: The first Dictation page presents the API key, microphone and Accessibility
 permissions, Live/Accurate mode, speech language, and start/finish, voice-edit,
-cancel shortcuts. Dictionary, History, and Settings are secondary pages. The
+cancel shortcuts. Dictionary, Replacements, History, and Settings are secondary pages. The
 rail keeps the current shortcut and version visible.
 
 FIRST VIEWPORT: Default settings content is 790 × 650pt, with a fixed 190pt
@@ -68,7 +68,7 @@ comp or direction roll.
 
 ## Implementation evidence
 
-- `apps/macos/Sources/OpenDictate/SettingsView.swift`: four pages, system type,
+- `apps/macos/Sources/OpenDictate/SettingsView.swift`: five pages, system type,
   semantic colors, native control styles, scrolling, and passive status content.
 - `apps/macos/Sources/OpenDictate/OpenDictateApp.swift`: window dimensions,
   menu commands, recording panel ownership and nonactivation.
@@ -105,7 +105,7 @@ review screenshots are evidence rather than shipping artwork.
 ## Theme choice
 
 A native menu button at the top right offers System, Light and Dark appearance.
-The choice is saved in local preferences and applies to all four settings pages.
+The choice is saved in local preferences and applies to all five settings pages.
 Dark preserves the prior default; System follows macOS. Semantic AppKit surfaces
 and foreground colors keep the navigation selection readable in either theme.
 The nonactivating recording indicator retains its dark appearance.
@@ -132,3 +132,11 @@ variant. No captured audio or level history is persisted.
 ## RC7 refinement
 
 Both indicator styles and processing spinners scale uniformly by 1.25, including icons, bars, borders, spacing and hit targets. Nominal compact size is 55 × 27.5pt and waveform size is 62.5 × 27.5pt. Native panel bounds round fractional points as needed. Finish uses an accessibility-labelled native NSView that refuses first responder and dispatches the action after mouse-up. The panel remains nonactivating. Escape in the shortcut recorder clears and persists the binding; disabled shortcuts are skipped by global registration.
+
+## Local word replacements extension
+
+Mode remains Operate. Replacements is a distinct fifth sidebar page with the `arrow.left.arrow.right` SF Symbol, preserving the fixed rail, system typography, native theme choice, and scrollable settings body. Dictionary continues to hold recognition hints. `ReplacementSettingsView.swift` uses the existing 27pt semibold heading, supporting secondary copy, a native global switch, rounded-border source/replacement fields, and native Add/Save/Cancel buttons. Editor groups use 12pt spacing and the page uses 20pt spacing. Saved rules use checkbox controls, source above replacement, and accessible borderless pencil/trash actions, separated by native dividers.
+
+English/Russian copy wraps vertically. Blank fields disable Add/Save, rejected entries show validation guidance, and storage errors preserve saved data and disable saving. The empty state provides a source → replacement example. Editing focuses the source field; the settings body supports long lists and compact windows. Footer guidance explains whole-word/phrase matching without case sensitivity, exact replacement spelling, next-dictation application in Live and Accurate, and device-local storage. No synchronization control is present; synchronization is deferred until Google Drive support exists.
+
+Finish reviewer disposition: **ship**, with no material findings. `SettingsView.swift` and `ReplacementSettingsView.swift` are implementation authority; `.impeccable/review/macos.png` is the native replacement-page capture. The review confirmed no clipping and used native code/captures without an HTML detector. No shipping raster assets or new visual tokens were introduced.

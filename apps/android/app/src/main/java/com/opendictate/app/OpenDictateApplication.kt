@@ -5,6 +5,7 @@ import com.opendictate.app.audio.LastDictationAudioStore
 import com.opendictate.app.data.TranscriptHistoryStore
 
 class OpenDictateApplication : Application() {
+    val replacementStore by lazy { com.opendictate.app.data.ReplacementStore(this) }
     val transcriptHistoryStore by lazy { TranscriptHistoryStore(this) }
     val lastDictationAudioStore by lazy { LastDictationAudioStore(filesDir) }
 }

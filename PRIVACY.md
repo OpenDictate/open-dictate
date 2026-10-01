@@ -2,6 +2,11 @@
 
 OpenDictate does not operate a backend and does not include analytics or ads.
 
+Word replacement rules are stored locally on each device and applied on-device
+after recognition. Rules are not uploaded as transcription hints or synchronized.
+Completed text saved to history or copied to the clipboard includes replacements.
+An explicit AI history search may send that saved text to OpenAI.
+
 ## macOS
 
 - Your OpenAI API key is stored in a non-synchronizing, device-only Keychain

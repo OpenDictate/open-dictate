@@ -139,3 +139,14 @@ not collected. See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md).
 ## License
 
 MIT. See [third-party notices](THIRD_PARTY_NOTICES.md).
+
+## Word replacements
+
+Both Android and macOS support local word and phrase replacements in Settings.
+Add a recognized phrase and its preferred spelling, edit or delete it, disable
+individual rules, or turn replacements off. Live and Accurate dictation apply
+the same case-insensitive, whole-word rules; longer phrases win and replacements
+do not cascade. Changes take effect with the next recording. Android retry also
+applies the current rules. Voice editing is unchanged. Rules are separate from
+the recognition dictionary and are not sent to OpenAI. Device synchronization
+is deferred until Google Drive integration is available.

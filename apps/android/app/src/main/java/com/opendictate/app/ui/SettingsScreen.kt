@@ -118,6 +118,7 @@ internal fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     var setupExpanded by rememberSaveable { mutableStateOf(false) }
+    var replacementsOpen by rememberSaveable { mutableStateOf(false) }
     var dictionaryOpen by rememberSaveable { mutableStateOf(false) }
     var languagesOpen by rememberSaveable { mutableStateOf(false) }
     var timeoutOpen by rememberSaveable { mutableStateOf(false) }
@@ -224,6 +225,9 @@ internal fun SettingsScreen(
                     ToggleRow(Icons.Outlined.TextFields, stringResource(R.string.trailing_period_title),
                         stringResource(R.string.trailing_period_subtitle), state.keepTrailingPeriod, viewModel::setKeepTrailingPeriod)
                     SettingsDivider()
+                    ActionRow(Icons.Outlined.AutoFixHigh, stringResource(R.string.replacements_title),
+                        stringResource(R.string.replacements_summary), { replacementsOpen = true })
+                    SettingsDivider()
                     ActionRow(Icons.AutoMirrored.Outlined.MenuBook, stringResource(R.string.settings_dictionary),
                         if (state.prompt.isBlank()) stringResource(R.string.settings_dictionary_empty)
                         else stringResource(R.string.settings_dictionary_count, state.prompt.lineSequence().count { it.isNotBlank() }),
@@ -305,6 +309,7 @@ internal fun SettingsScreen(
             }
         }
     }
+    if (replacementsOpen) ReplacementSheet(viewModel.replacements) { replacementsOpen = false }
     if (languagesOpen) LanguagesSheet(state.languages, viewModel::toggleLanguage, viewModel::useAutomaticLanguageDetection) { languagesOpen = false }
     if (dictionaryOpen) DictionarySheet(state.prompt, viewModel::savePrompt) { dictionaryOpen = false }
     if (timeoutOpen) TranscriptionTimeoutDialog(state.transcriptionResponseTimeoutSeconds,

@@ -60,6 +60,21 @@ to both Live and Accurate: text appears when recording finishes, after recheckin
 the original process, exact field, text and selection. Editors without usable Accessibility metadata need
 manual Copy last transcript. Password fields are deliberately excluded.
 
+### Word replacements
+
+Settings → Word replacements manages local “recognized phrase → replacement”
+rules. Add, edit, delete, enable individual rules or turn all replacements off.
+Matching ignores case, respects Unicode word boundaries, prefers longer phrases
+and never cascades into another rule. Replacement spelling is preserved exactly.
+Live applies completed words immediately; an unfinished trailing token waits for
+a boundary or the final result. Accurate applies rules before delivery.
+Each session captures its rules at startup, and history/copy use the same result.
+Voice editing instructions and results are not modified. Up to 500 rules, with
+256 UTF-16 units per phrase and 2,048 per replacement.
+
+Rules stay on this device and are separate from dictionary hints sent to OpenAI.
+Synchronization is deferred until Google Drive support is introduced.
+
 ### Appearance
 
 The theme button at the top right of Settings offers System, Light and Dark.

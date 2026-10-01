@@ -91,6 +91,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         AddToDictionaryActivity::class.java,
     )
     private val apiKeyStore = SecureApiKeyStore(application)
+    val replacements = (application as OpenDictateApplication).replacementStore
     private val historyStore = (application as OpenDictateApplication).transcriptHistoryStore
     private val apiClient = OpenAiTranscriptionClient(application.resources)
     private val mutableState = MutableStateFlow(loadState())

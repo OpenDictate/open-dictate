@@ -1,0 +1,18 @@
+[
+  {"name":"case and boundaries","rules":[{"source":"cat","replacement":"Kitten"}],"text":"CAT, cat! catalog bobcat cat2 cat_name.","expected":"Kitten, Kitten! catalog bobcat cat2 cat_name."},
+  {"name":"Cyrillic and emoji","rules":[{"source":"опен диктейт","replacement":"OpenDictate"}],"text":"🙂 ОПЕН ДИКТЕЙТ и опен диктейт.","expected":"🙂 OpenDictate и OpenDictate."},
+  {"name":"longest phrase first","rules":[{"source":"new","replacement":"fresh"},{"source":"new york","replacement":"NYC"}],"text":"New York, new day.","expected":"NYC, fresh day."},
+  {"name":"no cascading","rules":[{"source":"alpha","replacement":"beta"},{"source":"beta","replacement":"gamma"}],"text":"alpha beta","expected":"beta gamma"},
+  {"name":"literal symbols and replacement","rules":[{"source":"c++","replacement":"C++ $1 \\ tools"}],"text":"c++ and c++17","expected":"C++ $1 \\ tools and c++17"},
+  {"name":"disabled","rules":[{"source":"cat","replacement":"dog","enabled":false}],"text":"Cat cat","expected":"Cat cat"},
+  {"name":"canonical Unicode","rules":[{"source":"café","replacement":"Coffee"}],"text":"café CAFÉ.","expected":"Coffee Coffee."},
+  {"name":"combining mark is word content","rules":[{"source":"cat","replacement":"dog"}],"text":"cat́ cat.","expected":"cat́ dog."},
+  {"name":"live trailing token","rules":[{"source":"cat","replacement":"dog"}],"text":"cat cat","final":false,"expected":"dog cat"},
+  {"name":"live growing token","rules":[{"source":"cat","replacement":"dog"}],"text":"catalog","final":false,"expected":"catalog"},
+  {"name":"live delimiter","rules":[{"source":"cat","replacement":"dog"}],"text":"cat ","final":false,"expected":"dog "},
+  {"name":"final token","rules":[{"source":"cat","replacement":"dog"}],"text":"cat","expected":"dog"},
+  {"name":"literal dots","rules":[{"source":"a.b","replacement":"Term"}],"text":"a.b axb a.bx","expected":"Term axb a.bx"},
+  {"name":"empty dictionary","rules":[],"text":"Leave this 🙂 alone","expected":"Leave this 🙂 alone"},
+  {"name":"replacement multiline","rules":[{"source":"my address","replacement":"First line\nSecond line"}],"text":"my address.","expected":"First line\nSecond line."},
+  {"name":"repeated cumulative text","rules":[{"source":"open dictate","replacement":"OpenDictate"}],"text":"open dictate and open dictate.","expected":"OpenDictate and OpenDictate."}
+]

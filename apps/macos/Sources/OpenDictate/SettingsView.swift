@@ -23,6 +23,7 @@ struct SettingsView: View {
                 VStack(spacing: 5) {
                     navigation("dictation", t("Dictation", "Диктовка"), "waveform")
                     navigation("dictionary", t("Dictionary", "Словарь"), "book.closed")
+                    navigation("replacements", t("Replacements", "Автозамена"), "arrow.left.arrow.right")
                     navigation("history", t("History", "История"), "clock")
                     navigation("general", t("Settings", "Настройки"), "slider.horizontal.3")
                 }
@@ -46,6 +47,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         switch selection {
                         case "dictionary": dictionaryPage
+                        case "replacements": ReplacementSettingsView(store: model.replacements, preferences: preferences)
                         case "history": historyPage
                         case "general": generalPage
                         default: dictationPage

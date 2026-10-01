@@ -3,6 +3,11 @@
 Please report vulnerabilities privately through GitHub Security Advisories.
 Do not include API keys, recordings, or other sensitive data in public issues.
 
+Word replacements use literal, case-insensitive matches with Unicode word
+boundaries. Rules are compiled once per dictation, operate only on recognized
+text, and never alter the captured original field or voice-edit instructions.
+Rules stay in device-local preferences; no sync service or new permission is added.
+
 ## macOS
 
 The macOS app uses device-only Keychain credentials, ephemeral URLSession
