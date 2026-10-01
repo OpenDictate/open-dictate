@@ -1,5 +1,32 @@
 # macOS verification
 
+## 0.2.0-rc.22 — keep dictation active across window changes
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- All 119 Swift tests pass. Eight new AppModel session tests reproduce the old
+  recording → processing transition and missing delivery, then verify switching
+  windows, returning, stopping during preparation, destination freezing,
+  unavailable/secure/excluded-field capture, cancellation, permission revocation
+  and the retained voice-edit focus guard.
+- The local-only debug bundle used the real microphone and HUD. Recording
+  continued after changing fields and after activating a second disposable
+  editor process. Finishing through the nonactivating HUD inserted synthetic
+  text once into the second process's active field; no new insertion reached
+  the original process. No API key/history was read or OpenAI request made.
+- Android debug tests/lint/assembly and release lint/assembly pass. Stable/RC
+  version checks, universal arm64/x86_64 packaging, ad-hoc signature and DMG
+  integrity pass. Displayed version is 0.2.0-rc.22, bundle short version 0.2.0,
+  build 23. The installer is not notarized.
+
+Physical global hotkeys, permission denial/revocation, secure-field capture,
+voice-edit cancellation, Spaces/full-screen windows, actual provider access and
+Intel/macOS 14 hardware were not re-exercised natively. Session/delivery tests
+cover the relevant guards; they cannot establish TCC or provider access.
+TextEdit automation did not reliably change the system foreground application;
+the cross-process focus check therefore used two editor fixtures with explicit
+activation controls.
+
 ## 0.2.0-rc.17 — golden proportions around the waveform
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

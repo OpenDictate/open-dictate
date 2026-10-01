@@ -1,15 +1,15 @@
-OpenDictate for macOS **0.2.0-rc.21** adds optional punctuation correction for Accurate dictation. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.22** fixes dictation when switching windows. Requires macOS 14+ on Apple Silicon or Intel.
 
-- **Correct punctuation in Accurate:** a new switch in Settings → Dictation, off by default. After recognition, GPT-6 Luna corrects punctuation and capitalization before local replacements and the final-period preference. It adds a separate OpenAI request and processing time.
-- Live and voice editing skip punctuation correction. Failed requests or responses that alter words, order, numbers or addresses preserve the original transcription. Cancellation prevents delivery.
-- The switch synchronizes with Android through the existing Google Drive connection. Older installations default to off; existing cloud values win on first connection.
-- Includes the prior fixes for typing/cursor movement during dictation, Command-W in Settings, clipboard delivery, the waveform indicator and the multilingual speech-language picker.
+- Ordinary Live and Accurate dictation keep recording when you switch fields, windows or apps. Press the shortcut again or click the recording control to stop; the active eligible field at that moment becomes the destination.
+- Switching focus during processing prevents automatic insertion into a different field. If the field is unavailable, secure or in an excluded app, the completed text remains available through Copy last transcript.
+- Voice editing remains bound to its original text and selection. Escape cancels; revoking Accessibility or sleeping also cancels recording.
+- Includes optional Accurate punctuation correction, typing/cursor fixes, clipboard delivery and the waveform indicator.
 
 This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.21-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.22-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

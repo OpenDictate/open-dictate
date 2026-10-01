@@ -1,8 +1,15 @@
 import AVFoundation
 import OpenDictateCore
 
+protocol AudioRecording: Sendable {
+    func start(keepAudio: Bool, onChunk: @escaping @Sendable (Data) -> Void,
+               onLevel: @escaping @Sendable (Float) -> Void,
+               onError: @escaping @Sendable (DictationError) -> Void) async throws
+    func stop() async -> (Data, Int)
+}
+
 /// Every engine, conversion and recording operation runs on this serial worker.
-final class AudioRecorder: @unchecked Sendable {
+final class AudioRecorder: AudioRecording, @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.opendictate.mac.audio", qos: .userInitiated)
     private var engine: AVAudioEngine?
     private var converter: AVAudioConverter?
