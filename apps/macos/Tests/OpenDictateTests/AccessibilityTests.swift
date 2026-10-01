@@ -12,6 +12,8 @@ private final class Editor: TextAccessibility {
     var delayedSelection = false
     var losesFocusWhenSelecting = false
     var selectionWrites = 0
+    var onSelectionWrite: ((NSRange) -> Void)?
+    var onSelectionApplied: ((NSRange) -> Void)?
 
     init(_ snapshot: EditableTextSnapshot) { text = snapshot.original; range = snapshot.selection }
     func isFocused(_ element: AXUIElement, pid: pid_t) -> Bool { focused }
@@ -19,8 +21,10 @@ private final class Editor: TextAccessibility {
     func selection(_ element: AXUIElement) -> NSRange? { range }
     func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool {
         selectionWrites += 1
-        if delayedSelection { DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { self.range = range } }
-        else { self.range = range }
+        let apply = { self.range = range; self.onSelectionApplied?(range) }
+        if delayedSelection { DispatchQueue.main.asyncAfter(deadline: .now() + 0.03, execute: apply) }
+        else { apply() }
+        onSelectionWrite?(range)
         if losesFocusWhenSelecting { focused = false }
         return true
     }
@@ -186,10 +190,18 @@ final class AccessibilityTests: XCTestCase {
         let snapshot = EditableTextSnapshot(original: "original", selection: NSRange(location: 3, length: 0))
         let editor = Editor(snapshot), paste = Paste(editor); editor.delayedSelection = true
         let target = editor.target(snapshot, clipboard: paste, transform: true)
-        let task = Task { await target.paste("new") }
-        try await Task.sleep(for: .milliseconds(10)); task.cancel()
-        let result = await task.value
-        try await Task.sleep(for: .milliseconds(50))
+        let restored = expectation(description: "Original caret restored after selection acknowledgement")
+        var task: Task<Bool, Never>?
+        // Cancel exactly while the selection write is pending. Timer-based cancellation
+        // can run after the paste on a busy CI main actor and test a different scenario.
+        editor.onSelectionWrite = { _ in task?.cancel() }
+        editor.onSelectionApplied = { range in
+            if range == snapshot.selection { restored.fulfill() }
+        }
+        defer { editor.onSelectionWrite = nil; editor.onSelectionApplied = nil }
+        task = Task { await target.paste("new") }
+        let result = await task!.value
+        await fulfillment(of: [restored], timeout: 2)
         XCTAssertFalse(result)
         XCTAssertEqual(editor.text, snapshot.original)
         XCTAssertEqual(editor.range, snapshot.selection)

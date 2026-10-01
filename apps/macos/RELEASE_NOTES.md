@@ -1,4 +1,4 @@
-OpenDictate for macOS **0.2.0-rc.20** adds optional punctuation correction for Accurate dictation. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.21** adds optional punctuation correction for Accurate dictation. Requires macOS 14+ on Apple Silicon or Intel.
 
 - **Correct punctuation in Accurate:** a new switch in Settings → Dictation, off by default. After recognition, GPT-6 Luna corrects punctuation and capitalization before local replacements and the final-period preference. It adds a separate OpenAI request and processing time.
 - Live and voice editing skip punctuation correction. Failed requests or responses that alter words, order, numbers or addresses preserve the original transcription. Cancellation prevents delivery.
@@ -9,7 +9,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.20-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.21-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
