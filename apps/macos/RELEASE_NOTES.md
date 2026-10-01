@@ -1,4 +1,8 @@
-OpenDictate for macOS **0.2.0-rc.17** uses the golden ratio for the spacing around the recording waveform. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.18** fixes the standard keyboard shortcuts for closing Settings. Requires macOS 14+ on Apple Silicon or Intel.
+
+- **Close Settings:** Command-W closes the current settings window; Command-Shift-W closes all regular application windows. Settings can be reopened from the menu bar. The recording indicator stays visible.
+
+Includes the waveform spacing improvements from rc.17:
 
 - **Waveform proportions:** the capsule is approximately 62.5 × 28.32 pt, surrounding a 38.63 × 17.5 pt waveform at full level. Both capsule height / waveform height and capsule width / waveform width equal the golden ratio (≈1.618).
 - The maximum bar height stays 17.5 pt, with approximately 5.41 pt above and below. The ten bars spread slightly farther apart to balance horizontal spacing.
@@ -34,7 +38,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.17-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.18-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

@@ -109,11 +109,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.target = self; item.isEnabled = enabled; menu.addItem(item)
     }
 
-    private func updateState() {
+    func makeMainMenu(preferences: Preferences) -> NSMenu {
         let main = NSMenu()
         let applicationItem = NSMenuItem(); main.addItem(applicationItem)
         let applicationMenu = NSMenu(title: "OpenDictate")
-        let settings = NSMenuItem(title: model.preferences.t("Settings…", "Настройки…"), action: #selector(settings), keyEquivalent: ",")
+        let settings = NSMenuItem(title: preferences.t("Settings…", "Настройки…"), action: #selector(settings), keyEquivalent: ",")
         settings.target = self; applicationMenu.addItem(settings)
         #if DEBUG
         if localChecks != nil {
@@ -134,20 +134,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         #endif
         applicationMenu.addItem(.separator())
-        let quit = NSMenuItem(title: model.preferences.t("Quit OpenDictate", "Завершить OpenDictate"), action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: preferences.t("Quit OpenDictate", "Завершить OpenDictate"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self; applicationMenu.addItem(quit)
         applicationItem.submenu = applicationMenu
-        let editItem = NSMenuItem(), editMenu = NSMenu(title: model.preferences.t("Edit", "Правка"))
+        let fileItem = NSMenuItem(), fileMenu = NSMenu(title: preferences.t("File", "Файл"))
+        main.addItem(fileItem); fileItem.submenu = fileMenu
+        fileMenu.addItem(NSMenuItem(title: preferences.t("Close Window", "Закрыть окно"),
+                                   action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w"))
+        let closeAll = NSMenuItem(title: preferences.t("Close All Windows", "Закрыть все окна"),
+                                  action: #selector(closeAllWindows(_:)), keyEquivalent: "w")
+        closeAll.keyEquivalentModifierMask = [.command, .shift]
+        closeAll.target = self; fileMenu.addItem(closeAll)
+        let editItem = NSMenuItem(), editMenu = NSMenu(title: preferences.t("Edit", "Правка"))
         main.addItem(editItem); editItem.submenu = editMenu
-        editMenu.addItem(NSMenuItem(title: model.preferences.t("Undo", "Отменить"), action: NSSelectorFromString("undo:"), keyEquivalent: "z"))
-        let redo = NSMenuItem(title: model.preferences.t("Redo", "Повторить"), action: NSSelectorFromString("redo:"), keyEquivalent: "z")
+        editMenu.addItem(NSMenuItem(title: preferences.t("Undo", "Отменить"), action: NSSelectorFromString("undo:"), keyEquivalent: "z"))
+        let redo = NSMenuItem(title: preferences.t("Redo", "Повторить"), action: NSSelectorFromString("redo:"), keyEquivalent: "z")
         redo.keyEquivalentModifierMask = [.command, .shift]; editMenu.addItem(redo)
         editMenu.addItem(.separator())
-        editMenu.addItem(NSMenuItem(title: model.preferences.t("Cut", "Вырезать"), action: #selector(NSText.cut(_:)), keyEquivalent: "x"))
-        editMenu.addItem(NSMenuItem(title: model.preferences.t("Copy", "Скопировать"), action: #selector(NSText.copy(_:)), keyEquivalent: "c"))
-        editMenu.addItem(NSMenuItem(title: model.preferences.t("Paste", "Вставить"), action: #selector(NSText.paste(_:)), keyEquivalent: "v"))
-        editMenu.addItem(NSMenuItem(title: model.preferences.t("Select All", "Выбрать всё"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"))
-        NSApp.mainMenu = main
+        editMenu.addItem(NSMenuItem(title: preferences.t("Cut", "Вырезать"), action: #selector(NSText.cut(_:)), keyEquivalent: "x"))
+        editMenu.addItem(NSMenuItem(title: preferences.t("Copy", "Скопировать"), action: #selector(NSText.copy(_:)), keyEquivalent: "c"))
+        editMenu.addItem(NSMenuItem(title: preferences.t("Paste", "Вставить"), action: #selector(NSText.paste(_:)), keyEquivalent: "v"))
+        editMenu.addItem(NSMenuItem(title: preferences.t("Select All", "Выбрать всё"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"))
+        return main
+    }
+
+    private func updateState() {
+        NSApp.mainMenu = makeMainMenu(preferences: model.preferences)
         statusItem.button?.image = NSImage(systemSymbolName: model.isActive ? "waveform" : "mic", accessibilityDescription: "OpenDictate")
         statusItem.button?.title = model.phase == .processing ? " …" : ""
         statusItem.button?.toolTip = "OpenDictate · \(model.stateLabel) · \(model.preferences.shortcutLabel)"
@@ -200,6 +212,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let raw = sender.representedObject as? String, let mode = DictationMode(rawValue: raw) { model.preferences.mode = mode }
     }
     @objc private func settings() { openSettings() }
+    @objc private func closeAllWindows(_ sender: Any?) {
+        for window in NSApp.windows where window.isVisible && window.styleMask.contains(.closable) {
+            window.performClose(sender)
+        }
+    }
     @objc private func quit() { NSApp.terminate(nil) }
     #if DEBUG
     @objc private func checkRecordingSession() {
