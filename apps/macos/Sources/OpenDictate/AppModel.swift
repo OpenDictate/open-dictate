@@ -32,6 +32,7 @@ final class AppModel: ObservableObject {
     private var timer: Timer?
     private var subscriptions = Set<AnyCancellable>()
     private var searchTask: Task<Void, Never>?
+    private var pasteTask: Task<Void, Never>?
     private var searchID: UUID?
     private var recordingShortcut = false
     var showSettings: (() -> Void)?
@@ -49,6 +50,10 @@ final class AppModel: ObservableObject {
         let keepTrailingPeriod: Bool
         let timeout: Int
         let started = Date()
+        var deliveryTask: Task<Void, Never>?
+        var pendingPartial: String?
+        var acceptsPartials = true
+        var cancelling = false
         var detached = false
         var stopRequested = false
         var live: LiveTranscriptionSession?
@@ -149,7 +154,7 @@ final class AppModel: ObservableObject {
         guard !localOnly else { return }
         if phase == .preparing { stop(); return }
         if phase == .recording { stop(); return }
-        guard phase == .idle else { return }
+        guard phase == .idle, pasteTask == nil else { return }
         do {
             guard let key = try APIKeyStore.load(), !key.isEmpty else { throw DictationError.missingKey }
             guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { throw DictationError.microphone }
@@ -161,6 +166,29 @@ final class AppModel: ObservableObject {
             session.setup = Task { await start(session) }
         } catch { present(error); showSettings?() }
     }
+
+    #if DEBUG
+    /// Exercises production capture, focus monitoring, stop and delivery without credentials/network.
+    func toggleLocalRecording(autoStop: Bool = false) {
+        guard localOnly else { return }
+        if isActive { stop(); return }
+        do {
+            preferences.mode = .accurate
+            let target = try TextTarget.capture(exclusions: [])
+            target.preserveOriginal()
+            let session = Session(target: target, transform: false, key: "", preferences: preferences)
+            current = session; phase = .preparing; audioLevels.reset(); message = ""
+            hotKeys.setCancelEnabled(true); onStateChange?()
+            session.setup = Task { await start(session) }
+            if autoStop {
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    if current?.id == session.id { stop() }
+                }
+            }
+        } catch { present(error) }
+    }
+    #endif
 
     private func start(_ session: Session) async {
         let id = session.id
@@ -227,7 +255,9 @@ final class AppModel: ObservableObject {
             guard current?.id == session.id else { return }
             guard bytes >= 4_800 else { throw DictationError.tooShort }
             let transcript: String
-            if let live = session.live {
+            if localOnly {
+                transcript = "Локальная проверка 🙂"
+            } else if let live = session.live {
                 transcript = try await live.finish(timeout: session.timeout)
             } else {
                 transcript = try await client.transcribe(pcm: pcm, key: session.key, context: session.context, timeout: session.timeout)
@@ -247,7 +277,17 @@ final class AppModel: ObservableObject {
                 result = transformed
             }
             guard !result.isEmpty else { throw DictationError.tooShort }
-            let delivered = !session.detached && (session.target.apply(result) || session.target.paste(result))
+            session.acceptsPartials = false
+            await session.deliveryTask?.value
+            try Task.checkCancellation()
+            guard current?.id == session.id else { return }
+            var delivered = false
+            if !session.detached {
+                delivered = await session.target.apply(result)
+                if !delivered && !Task.isCancelled { delivered = session.target.paste(result) }
+            }
+            try Task.checkCancellation()
+            guard current?.id == session.id else { return }
             lastTranscript = result
             if preferences.saveHistory { history.add(result, mode: session.transform ? "edit" : session.mode.rawValue) }
             message = delivered ? preferences.t("Text inserted.", "Текст вставлен.") :
@@ -258,33 +298,57 @@ final class AppModel: ObservableObject {
     }
 
     private func receive(_ text: String, id: UUID) {
-        guard let session = current, session.id == id, !session.transform else { return }
+        guard let session = current, session.id == id, !session.transform, session.acceptsPartials else { return }
         partial = text
-        if !session.detached && session.target.writable && !text.isEmpty {
-            if !session.target.apply(text) { session.detached = true }
+        guard !session.detached, session.target.writable, !text.isEmpty else { return }
+        session.pendingPartial = text
+        guard session.deliveryTask == nil else { return }
+        session.deliveryTask = Task { [weak self] in
+            defer { session.deliveryTask = nil }
+            while let text = session.pendingPartial, !Task.isCancelled {
+                session.pendingPartial = nil
+                guard self?.current?.id == id else { return }
+                if !(await session.target.apply(text)) { session.detached = true; return }
+            }
         }
     }
 
     func cancel() {
         guard let session = current else { return }
-        session.target.restore()
-        session.setup?.cancel(); session.completion?.cancel()
-        finish(session)
-        message = preferences.t("Dictation cancelled.", "Диктовка отменена.")
+        terminate(session, error: nil)
     }
 
-    private func fail(_ error: Error, session: Session) {
-        session.target.restore()
-        session.setup?.cancel(); session.completion?.cancel()
-        finish(session)
-        if !(error is CancellationError) { present(error) }
+    private func fail(_ error: Error, session: Session) { terminate(session, error: error) }
+
+    private func terminate(_ session: Session, error: Error?) {
+        guard current?.id == session.id, !session.cancelling else { return }
+        session.cancelling = true; session.acceptsPartials = false
+        session.setup?.cancel(); session.completion?.cancel(); session.deliveryTask?.cancel()
+        session.continuation?.finish(); session.pump?.cancel()
+        phase = .processing; onStateChange?()
+        Task {
+            await session.setup?.value
+            _ = await session.recorder.stop()
+            await session.live?.close()
+            await session.deliveryTask?.value
+            await session.completion?.value
+            await session.target.restore()
+            guard current?.id == session.id else { return }
+            finish(session)
+            if let error {
+                if !(error is CancellationError) { present(error) }
+            } else {
+                message = preferences.t("Dictation cancelled.", "Диктовка отменена.")
+                onStateChange?()
+            }
+        }
     }
 
     private func finish(_ session: Session) {
         guard current?.id == session.id else { return }
         current = nil; phase = .idle; audioLevels.reset(); partial = ""
         hotKeys.setCancelEnabled(false); onStateChange?()
-        session.continuation?.finish(); session.pump?.cancel()
+        session.continuation?.finish(); session.pump?.cancel(); session.deliveryTask?.cancel()
         Task {
             await session.setup?.value
             _ = await session.recorder.stop()
@@ -295,7 +359,7 @@ final class AppModel: ObservableObject {
     private func tick() {
         if let session = current {
             if phase == .recording { elapsed = Int(Date().timeIntervalSince(session.started)) }
-            if !session.detached && !session.target.isCurrent {
+            if !session.detached && !session.target.isUpdating && !session.target.isCurrent {
                 session.detached = true
                 if phase == .recording { stop() }
                 else if phase == .preparing { stop() }
@@ -349,10 +413,14 @@ final class AppModel: ObservableObject {
         message = preferences.t("Copied to clipboard.", "Скопировано в буфер обмена.")
     }
     func pasteLast() {
-        guard !isActive, !lastTranscript.isEmpty else { return }
+        guard !isActive, pasteTask == nil, !lastTranscript.isEmpty else { return }
         do {
             let target = try TextTarget.capture(exclusions: preferences.excludedApps)
-            if !target.apply(lastTranscript) && !target.paste(lastTranscript) { throw DictationError.noField }
+            let text = lastTranscript
+            pasteTask = Task {
+                defer { pasteTask = nil }
+                if !(await target.apply(text)) && !target.paste(text) { present(DictationError.noField) }
+            }
         } catch { present(error) }
     }
     func addSelectionToDictionary() {
@@ -402,5 +470,5 @@ final class AppModel: ObservableObject {
         onStateChange?()
     }
     func clearMessage() { message = "" }
-    func shutdown() { cancel(); cancelSearch(); timer?.invalidate(); hotKeys.shutdown() }
+    func shutdown() { cancel(); cancelSearch(); pasteTask?.cancel(); timer?.invalidate(); hotKeys.shutdown() }
 }

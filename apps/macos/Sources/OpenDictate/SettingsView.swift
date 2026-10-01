@@ -28,8 +28,8 @@ struct SettingsView: View {
                 }
                 Spacer()
                 VStack(alignment: .leading, spacing: 7) {
-                    Text(preferences.shortcutLabel).font(.system(.body, design: .monospaced)).foregroundStyle(.primary)
-                    Text(t("Press once to start.\nPress again to finish.", "Нажмите, чтобы начать.\nЕщё раз — завершить."))
+                    Text(preferences.shortcuts.dictate.isEnabled ? preferences.shortcutLabel : t("Not set", "Не задано")).font(.system(.body, design: .monospaced)).foregroundStyle(.primary)
+                    Text(preferences.shortcuts.dictate.isEnabled ? t("Press once to start.\nPress again to finish.", "Нажмите, чтобы начать.\nЕщё раз — завершить.") : t("Start dictation from the menu.", "Начните диктовку из меню."))
                         .font(.caption).foregroundStyle(.secondary).lineSpacing(3)
                 }
                 Divider()
@@ -276,8 +276,8 @@ struct SettingsView: View {
                 Text(t("Keyboard shortcuts", "Сочетания клавиш")).fontWeight(.medium)
                 shortcutSetting(t("Dictation", "Диктовка"), transform: false)
                 shortcutSetting(t("Voice editing", "Голосовая правка"), transform: true)
-                Text(t("Click a shortcut and press any key combination, or press and release modifiers. Escape cancels recording.",
-                       "Нажмите на сочетание и введите новое, либо нажмите и отпустите модификаторы. Escape отменяет назначение."))
+                Text(t("Click a shortcut and press any key combination, or press and release modifiers. Escape clears the shortcut.",
+                       "Нажмите на сочетание и введите новое, либо нажмите и отпустите модификаторы. Escape очищает сочетание."))
                     .font(.caption).foregroundStyle(.secondary)
                 Text(t("For F1–F12, enable standard function keys in macOS Keyboard settings (or hold Fn). For Globe/Fn taps, set “Press 🌐 key to” to “Do Nothing”; Accessibility must be allowed.",
                        "Для F1–F12 включите стандартные функциональные клавиши в настройках клавиатуры macOS (либо удерживайте Fn). Для нажатий Globe/Fn выберите «При нажатии 🌐» → «Ничего не делать»; нужен доступ к Универсальному доступу."))
@@ -365,7 +365,7 @@ struct SettingsView: View {
         return HStack {
             Text(label)
             Spacer()
-            ShortcutRecorder(shortcut: shortcut, title: label,
+            ShortcutRecorder(shortcut: shortcut, title: label, emptyLabel: t("Not set", "Не задано"),
                              prompt: t("Press and release…", "Нажмите и отпустите…"), enabled: !model.isActive,
                              onRecording: model.recordShortcut, onSave: save)
                 .frame(width: 175, height: 28)

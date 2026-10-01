@@ -15,8 +15,10 @@ final class RecordingIndicator {
         panel.level = .statusBar
         panel.isOpaque = false
         panel.backgroundColor = .clear
+        panel.appearance = NSAppearance(named: .darkAqua)
         panel.hasShadow = true
         panel.hidesOnDeactivate = false
+        panel.becomesKeyOnlyIfNeeded = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.contentView = content
     }
@@ -60,8 +62,10 @@ struct RecordingStatusView: View {
         self.audioLevels = audioLevels ?? RecordingAudioLevels()
     }
 
+    static let scale: CGFloat = 1.25
+
     static func size(phase: AppModel.Phase, style: RecordingIndicatorStyle) -> NSSize {
-        NSSize(width: style == .waveform ? 50 : (phase.showsFinishControl ? 44 : 22), height: 22)
+        NSSize(width: (style == .waveform ? 50 : (phase.showsFinishControl ? 44 : 22)) * scale, height: 22 * scale)
     }
 
     var body: some View {
@@ -73,16 +77,12 @@ struct RecordingStatusView: View {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 9, weight: .medium)).frame(width: 10)
                         .accessibilityHidden(true)
-                    Button(action: finish) {
-                        ZStack {
-                            Circle().fill(Color.red).frame(width: 14, height: 14)
-                            RoundedRectangle(cornerRadius: 1).fill(Color.white).frame(width: 4.5, height: 4.5)
-                        }.frame(width: 16, height: 16).contentShape(Circle())
+                    ZStack {
+                        Circle().fill(Color.red).frame(width: 14, height: 14)
+                        RoundedRectangle(cornerRadius: 1).fill(Color.white).frame(width: 4.5, height: 4.5)
                     }
-                    .buttonStyle(.plain)
-                    .help(isRussian ? "Завершить и отправить" : "Finish and submit")
-                    .accessibilityLabel(isRussian ? "Завершить диктовку" : "Finish dictation")
-                    .accessibilityIdentifier("finishDictation")
+                    .frame(width: 16, height: 16)
+                    .overlay { finishControl }
                 }
                 .fixedSize()
                 .padding(.horizontal, 6)
@@ -97,21 +97,21 @@ struct RecordingStatusView: View {
         .overlay {
             if style == .waveform { Capsule().strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5).allowsHitTesting(false) }
         }
+        .scaleEffect(Self.scale)
+        .frame(width: Self.size(phase: phase, style: style).width, height: Self.size(phase: phase, style: style).height)
         .preferredColorScheme(.dark)
+    }
+
+    private var finishControl: some View {
+        IndicatorFinishControl(isRussian: isRussian, finish: finish)
     }
 
     private var waveform: some View {
         Group {
             if phase.showsFinishControl {
-                Button(action: finish) {
-                    WaveformBars(samples: audioLevels.history.samples)
-                        .frame(width: 50, height: 22)
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .help(isRussian ? "Завершить и отправить" : "Finish and submit")
-                .accessibilityLabel(isRussian ? "Завершить диктовку" : "Finish dictation")
-                .accessibilityIdentifier("finishDictation")
+                WaveformBars(samples: audioLevels.history.samples)
+                    .frame(width: 50, height: 22)
+                    .overlay { finishControl }
             } else {
                 ProgressView().progressViewStyle(.circular).controlSize(.mini)
                     .frame(width: 50, height: 22)
@@ -134,5 +134,38 @@ struct WaveformBars: View {
         }
         .animation(reduceMotion ? nil : .linear(duration: 0.04), value: samples)
         .accessibilityHidden(true)
+    }
+}
+
+/// AppKit mouse handling keeps SwiftUI's focus system out of the external editor.
+/// Finish after mouse-up, before replacing the clickable view with the spinner.
+struct IndicatorFinishControl: NSViewRepresentable {
+    let isRussian: Bool
+    let finish: () -> Void
+    func makeNSView(context: Context) -> IndicatorFinishView { IndicatorFinishView() }
+    func updateNSView(_ view: IndicatorFinishView, context: Context) {
+        view.finish = finish
+        view.setAccessibilityElement(true)
+        view.setAccessibilityRole(.button)
+        view.setAccessibilityLabel(isRussian ? "Завершить диктовку" : "Finish dictation")
+        view.setAccessibilityIdentifier("finishDictation")
+        view.toolTip = isRussian ? "Завершить и отправить" : "Finish and submit"
+    }
+}
+
+final class IndicatorFinishView: NSView {
+    var finish: (() -> Void)?
+    override var acceptsFirstResponder: Bool { false }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func mouseDown(with event: NSEvent) {} // Do not ask AppKit/SwiftUI to focus this control.
+    override func mouseUp(with event: NSEvent) {
+        guard bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
+        let action = finish
+        DispatchQueue.main.async { action?() }
+    }
+    override func accessibilityPerformPress() -> Bool {
+        let action = finish
+        DispatchQueue.main.async { action?() }
+        return true
     }
 }

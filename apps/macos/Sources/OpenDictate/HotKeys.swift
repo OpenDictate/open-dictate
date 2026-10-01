@@ -68,6 +68,7 @@ final class HotKeys {
 
     private func install(_ candidate: ShortcutBindings) throws {
         for (action, shortcut) in [(Action.dictate, candidate.dictate), (.transform, candidate.transform)] {
+            guard shortcut.isEnabled else { continue }
             if shortcut.usesEventMonitor { gestures[action] = ShortcutGesture() }
             else { try register(action, shortcut: shortcut) }
         }

@@ -8,24 +8,24 @@ final class LocalSmokeChecks {
     private let model: AppModel
     init(model: AppModel) { self.model = model }
 
-    func toggle() {
+    func toggle() async {
         if let target {
-            let accepted = target.apply("Проверка 🙂")
+            let accepted = await target.apply("Проверка 🙂")
             model.present(CheckMessage(accepted ? "LOCAL CHECK: cumulative final inserted" : "LOCAL CHECK: focus guard rejected final"))
             self.target = nil; model.hotKeys.setCancelEnabled(false)
         } else {
             do {
                 let target = try TextTarget.capture(exclusions: [])
                 target.preserveOriginal()
-                guard target.apply("Проверка") else { throw DictationError.noField }
+                guard await target.apply("Проверка") else { throw DictationError.noField }
                 self.target = target
                 model.hotKeys.setCancelEnabled(true)
                 model.present(CheckMessage("LOCAL CHECK: partial inserted; press shortcut again or Escape"))
             } catch { model.present(error) }
         }
     }
-    func cancel() {
-        target?.restore(); target = nil; model.hotKeys.setCancelEnabled(false)
+    func cancel() async {
+        await target?.restore(); target = nil; model.hotKeys.setCancelEnabled(false)
         model.present(CheckMessage("LOCAL CHECK: cancellation restored unchanged field"))
     }
     func verifyInsertionAndRollback() async {
@@ -33,11 +33,11 @@ final class LocalSmokeChecks {
             let target = try TextTarget.capture(exclusions: [])
             let original = target.snapshot
             target.preserveOriginal()
-            guard target.apply("Проверка") else { throw CheckMessage("LOCAL CHECK: partial delivery rejected") }
+            guard await target.apply("Проверка") else { throw CheckMessage("LOCAL CHECK: partial delivery rejected") }
             try await Task.sleep(nanoseconds: 100_000_000)
-            guard target.apply("Проверка 🙂") else { throw CheckMessage("LOCAL CHECK: cumulative delivery rejected") }
+            guard await target.apply("Проверка 🙂") else { throw CheckMessage("LOCAL CHECK: cumulative delivery rejected") }
             try await Task.sleep(nanoseconds: 100_000_000)
-            target.restore()
+            await target.restore()
             try await Task.sleep(nanoseconds: 100_000_000)
             let restored = try TextTarget.capture(exclusions: []).snapshot
             guard restored == original else { throw CheckMessage("LOCAL CHECK: original selection was not restored") }
@@ -45,7 +45,7 @@ final class LocalSmokeChecks {
         } catch { model.present(error) }
     }
     func record() {
-        Task {
+        Task { [model] in
             let recorder = AudioRecorder()
             do {
                 model.audioLevels.reset()

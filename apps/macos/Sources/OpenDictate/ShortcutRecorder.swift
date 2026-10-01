@@ -3,6 +3,7 @@ import SwiftUI
 struct ShortcutRecorder: NSViewRepresentable {
     let shortcut: KeyboardShortcut
     let title: String
+    let emptyLabel: String
     let prompt: String
     let enabled: Bool
     let onRecording: (Bool) -> Void
@@ -15,7 +16,7 @@ struct ShortcutRecorder: NSViewRepresentable {
         return button
     }
     func updateNSView(_ button: ShortcutRecorderButton, context: Context) {
-        button.shortcutLabel = shortcut.label; button.prompt = prompt
+        button.shortcutLabel = shortcut.isEnabled ? shortcut.label : emptyLabel; button.prompt = prompt
         button.onRecording = onRecording; button.onSave = onSave
         button.isEnabled = enabled
         button.setAccessibilityLabel(title)
@@ -65,11 +66,11 @@ final class ShortcutRecorderButton: NSButton {
         if event.type == .keyDown {
             guard !event.isARepeat else { return }
             if event.keyCode == 53 && event.modifierFlags.intersection(KeyboardShortcut.modifierMask).isEmpty {
-                finish(); return
+                pendingShortcut = .disabled; return
             }
             if pendingShortcut == nil { pendingShortcut = KeyboardShortcut.recorded(event) }
         } else if event.type == .keyUp {
-            if let shortcut = pendingShortcut, shortcut.keyCode == event.keyCode {
+            if let shortcut = pendingShortcut, (shortcut == .disabled && event.keyCode == 53) || shortcut.keyCode == event.keyCode {
                 // Register only after release: no held key/autorepeat can activate
                 // the new shortcut, and Carbon starts with a clean press state.
                 finish(); onSave?(shortcut)

@@ -38,8 +38,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let checks = LocalSmokeChecks(model: model); localChecks = checks
             model.hotKeys.onAction = { action in
                 switch action {
-                case .dictate, .transform: checks.toggle()
-                case .cancel: checks.cancel()
+                case .dictate, .transform: Task { await checks.toggle() }
+                case .cancel: self.model.cancel(); Task { await checks.cancel() }
                 }
             }
         }
@@ -125,6 +125,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             cancellation.target = self; applicationMenu.addItem(cancellation)
             let sequence = NSMenuItem(title: "Local check: insertion and rollback in 3 seconds", action: #selector(checkSequence), keyEquivalent: "")
             sequence.target = self; applicationMenu.addItem(sequence)
+            let session = NSMenuItem(title: "Local check: recording and insertion in 5 seconds", action: #selector(checkRecordingSession), keyEquivalent: "")
+            session.target = self; applicationMenu.addItem(session)
             let recording = NSMenuItem(title: "Local check: preview recording indicator", action: #selector(previewRecording), keyEquivalent: "")
             recording.target = self; applicationMenu.addItem(recording)
             let processing = NSMenuItem(title: "Local check: preview processing indicator", action: #selector(previewProcessing), keyEquivalent: "")
@@ -199,16 +201,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func settings() { openSettings() }
     @objc private func quit() { NSApp.terminate(nil) }
     #if DEBUG
+    @objc private func checkRecordingSession() {
+        hudPreviewPhase = nil
+        Task { try? await Task.sleep(nanoseconds: 5_000_000_000); model.toggleLocalRecording(autoStop: true) }
+    }
     @objc private func checkMicrophone() {
         hudPreviewPhase = .recording; updateState(); localChecks?.record()
     }
     @objc private func previewRecording() { hudPreviewPhase = .recording; updateState() }
     @objc private func previewProcessing() { hudPreviewPhase = .processing; updateState() }
     @objc private func checkInsertion() {
-        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); localChecks?.toggle() }
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.toggle() }
     }
     @objc private func checkCancellation() {
-        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); localChecks?.cancel() }
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.cancel() }
     }
     @objc private func checkSequence() {
         Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.verifyInsertionAndRollback() }

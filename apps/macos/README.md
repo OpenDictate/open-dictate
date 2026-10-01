@@ -39,21 +39,21 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
 - `OpenAIClient` uses ephemeral HTTPS sessions. Voice edits and explicit AI
   history searches use structured Responses output with `store: false`.
 - `RecordingIndicator` owns a nonactivating panel that cannot become key/main.
-  Settings choose Microphone (the existing 44 × 22 pt finish control) or Waveform
-  (a black 50 × 22 pt capsule with ten white level bars). New input appears on
+  Settings choose Microphone (the existing 55 × 27.5 pt finish control) or Waveform
+  (a black 62.5 × 27.5 pt capsule with ten white level bars). New input appears on
   the right and older levels move left, using the existing 40 ms microphone
   level callbacks. Only ten normalized RMS levels live in memory and are cleared
   on every session exit. The HUD alone observes those updates, without rebuilding
   menu state. Click the red button or waveform capsule to stop/submit without
   moving focus. Preparation already offers the finish action; processing shows
-  a native spinner (22 × 22 pt for Microphone, 50 × 22 pt for Waveform).
+  a native spinner (27.5 × 27.5 pt for Microphone, 62.5 × 27.5 pt for Waveform).
 - The HUD never takes keyboard focus. Changing fields, typing, changing the
   caret, revoking Accessibility or sleeping detaches/stops a recording.
   Final results remain available to copy, without insertion into a new field.
 
 Supported editors expose an Accessibility string value and selected text range.
 Writable values receive live updates through selected-text replacement when supported,
-with a verified whole-value fallback. The caret is placed after value readback. Other accessible editors receive a final
+with a verified whole-value fallback. Acknowledged text/caret writes have a bounded 300 ms readback window; no write is repeated. Live delivery is serialized, and focus monitoring excludes the app’s own pending updates. The caret is placed after value readback. Other accessible editors receive a final
 paste using the clipboard. Editors without usable Accessibility metadata need
 manual Copy last transcript. Password fields are deliberately excluded.
 
@@ -69,7 +69,7 @@ In Settings, click either shortcut and press the desired combination. Letters,
 symbols, navigation, numpad and F1–F20 keys work with any combination of Control,
 Option, Shift and Command, or without modifiers. Dictation and voice editing are
 configured independently; their defaults remain Option+Space and Option+Shift+Space.
-Existing preferences migrate automatically. Escape cancels shortcut recording;
+Existing preferences migrate automatically. Escape clears the shortcut; either or both can remain unassigned. Dictation and voice editing are still available from the menu;
 use the adjacent key menu to assign Escape, an F-key, or Globe/Fn directly.
 During an active dictation, unmodified Escape always cancels even if assigned.
 Conflicting registrations leave the previous shortcut working and show an error.
@@ -106,8 +106,8 @@ For native smoke checks, run `scripts/build-smoke.sh` and
 `scripts/build-editor-fixture.sh`, then launch the printed app paths. The smoke
 bundle enables local-only checks automatically; other debug bundles accept
 `--local-smoke-test`.
-This debug-only mode uses the real shortcut and Accessibility insertion with
-synthetic text and provides a two-second microphone check in its menu. It makes
+This debug-only mode uses the real shortcut, microphone session and Accessibility insertion with
+synthetic text and provides a two-second microphone check in its menu. The recording/insertion check starts after five seconds and submits after three seconds so a disposable editor can retain focus. It makes
 no OpenAI requests, never reads your API key or history, and writes no audio.
 It uses a separate preference domain. These checks are absent from release builds.
 
