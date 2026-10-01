@@ -21,7 +21,9 @@ class GoogleDriveSettingsClient(
 ) {
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
-    data class Remote(val document: SettingsSyncDocument, val ownFileId: String?)
+    data class Remote(val document: SettingsSyncDocument, val ownFileId: String?) {
+        fun needsUpload(merged: SettingsSyncDocument): Boolean = ownFileId == null || merged != document
+    }
 
     suspend fun download(token: String, deviceId: String): Remote = withContext(Dispatchers.IO) {
         var document = SettingsSyncDocument()

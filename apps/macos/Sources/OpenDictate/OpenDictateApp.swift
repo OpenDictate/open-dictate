@@ -168,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func openSettings() {
         model.refreshPermissions()
+        model.driveSync.syncNow()
         if settingsWindow == nil {
             #if DEBUG
             let compact = localChecks != nil && CommandLine.arguments.contains("--compact-ui-check")

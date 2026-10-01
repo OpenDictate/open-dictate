@@ -36,6 +36,25 @@ class ReplacementSyncTest {
             "wordReplacementsEnabled" to SettingsSyncEntry("true", 42, "mac")))
     }
 
+    @Test fun onlyActualLocalChangesIncrementSyncRevisionAndImportsNeverDo() = scoped { context, settings, store ->
+        val prefs = context.getSharedPreferences("opendictate_settings", Context.MODE_PRIVATE)
+        fun revision() = prefs.getLong("sync_local_revision", 0)
+        settings.keepTrailingPeriod = !settings.keepTrailingPeriod
+        settings.prompt = settings.prompt
+        assertEquals(0L, revision())
+        settings.prompt = "Local edit"
+        settings.model = if (settings.model == com.opendictate.app.model.TranscriptionModel.LIVE)
+            com.opendictate.app.model.TranscriptionModel.ACCURATE else com.opendictate.app.model.TranscriptionModel.LIVE
+        assertTrue(store.save(null, "cat", "dog"))
+        store.setEnabled(false)
+        assertEquals(4L, revision())
+        val remote = settings.syncDocument().copy(entries = settings.syncDocument().entries +
+            ("dictionary" to SettingsSyncEntry("Remote edit", Long.MAX_VALUE - 10, "remote")))
+        settings.mergeSyncDocument(remote, store)
+        assertEquals("Remote edit", settings.prompt)
+        assertEquals(4L, revision())
+    }
+
     @Test fun importRefreshesExistingStoreAndKeepsSessionSnapshotAndIncomingTimestamp() = scoped { _, settings, store ->
         val active = store.engine()
         val remote = remote()

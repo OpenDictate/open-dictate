@@ -10,6 +10,16 @@ import org.junit.Test
 import org.json.JSONObject
 
 class GoogleDriveSettingsClientTest {
+    @Test fun `unchanged polls and cloud-only edits do not upload but local edits and first link do`() {
+        val document = SettingsSyncDocument().record(mapOf("dictionary" to "Cloud"), "mac", 42)
+        val existing = GoogleDriveSettingsClient.Remote(document, "own-file")
+        assertFalse(existing.needsUpload(document))
+        val imported = SettingsSyncDocument().merge(document)
+        assertFalse(existing.needsUpload(imported))
+        assertTrue(existing.needsUpload(imported.record(mapOf("dictionary" to "Local"), "android", 50)))
+        assertTrue(GoogleDriveSettingsClient.Remote(document, null).needsUpload(imported))
+    }
+
     private fun client(handler: (Request) -> Pair<Int, String>) = GoogleDriveSettingsClient(
         OkHttpClient.Builder().addInterceptor { chain ->
             val (status, body) = handler(chain.request())

@@ -1,6 +1,7 @@
 package com.opendictate.app.data
 
 import android.content.Context
+import android.os.SystemClock
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -33,13 +34,14 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutex = Mutex()
     private var generation = 0
+    private var schedule = SettingsSyncSchedule()
     private val mutableState = MutableStateFlow(DriveSyncState(enabled = settings.driveSyncEnabled))
     val state = mutableState.asStateFlow()
     private var changeJob: kotlinx.coroutines.Job? = null
     private val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key in setOf("prompt", "model", "live_model_id", "accurate_model_id", "transformation_model_id")) {
-            changeJob?.cancel()
-            changeJob = scope.launch { delay(1500); sync() }
+        if (key == "sync_local_revision" && settings.driveSyncEnabled) {
+            schedule.changed(SystemClock.elapsedRealtime())
+            pump()
         }
     }
 
@@ -47,19 +49,21 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
         // Seed before the first local edit, including migration from the original five fields.
         runCatching { settings.syncDocument() }
         context.getSharedPreferences("opendictate_settings", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(listener)
-        scope.launch { while (true) { sync(); delay(60_000) } }
+        scope.launch { while (true) { requestSync(); delay(60_000) } }
     }
 
     fun connect(token: String) {
         settings.driveSyncEnabled = true
         mutableState.value = DriveSyncState(enabled = true)
-        scope.launch { performSync(token) }
+        schedule.refresh()
+        pump(token)
     }
 
     fun disconnect() {
         generation++
         settings.driveSyncEnabled = false
         changeJob?.cancel()
+        schedule = SettingsSyncSchedule()
         mutableState.value = DriveSyncState()
     }
 
@@ -67,17 +71,32 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
         mutableState.value = mutableState.value.copy(busy = false, failed = true, needsAuthorization = true)
     }
 
-    fun requestSync() { scope.launch { sync() } }
-
-    fun replacementsChanged() {
-        settings.recordReplacementChange()
-        changeJob?.cancel()
-        changeJob = scope.launch { delay(1500); sync() }
+    fun requestSync() {
+        if (!settings.driveSyncEnabled) return
+        schedule.refresh()
+        pump()
     }
 
-    private suspend fun sync() {
-        if (!settings.driveSyncEnabled || mutex.isLocked) return
-        performSync(null)
+    fun replacementsChanged() { settings.recordReplacementChange() }
+
+    private fun pump(suppliedToken: String? = null) {
+        if (!settings.driveSyncEnabled || mutex.isLocked || schedule.busy) return
+        changeJob?.cancel()
+        val now = SystemClock.elapsedRealtime()
+        if (!schedule.begin(now)) {
+            schedule.delayUntilReady(now)?.let { wait ->
+                changeJob = scope.launch { delay(wait); pump() }
+            }
+            return
+        }
+        val run = generation
+        scope.launch {
+            try { performSync(suppliedToken) }
+            finally {
+                if (generation == run) schedule.finish()
+                pump()
+            }
+        }
     }
 
     private suspend fun performSync(suppliedToken: String?) = mutex.withLock {
@@ -97,12 +116,21 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
             val accessToken = token ?: throw DriveSyncException(401)
             val remote = client.download(accessToken, settings.syncDeviceId)
             if (runGeneration != generation) return@withLock
+            // A pull must not publish an unfinished dictionary edit made during the download.
+            if (schedule.hasPendingChange) {
+                schedule.refresh()
+                mutableState.value = mutableState.value.copy(busy = false)
+                return@withLock
+            }
             val merged = settings.mergeSyncDocument(remote.document, replacements)
             // Refresh open editors as soon as incoming preferences apply, before the upload suspends.
             mutableState.value = mutableState.value.copy(settingsRevision = mutableState.value.settingsRevision + 1)
             if (runGeneration != generation) return@withLock
-            client.upload(accessToken, settings.syncDeviceId, remote.ownFileId, merged)
-            if (runGeneration == generation) mutableState.value = DriveSyncState(enabled = true, lastSyncedAt = System.currentTimeMillis())
+            if (remote.needsUpload(merged)) {
+                client.upload(accessToken, settings.syncDeviceId, remote.ownFileId, merged)
+            }
+            if (runGeneration == generation) mutableState.value = mutableState.value.copy(enabled = true, busy = false, failed = false,
+                needsAuthorization = false, lastSyncedAt = System.currentTimeMillis())
         } catch (error: Exception) {
             if (error is CancellationException) throw error
             if (error is DriveSyncException && error.status == 401) token?.let {
