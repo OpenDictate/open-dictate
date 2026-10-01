@@ -63,9 +63,17 @@ struct RecordingStatusView: View {
     }
 
     static let scale: CGFloat = 1.25
+    private static let waveformSize = NSSize(width: 50, height: 18)
+    private static let spinnerSize = NSSize(width: 22, height: 22)
 
     static func size(phase: AppModel.Phase, style: RecordingIndicatorStyle) -> NSSize {
-        NSSize(width: (style == .waveform ? 50 : (phase.showsFinishControl ? 44 : 22)) * scale, height: 22 * scale)
+        let size: NSSize
+        if !phase.showsFinishControl {
+            size = spinnerSize
+        } else {
+            size = style == .waveform ? waveformSize : NSSize(width: 44, height: 22)
+        }
+        return NSSize(width: size.width * scale, height: size.height * scale)
     }
 
     var body: some View {
@@ -88,7 +96,7 @@ struct RecordingStatusView: View {
                 .fixedSize()
             } else {
                 ProgressView().progressViewStyle(.circular).controlSize(.mini)
-                    .frame(width: 22, height: 22)
+                    .frame(width: Self.spinnerSize.width, height: Self.spinnerSize.height)
                     .accessibilityLabel(isRussian ? "Распознавание" : "Transcribing")
             }
         }
@@ -109,11 +117,11 @@ struct RecordingStatusView: View {
         Group {
             if phase.showsFinishControl {
                 WaveformBars(samples: audioLevels.history.samples)
-                    .frame(width: 50, height: 22)
+                    .frame(width: Self.waveformSize.width, height: Self.waveformSize.height)
                     .overlay { finishControl }
             } else {
                 ProgressView().progressViewStyle(.circular).controlSize(.mini)
-                    .frame(width: 50, height: 22)
+                    .frame(width: Self.spinnerSize.width, height: Self.spinnerSize.height)
                     .accessibilityLabel(isRussian ? "Распознавание" : "Transcribing")
             }
         }
@@ -128,7 +136,7 @@ struct WaveformBars: View {
         HStack(spacing: 1.5) {
             ForEach(samples.indices, id: \.self) { index in
                 Capsule().fill(Color.white)
-                    .frame(width: 1.5, height: 2 + 8 * CGFloat(sqrt(samples[index])))
+                    .frame(width: 1.5, height: 2 + 12 * CGFloat(sqrt(samples[index])))
             }
         }
         .animation(reduceMotion ? nil : .linear(duration: 0.04), value: samples)

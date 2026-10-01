@@ -1,4 +1,9 @@
-OpenDictate for macOS **0.2.0-rc.13** adds a searchable, multilingual dictation picker. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.14** makes the waveform recording indicator more expressive and compacts the transcription spinner. Requires macOS 14+ on Apple Silicon or Intel.
+
+- **Waveform indicator:** louder audio produces taller bars, with a 50% larger height range and tighter vertical padding during preparation and recording.
+- **Transcription indicator:** the waveform capsule shrinks to a circle around the native spinner, restoring its original vertical spacing.
+
+Includes the multilingual picker from rc.13:
 
 - **Speech languages** now offers 64 languages with checkboxes. Select several without closing the list, search by English, Russian or native name (or language code), and choose **Automatic detection** to clear all hints.
 - Language choices save automatically, apply to both Live and Accurate, and preserve the previous Automatic, Russian, English, Ukrainian and Russian + English settings on upgrade.
@@ -18,7 +23,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.13-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.14-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

@@ -1,5 +1,27 @@
 # macOS verification
 
+## 0.2.0-rc.14 — waveform height and circular processing indicator
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- All 98 Swift tests pass. Production-view raster tests verify ten bars, a
+  2.5–17.5 pt level range, symmetric 2.5 pt maximum-level vertical insets,
+  and the 27.5 × 27.5 pt circular processing background. Panel tests cover
+  preparation → processing → recording → idle, mouse-event exclusion while
+  processing, and unchanged foreground process/key window through resizing.
+- The isolated, network-free native HUD preview showed the shorter waveform
+  capsule and switched to the circular spinner when its finish control was
+  clicked. No microphone capture or OpenAI request was used for this preview.
+- Android debug tests/lint/assembly and release lint/assembly pass.
+- Universal arm64/x86_64 packaging, ad-hoc signature, DMG integrity and release
+  version validation pass. Displayed version is 0.2.0-rc.14, numeric bundle
+  version 0.2.0, build 15. The release is not notarized.
+
+This change only adjusts HUD geometry. Physical global hotkeys, permission
+changes, secure fields, cursor edits, field delivery, provider access, Spaces,
+full-screen apps and Intel/macOS 14 hardware were not re-exercised; the
+existing smoke-check evidence and compatibility limits below still apply.
+
 ## 0.2.0-rc.12 — universal final clipboard insertion
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

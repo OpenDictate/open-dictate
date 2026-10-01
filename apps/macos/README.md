@@ -40,13 +40,15 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   history searches use structured Responses output with `store: false`.
 - `RecordingIndicator` owns a nonactivating panel that cannot become key/main.
   Settings choose Microphone (the existing 55 × 27.5 pt finish control) or Waveform
-  (a black 62.5 × 27.5 pt capsule with ten white level bars). New input appears on
+  (a black 62.5 × 22.5 pt capsule with ten white level bars, ranging from
+  2.5 pt in silence to 17.5 pt at full level, with 2.5 pt vertical insets). New input appears on
   the right and older levels move left, using the existing 40 ms microphone
   level callbacks. Only ten normalized RMS levels live in memory and are cleared
   on every session exit. The HUD alone observes those updates, without rebuilding
   menu state. Click the red button or waveform capsule to stop/submit without
   moving focus. Preparation already offers the finish action; processing shows
-  a native spinner (27.5 × 27.5 pt for Microphone, 62.5 × 27.5 pt for Waveform).
+  a native spinner in a 27.5 × 27.5 pt circle for either style, restoring
+  the original vertical spacing around the spinner.
 - The HUD never takes keyboard focus. Changing fields, typing, changing the
   caret, revoking Accessibility or sleeping detaches/stops a recording.
   Final results remain available to copy, without insertion into a new field.
