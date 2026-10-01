@@ -8,7 +8,7 @@ import org.junit.Test
 class DictationStateTest {
     @Test
     fun `accurate cancellation does not restore text while recording or processing`() {
-        for (phase in listOf(DictationPhase.LISTENING, DictationPhase.PROCESSING)) {
+        for (phase in listOf(DictationPhase.LISTENING, DictationPhase.PROCESSING, DictationPhase.CORRECTING_PUNCTUATION)) {
             val state = DictationState(
                 sessionId = 42L,
                 phase = phase,
@@ -17,6 +17,17 @@ class DictationStateTest {
 
             assertFalse(state.shouldRestoreTextOnCancellation())
         }
+    }
+
+    @Test
+    fun `punctuation correction remains active processing and accepts completion and cancellation`() {
+        val state = DictationState(sessionId = 42L, phase = DictationPhase.CORRECTING_PUNCTUATION,
+            model = TranscriptionModel.ACCURATE)
+        assertTrue(state.isActive)
+        assertTrue(state.phase.isProcessing)
+        assertTrue(state.acceptsActiveUpdate(42L))
+        assertTrue(state.acceptsCancellation(42L))
+        assertFalse(state.acceptsActiveUpdate(41L))
     }
 
     @Test
