@@ -278,10 +278,11 @@ private class OverlayPrimaryActionView(
     private fun updateContentDescription() {
         contentDescription = context.getString(
             when {
-                phase == DictationPhase.PROCESSING &&
+                phase.isProcessing &&
                     operation == DictationOperation.TRANSFORMATION ->
                     R.string.overlay_transforming_description
-                phase == DictationPhase.PROCESSING -> R.string.overlay_processing_description
+                phase == DictationPhase.CORRECTING_PUNCTUATION -> R.string.overlay_correcting_punctuation_description
+                phase.isProcessing -> R.string.overlay_processing_description
                 isActionActive() && operation == DictationOperation.TRANSFORMATION ->
                     R.string.overlay_active_transformation_description
                 isActionActive() -> R.string.overlay_active_dictation_description
@@ -314,7 +315,7 @@ private class OverlayPrimaryActionView(
                 closeIcon,
                 if (cancelArmed) Color.WHITE else Color.rgb(8, 8, 8),
             )
-            phase == DictationPhase.PROCESSING -> drawSpinner(canvas)
+            phase.isProcessing -> drawSpinner(canvas)
             active -> drawIcon(canvas, stopIcon, activeColor())
             menuExpanded -> drawIcon(canvas, closeIcon, dictationColor)
             else -> drawIcon(canvas, idleIcon, dictationColor)
@@ -543,9 +544,7 @@ private class OverlayPrimaryActionView(
             R.string.overlay_cancel_dictation
         }
 
-    private fun isActionActive(): Boolean = phase == DictationPhase.CONNECTING ||
-        phase == DictationPhase.LISTENING ||
-        phase == DictationPhase.PROCESSING
+    private fun isActionActive(): Boolean = phase.isActive
 
     private fun activeColor(): Int = if (operation == DictationOperation.TRANSFORMATION) {
         transformationColor

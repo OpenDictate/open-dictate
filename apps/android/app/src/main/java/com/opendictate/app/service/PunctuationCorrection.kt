@@ -17,7 +17,8 @@ object PunctuationCorrection {
         "boundaries. Return the corrected text in transformed_text and null in message, without commentary."
     private const val EDITABLE = ".,!?;:…—–()[]{}\"'«»“”„‘’"
     private val numbers = Regex("[+-]?(?:[.,]\\p{N}+|\\p{N}+(?:[.,:/]\\p{N}+)*)")
-    private val whitespace = Regex("(?U)\\s+")
+    // Android ICU rejects Java's inline (?U) flag; list Unicode whitespace explicitly.
+    private val whitespace = Regex("[\\s\\p{Z}\\u0085]+")
 
     fun validated(candidate: String, source: String): String {
         val trimmed = candidate.trim()

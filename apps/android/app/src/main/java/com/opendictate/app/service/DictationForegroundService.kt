@@ -257,9 +257,7 @@ class DictationForegroundService : Service() {
                     modelMessage = transformation.message
                     transformation.text
                 } else {
-                    val corrected = PunctuationCorrection.apply(transcript, accuratePunctuationEnabled, model) {
-                        apiClient.correctPunctuation(apiKey, transcript)
-                    }
+                    val corrected = correctPunctuation(sessionId, transcript, accuratePunctuationEnabled, model, operation, apiKey)
                     replacements.apply(TranscriptFormatter.formatFinal(corrected, keepTrailingPeriod))
                 }
                 if (result.isBlank()) {
@@ -354,9 +352,7 @@ class DictationForegroundService : Service() {
                 if (transcript.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_speech_not_recognized))
                 }
-                val corrected = PunctuationCorrection.apply(transcript, accuratePunctuationEnabled, model) {
-                    apiClient.correctPunctuation(apiKey, transcript)
-                }
+                val corrected = correctPunctuation(sessionId, transcript, accuratePunctuationEnabled, model, DictationOperation.DICTATION, apiKey)
                 val result = replacements.apply(TranscriptFormatter.formatFinal(corrected, keepTrailingPeriod))
                 val completed = publishWhileActive(
                     sessionId,
@@ -398,10 +394,30 @@ class DictationForegroundService : Service() {
         }
     }
 
+    private suspend fun correctPunctuation(
+        sessionId: Long,
+        transcript: String,
+        enabled: Boolean,
+        model: TranscriptionModel,
+        operation: DictationOperation,
+        apiKey: String,
+    ): String = PunctuationCorrection.apply(transcript, enabled, model) {
+        publishWhileActive(
+            sessionId,
+            DictationState(
+                sessionId = sessionId,
+                phase = DictationPhase.CORRECTING_PUNCTUATION,
+                operation = operation,
+                model = model,
+            ),
+        )
+        apiClient.correctPunctuation(apiKey, transcript)
+    }
+
     private fun requestStop() {
         stopSignal.complete(Unit)
         val state = DictationStateBus.state.value
-        if (state.isActive) {
+        if (state.isActive && !state.phase.isProcessing) {
             DictationStateBus.set(state.copy(phase = DictationPhase.PROCESSING))
             updateNotification(true, activeOperation)
         }

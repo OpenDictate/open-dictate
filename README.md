@@ -101,6 +101,17 @@ Android requires JDK 17+ and Android SDK 37. The root wrapper forwards to
 ./gradlew lintRelease assembleRelease
 ```
 
+Run the punctuation/runtime and native Accessibility delivery checks on a fresh
+emulator debug installation (without an API key):
+
+```bash
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.opendictate.app.service.PunctuationRuntimeTest,com.opendictate.app.service.DictationDeliveryTest
+```
+
+These checks use synthetic provider results, verify Android regex compatibility,
+text insertion, punctuation progress animation and cancellation, and make no
+OpenAI requests. The editor fixture is included only in debug builds.
+
 APKs are under `apps/android/app/build/outputs/apk/`.
 Release signing requires the environment variables listed below.
 

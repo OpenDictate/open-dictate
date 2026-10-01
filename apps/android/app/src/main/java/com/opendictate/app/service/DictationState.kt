@@ -9,8 +9,15 @@ enum class DictationPhase {
     CONNECTING,
     LISTENING,
     PROCESSING,
+    CORRECTING_PUNCTUATION,
     COMPLETED,
-    ERROR,
+    ERROR;
+
+    val isProcessing: Boolean
+        get() = this == PROCESSING || this == CORRECTING_PUNCTUATION
+
+    val isActive: Boolean
+        get() = this == CONNECTING || this == LISTENING || isProcessing
 }
 
 enum class DictationOperation {
@@ -31,9 +38,7 @@ data class DictationState(
     }
 
     val isActive: Boolean
-        get() = phase == DictationPhase.CONNECTING ||
-            phase == DictationPhase.LISTENING ||
-            phase == DictationPhase.PROCESSING
+        get() = phase.isActive
 
     internal fun acceptsActiveUpdate(sessionId: Long): Boolean =
         this.sessionId == sessionId && isActive
