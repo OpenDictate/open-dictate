@@ -44,9 +44,9 @@ class PunctuationCorrectionTest {
         } catch (_: CancellationException) { }
     }
 
-    @Test fun `final period preference is applied after correction`() = runTest {
-        val corrected = PunctuationCorrection.apply("привет мир", true, TranscriptionModel.ACCURATE) { "Привет, мир." }
-        assertEquals("Привет, мир", TranscriptFormatter.formatFinal(corrected, false))
-        assertEquals("Привет, мир.", TranscriptFormatter.formatFinal(corrected, true))
+    @Test fun `correction preserves the provider punctuation without a final period override`() = runTest {
+        for (result in listOf("Привет, мир.", "Привет, мир", "Привет, мир!")) {
+            assertEquals(result, PunctuationCorrection.apply("привет мир", true, TranscriptionModel.ACCURATE) { result })
+        }
     }
 }

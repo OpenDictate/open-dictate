@@ -67,7 +67,7 @@ class ReplacementSyncTest {
     @Test fun onlyActualLocalChangesIncrementSyncRevisionAndImportsNeverDo() = scoped { context, settings, store ->
         val prefs = context.getSharedPreferences("opendictate_settings", Context.MODE_PRIVATE)
         fun revision() = prefs.getLong("sync_local_revision", 0)
-        settings.keepTrailingPeriod = !settings.keepTrailingPeriod
+        settings.transformationButtonEnabled = !settings.transformationButtonEnabled
         settings.prompt = settings.prompt
         assertEquals(0L, revision())
         settings.prompt = "Local edit"

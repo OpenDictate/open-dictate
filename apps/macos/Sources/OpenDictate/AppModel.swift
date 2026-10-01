@@ -55,7 +55,6 @@ final class AppModel: ObservableObject {
         let context: TranscriptionContext
         let textModel: String
         let accuratePunctuationEnabled: Bool
-        let keepTrailingPeriod: Bool
         let timeout: Int
         let replacements: WordReplacementEngine
         let started = Date()
@@ -76,7 +75,7 @@ final class AppModel: ObservableObject {
             mode = transform ? .accurate : preferences.mode
             context = preferences.context; textModel = preferences.textModel
             accuratePunctuationEnabled = preferences.accuratePunctuationEnabled
-            keepTrailingPeriod = preferences.keepTrailingPeriod; timeout = preferences.timeout
+            timeout = preferences.timeout
         }
     }
 
@@ -316,7 +315,7 @@ final class AppModel: ObservableObject {
                 try Task.checkCancellation()
                 guard current?.id == session.id else { return }
             } else { corrected = transcript }
-            var result = TranscriptFormatter.format(corrected, keepTrailingPeriod: session.keepTrailingPeriod)
+            var result = TranscriptFormatter.format(corrected)
             if session.transform && !localOnly {
                 guard !result.isEmpty else { throw DictationError.tooShort }
                 let (transformed, responseMessage) = try await client.transform(source: session.target.snapshot.selectedText,

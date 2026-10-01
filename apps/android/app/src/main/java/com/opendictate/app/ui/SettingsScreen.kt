@@ -48,7 +48,6 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.SettingsAccessibility
-import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.UnfoldMore
@@ -220,15 +219,14 @@ internal fun SettingsScreen(
                         onSelect = if (live) viewModel::selectLiveModel else viewModel::selectAccurateModel,
                     )
                     SettingsDivider()
-                    ToggleRow(Icons.Outlined.AutoFixHigh, stringResource(R.string.accurate_punctuation_title),
-                        stringResource(R.string.accurate_punctuation_subtitle), state.accuratePunctuationEnabled,
-                        viewModel::setAccuratePunctuationEnabled, enabled = !dictation.isActive)
-                    SettingsDivider()
+                    if (!live) {
+                        ToggleRow(Icons.Outlined.AutoFixHigh, stringResource(R.string.accurate_punctuation_title),
+                            stringResource(R.string.accurate_punctuation_subtitle), state.accuratePunctuationEnabled,
+                            viewModel::setAccuratePunctuationEnabled, enabled = !dictation.isActive)
+                        SettingsDivider()
+                    }
                     ActionRow(Icons.Outlined.Language, stringResource(R.string.dictation_languages_title),
                         state.languages.summary(), { languagesOpen = true })
-                    SettingsDivider()
-                    ToggleRow(Icons.Outlined.TextFields, stringResource(R.string.trailing_period_title),
-                        stringResource(R.string.trailing_period_subtitle), state.keepTrailingPeriod, viewModel::setKeepTrailingPeriod)
                     SettingsDivider()
                     ActionRow(Icons.Outlined.AutoFixHigh, stringResource(R.string.replacements_title),
                         stringResource(R.string.replacements_summary), { replacementsOpen = true })

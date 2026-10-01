@@ -15,7 +15,6 @@ final class Preferences: ObservableObject {
     @Published var interfaceLanguage: String { didSet { defaults.set(interfaceLanguage, forKey: "interfaceLanguage") } }
     @Published var dictionary: String { didSet { defaults.set(dictionary, forKey: "dictionary"); recordSyncChange() } }
     @Published var accuratePunctuationEnabled: Bool { didSet { defaults.set(accuratePunctuationEnabled, forKey: "accuratePunctuationEnabled") } }
-    @Published var keepTrailingPeriod: Bool { didSet { defaults.set(keepTrailingPeriod, forKey: "keepTrailingPeriod") } }
     @Published var saveHistory: Bool { didSet { defaults.set(saveHistory, forKey: "saveHistory") } }
     @Published var shortcuts: ShortcutBindings {
         didSet { if let data = try? JSONEncoder().encode(shortcuts) { defaults.set(data, forKey: "shortcuts") } }
@@ -56,7 +55,6 @@ final class Preferences: ObservableObject {
         interfaceLanguage = defaults.string(forKey: "interfaceLanguage") ?? "auto"
         dictionary = defaults.string(forKey: "dictionary") ?? "OpenDictate"
         accuratePunctuationEnabled = defaults.bool(forKey: "accuratePunctuationEnabled")
-        keepTrailingPeriod = defaults.object(forKey: "keepTrailingPeriod") as? Bool ?? true
         saveHistory = defaults.object(forKey: "saveHistory") as? Bool ?? true
         if let data = defaults.data(forKey: "shortcuts"),
            let saved = try? JSONDecoder().decode(ShortcutBindings.self, from: data), saved.isValid {

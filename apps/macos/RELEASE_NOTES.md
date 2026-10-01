@@ -1,15 +1,15 @@
-OpenDictate for macOS **0.2.0-rc.23** makes Accurate punctuation correction a per-device preference. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.24** simplifies punctuation settings. Requires macOS 14+ on Apple Silicon or Intel.
 
-- Correct punctuation in Accurate is saved only on this Mac and no longer syncs with Android through Google Drive.
-- Your existing choice is preserved. Older cloud replicas cannot change it; changing the switch does not trigger an upload.
-- Settings now explain that this preference stays on the current device.
+- Correct punctuation is off by default and appears only in Accurate mode, with a shorter explanation.
+- The final-period setting has been removed. Transcription and correction results retain their punctuation without a separate period override.
+- Punctuation correction stays device-local; existing choices are preserved and never sync through Google Drive.
 - Retains dictation across window changes, final clipboard delivery and the waveform indicator.
 
 This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.23-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.24-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 
