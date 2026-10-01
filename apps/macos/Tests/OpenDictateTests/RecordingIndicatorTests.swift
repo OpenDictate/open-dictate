@@ -16,7 +16,7 @@ final class RecordingIndicatorTests: XCTestCase {
             let panel = try XCTUnwrap(application.windows.first {
                 $0.title == "OpenDictate recording indicator" && $0.isVisible
             } as? NSPanel)
-            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 28))
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 23))
             XCTAssertFalse(panel.canBecomeKey)
             XCTAssertFalse(panel.canBecomeMain)
             XCTAssertFalse(panel.ignoresMouseEvents)
@@ -25,7 +25,13 @@ final class RecordingIndicatorTests: XCTestCase {
             indicator.show(phase: .processing, style: .waveform, audioLevels: RecordingAudioLevels(),
                            isRussian: false, finish: {})
             XCTAssertTrue(panel.ignoresMouseEvents)
-            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 28))
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 28, height: 28))
+            indicator.show(phase: .recording, style: .waveform, audioLevels: RecordingAudioLevels(),
+                           isRussian: false, finish: {})
+            XCTAssertEqual(panel.contentLayoutRect.size, NSSize(width: 63, height: 23))
+            XCTAssertFalse(panel.ignoresMouseEvents)
+            XCTAssertTrue(application.keyWindow === originalKeyWindow)
+            XCTAssertEqual(NSWorkspace.shared.frontmostApplication?.processIdentifier, originalProcess)
             indicator.show(phase: .idle, style: .waveform, audioLevels: RecordingAudioLevels(),
                            isRussian: false, finish: {})
             XCTAssertFalse(panel.isVisible)
@@ -78,7 +84,7 @@ final class RecordingIndicatorTests: XCTestCase {
             let levels = RecordingAudioLevels()
             let quiet = try render(.preparing, style: .waveform, levels: levels)
             XCTAssertEqual(quiet.pixelsWide, 63)
-            XCTAssertEqual(quiet.pixelsHigh, 28)
+            XCTAssertEqual(quiet.pixelsHigh, 23)
             XCTAssertNil(redBounds(quiet))
             let quietBars = whiteBars(quiet)
             XCTAssertEqual(quietBars.count, 10)
@@ -87,8 +93,26 @@ final class RecordingIndicatorTests: XCTestCase {
             let loudBars = whiteBars(loud)
             XCTAssertEqual(loudBars.count, 10)
             XCTAssertEqual(Array(loudBars.dropLast()), Array(quietBars.dropLast()))
-            XCTAssertGreaterThan(try XCTUnwrap(loudBars.last).height, try XCTUnwrap(quietBars.last).height + 5)
-            XCTAssertEqual(RecordingStatusView.size(phase: .processing, style: .waveform), NSSize(width: 62.5, height: 27.5))
+            let loudBar = try XCTUnwrap(loudBars.last)
+            XCTAssertGreaterThan(loudBar.height, try XCTUnwrap(quietBars.last).height + 12)
+            XCTAssertEqual(loudBar.height, 17.5, accuracy: 1)
+            XCTAssertEqual(loudBar.minY, 2.5, accuracy: 1)
+            XCTAssertEqual(CGFloat(loud.pixelsHigh) - loudBar.maxY, 2.5, accuracy: 1)
+        }
+    }
+
+    func testWaveformProcessingShrinksToCircleWithRestoredVerticalSpace() async throws {
+        try await MainActor.run {
+            let image = try render(.processing, style: .waveform)
+            XCTAssertEqual(RecordingStatusView.size(phase: .processing, style: .waveform),
+                           NSSize(width: 27.5, height: 27.5))
+            XCTAssertEqual(image.pixelsWide, 28)
+            XCTAssertEqual(image.pixelsHigh, 28)
+            for (x, y) in [(0, 0), (27, 0), (0, 27), (27, 27)] {
+                XCTAssertLessThan(try XCTUnwrap(image.colorAt(x: x, y: y)).alphaComponent, 0.1)
+            }
+            XCTAssertGreaterThan(try XCTUnwrap(image.colorAt(x: 14, y: 2)).alphaComponent, 0.9)
+            XCTAssertGreaterThan(try XCTUnwrap(image.colorAt(x: 2, y: 14)).alphaComponent, 0.9)
         }
     }
 
@@ -119,7 +143,7 @@ final class RecordingIndicatorTests: XCTestCase {
         var bars = [CGRect]()
         for x in 10..<(image.pixelsWide - 10) {
             var column: CGRect?
-            for y in 5..<(image.pixelsHigh - 5) {
+            for y in 2..<(image.pixelsHigh - 2) {
                 guard let color = image.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
                       min(color.redComponent, color.greenComponent, color.blueComponent) > 0.5 else { continue }
                 let pixel = CGRect(x: x, y: y, width: 1, height: 1)
