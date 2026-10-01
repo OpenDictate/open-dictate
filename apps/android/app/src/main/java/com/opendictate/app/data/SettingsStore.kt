@@ -14,6 +14,7 @@ import com.opendictate.app.model.preferredModelId
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+    private val replacementPrefs = context.getSharedPreferences("word_replacements", Context.MODE_PRIVATE)
 
     var theme: AppTheme
         get() = AppTheme.fromStored(prefs.getString(KEY_THEME, null))
@@ -126,33 +127,46 @@ class SettingsStore(context: Context) {
             }
         }
 
-    private fun syncValues() = mapOf(
+    private fun syncValues(): Map<String, String> {
+        val replacements = replacementPrefs.getString("document", null) ?: "{\"schemaVersion\":1,\"rules\":[]}"
+        ReplacementDocument.fromJson(replacements)
+        return mapOf(
         "dictionary" to prefs.getString(KEY_PROMPT, DEFAULT_PROMPT).orEmpty(), "mode" to model.name.lowercase(),
         "liveModel" to prefs.getString(KEY_LIVE_MODEL_ID, ModelCatalog.DEFAULT.live.first()).orEmpty(),
         "accurateModel" to prefs.getString(KEY_ACCURATE_MODEL_ID, ModelCatalog.DEFAULT.accurate.first()).orEmpty(),
         "textModel" to prefs.getString(KEY_TRANSFORMATION_MODEL_ID, transformationModel.apiName).orEmpty(),
-    )
+        "wordReplacements" to replacements,
+        "wordReplacementsEnabled" to replacementPrefs.getBoolean("enabled", true).toString(),
+        ).also { values -> require(values.values.all { it.toByteArray().size <= 262_144 }) }
+    }
 
     fun syncDocument(): SettingsSyncDocument = synchronized(SYNC_LOCK) {
         val stored = prefs.getString("sync_document", null)
-        if (stored != null) SettingsSyncDocument.fromJson(stored)
-        else SettingsSyncDocument().record(syncValues(), syncDeviceId, 0, seed = true).also {
+        val document = stored?.let(SettingsSyncDocument::fromJson) ?: SettingsSyncDocument()
+        document.record(syncValues().filterKeys { it !in document.entries }, syncDeviceId, 0, seed = true).also {
             prefs.edit { putString("sync_document", it.toJson()) }
         }
     }
 
     private fun saveSynced(update: android.content.SharedPreferences.Editor.() -> Unit) = synchronized(SYNC_LOCK) {
         // A damaged sync journal must not prevent ordinary local settings edits.
-        val previous = runCatching { syncDocument() }.getOrNull()
+        val previous = runCatching {
+            prefs.getString("sync_document", null)?.let(SettingsSyncDocument::fromJson) ?: syncDocument()
+        }.getOrNull()
         prefs.edit { update() }
         if (previous != null) {
-            val document = previous.record(syncValues(), syncDeviceId, System.currentTimeMillis())
-            prefs.edit { putString("sync_document", document.toJson()) }
+            runCatching {
+                val document = previous.record(syncValues(), syncDeviceId, System.currentTimeMillis())
+                SettingsSyncDocument.fromJson(document.toJson())
+                prefs.edit { putString("sync_document", document.toJson()) }
+            }
         }
     }
 
     /** Called after all downloads succeed. Includes edits made while the network was suspended. */
-    fun mergeSyncDocument(remote: SettingsSyncDocument): SettingsSyncDocument = synchronized(SYNC_LOCK) {
+    fun recordReplacementChange() { saveSynced {} }
+
+    fun mergeSyncDocument(remote: SettingsSyncDocument, replacements: ReplacementStore): SettingsSyncDocument = synchronized(SYNC_LOCK) {
         val merged = syncDocument().merge(remote).promoteSeeds(syncDeviceId, System.currentTimeMillis())
         SettingsSyncDocument.fromJson(merged.toJson())
         val values = merged.entries
@@ -160,6 +174,11 @@ class SettingsStore(context: Context) {
         listOf("liveModel", "accurateModel", "textModel").forEach { key ->
             values[key]?.value?.let { require(it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"))) }
         }
+        val replacementJSON = values["wordReplacements"]?.value
+        replacementJSON?.let(ReplacementDocument::fromJson)
+        val enabled = values["wordReplacementsEnabled"]?.value
+        require(enabled in listOf(null, "true", "false"))
+        if (replacementJSON != null || enabled != null) replacements.applySync(replacementJSON, enabled?.toBooleanStrict())
         prefs.edit {
             values["dictionary"]?.let { putString(KEY_PROMPT, it.value) }
             values["mode"]?.let { putString(KEY_MODEL, it.value.uppercase()) }

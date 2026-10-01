@@ -1,5 +1,27 @@
 # macOS verification
 
+## 0.2.0-rc.10 — Google Drive settings and replacement synchronization
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
+
+- 85 Swift tests cover settings convergence and bounded wire data, replacement
+  import/edit/deletion, individual/master enabled states, journal migration,
+  preservation of active-session rules, invalid-data rejection and recovery
+  after reducing oversized settings. Both platforms read a shared JSON fixture.
+- Android passes 135 JVM tests, debug/release lint and assembly. Five isolated
+  storage/synchronization tests pass on an API 36 emulator; they do not grant
+  Google account access or edit the user's settings.
+- The original local macOS sync build completed real Desktop OAuth sign-in and
+  initial/repeat synchronization with the configured test account. Cross-device
+  Google synchronization still needs a signed Android device using that account.
+- Universal arm64/x86_64 packaging, ad-hoc signature, DMG integrity and SHA-256
+  pass. The displayed release version is 0.2.0-rc.10, numeric bundle version
+  0.2.0 and build 11. The release is not notarized.
+
+Provider access, physical hotkeys and the hardware/permissions/Spaces limitations
+below remain manual compatibility checks. Replacement changes do not alter audio,
+Accessibility delivery, hotkey registration or voice editing behavior.
+
 ## 0.2.0-rc.6 — selectable waveform indicator
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.

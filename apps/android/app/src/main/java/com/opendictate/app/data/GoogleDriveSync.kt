@@ -26,7 +26,7 @@ data class DriveSyncState(val enabled: Boolean = false, val busy: Boolean = fals
     val settingsRevision: Long = 0)
 
 /** Process-owned: includes dictionary edits from the share and selection activities. */
-class GoogleDriveSync(context: Context) {
+class GoogleDriveSync(context: Context, private val replacements: ReplacementStore) {
     private val settings = SettingsStore(context)
     private val authorization = Identity.getAuthorizationClient(context)
     private val client = GoogleDriveSettingsClient()
@@ -44,6 +44,8 @@ class GoogleDriveSync(context: Context) {
     }
 
     init {
+        // Seed before the first local edit, including migration from the original five fields.
+        runCatching { settings.syncDocument() }
         context.getSharedPreferences("opendictate_settings", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(listener)
         scope.launch { while (true) { sync(); delay(60_000) } }
     }
@@ -67,6 +69,12 @@ class GoogleDriveSync(context: Context) {
 
     fun requestSync() { scope.launch { sync() } }
 
+    fun replacementsChanged() {
+        settings.recordReplacementChange()
+        changeJob?.cancel()
+        changeJob = scope.launch { delay(1500); sync() }
+    }
+
     private suspend fun sync() {
         if (!settings.driveSyncEnabled || mutex.isLocked) return
         performSync(null)
@@ -89,7 +97,7 @@ class GoogleDriveSync(context: Context) {
             val accessToken = token ?: throw DriveSyncException(401)
             val remote = client.download(accessToken, settings.syncDeviceId)
             if (runGeneration != generation) return@withLock
-            val merged = settings.mergeSyncDocument(remote.document)
+            val merged = settings.mergeSyncDocument(remote.document, replacements)
             // Refresh open editors as soon as incoming preferences apply, before the upload suspends.
             mutableState.value = mutableState.value.copy(settingsRevision = mutableState.value.settingsRevision + 1)
             if (runGeneration != generation) return@withLock

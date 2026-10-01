@@ -152,7 +152,7 @@ final class GoogleDriveAuthorization {
                     connection.cancel(); return
                 }
                 let code = url.queryItems?.first(where: { $0.name == "code" })?.value
-                let html = "<html><body>You can close this window and return to OpenDictate.</body></html>"
+                let html = "<html><head><title>OpenDictate — Google Drive</title></head><body>You can close this window and return to OpenDictate.</body></html>"
                 let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: \(html.utf8.count)\r\n\r\n\(html)"
                 let redirect = "http://127.0.0.1:\(self.listener?.port?.rawValue ?? 0)/"
                 connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in

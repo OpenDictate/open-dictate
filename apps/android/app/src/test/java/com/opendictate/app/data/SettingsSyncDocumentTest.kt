@@ -4,6 +4,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SettingsSyncDocumentTest {
+    @Test fun `shared replacement document imports IDs flags and Unicode and clearing defeats stale replicas`() {
+        val root = generateSequence(java.io.File(requireNotNull(System.getProperty("user.dir")))) { it.parentFile }
+            .first { java.io.File(it, "shared/settings-sync-replacements.json").isFile }
+        val remote = SettingsSyncDocument.fromJson(java.io.File(root, "shared/settings-sync-replacements.json").readText())
+        val seed = SettingsSyncDocument().record(mapOf("wordReplacements" to ReplacementDocument().toJson(),
+            "wordReplacementsEnabled" to "true"), "mac", 0, seed = true)
+        val merged = seed.merge(remote)
+        val rules = ReplacementDocument.fromJson(merged.entries.getValue("wordReplacements").value).rules
+        assertEquals("00000000-0000-0000-0000-000000000001", rules.first().id)
+        assertFalse(rules.last().enabled)
+        assertEquals("OpenDictate 📝 cat", WordReplacementEngine(rules).apply("опен диктейт cat"))
+        val cleared = merged.record(mapOf("wordReplacements" to ReplacementDocument().toJson(),
+            "wordReplacementsEnabled" to "false"), "mac", 50).merge(remote)
+        assertTrue(ReplacementDocument.fromJson(cleared.entries.getValue("wordReplacements").value).rules.isEmpty())
+        assertEquals("false", cleared.entries["wordReplacementsEnabled"]?.value)
+        assertEquals("preserved", cleared.entries["future.preference"]?.value)
+    }
+
+    @Test fun `replacement rules and master switch merge independently`() {
+        val rules = document("wordReplacements", ReplacementDocument().toJson(), 100, "android")
+        val enabled = document("wordReplacementsEnabled", "false", 120, "mac")
+        assertEquals(rules.merge(enabled), enabled.merge(rules))
+        assertEquals("false", rules.merge(enabled).entries["wordReplacementsEnabled"]?.value)
+    }
     private fun document(key: String, value: String, time: Long, device: String) =
         SettingsSyncDocument(mapOf(key to SettingsSyncEntry(value, time, device)))
 

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "entries": {
+    "dictionary": {
+      "value": "OpenDictate",
+      "modifiedAt": 42,
+      "deviceId": "android"
+    },
+    "wordReplacements": {
+      "value": "{\"schemaVersion\":1,\"rules\":[{\"id\":\"00000000-0000-0000-0000-000000000001\",\"source\":\"опен диктейт\",\"replacement\":\"OpenDictate 📝\",\"enabled\":true},{\"id\":\"00000000-0000-0000-0000-000000000002\",\"source\":\"cat\",\"replacement\":\"dog\",\"enabled\":false}]}",
+      "modifiedAt": 42,
+      "deviceId": "android"
+    },
+    "wordReplacementsEnabled": {
+      "value": "true",
+      "modifiedAt": 42,
+      "deviceId": "android"
+    },
+    "future.preference": {
+      "value": "preserved",
+      "modifiedAt": 7,
+      "deviceId": "mac"
+    }
+  }
+}

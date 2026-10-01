@@ -6,12 +6,14 @@ Do not include API keys, recordings, or other sensitive data in public issues.
 Word replacements use literal, case-insensitive matches with Unicode word
 boundaries. Rules are compiled once per dictation, operate only on recognized
 text, and never alter the captured original field or voice-edit instructions.
-Rules stay in device-local preferences; no sync service or new permission is added.
+Rules are applied on-device. Optional Drive sync uses the same app-data scope
+for the rule list and enabled states.
+
 ## Optional Google Drive synchronization
 
 Sync uses Google's HTTPS endpoints without a backend, requests only
-`drive.appdata` and exports an allowlist of dictionary, mode and model settings.
-API keys, audio and history are excluded. Tokens, dictionary contents and raw
+`drive.appdata` and exports an allowlist of dictionary, replacement, mode and model settings.
+API keys, audio and history are excluded. Tokens, dictionary/replacement contents and raw
 provider payloads are never logged. Drive clients disable redirects, cookies and
 persistent caches. Remote data is bounded and validated before application;
 unknown keys survive, while unsupported versions stop sync.

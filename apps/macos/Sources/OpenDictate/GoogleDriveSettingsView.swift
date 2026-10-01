@@ -9,8 +9,8 @@ struct GoogleDriveSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Google Drive").fontWeight(.medium)
-            Text(t("Sync your dictionary, dictation mode and selected models across Android and macOS.",
-                   "Синхронизация словаря, режима диктовки и выбранных моделей между Android и macOS."))
+            Text(t("Sync your dictionary, word replacements, dictation mode and selected models across Android and macOS.",
+                   "Синхронизация словаря, автозамен, режима диктовки и выбранных моделей между Android и macOS."))
                 .font(.callout).foregroundStyle(.secondary)
             if !preferences.driveSyncEnabled || sync.needsSignIn {
                 TextField(t("Desktop OAuth client ID", "ID OAuth-клиента для ПК"), text: $preferences.driveClientID)

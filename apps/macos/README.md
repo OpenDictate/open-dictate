@@ -72,8 +72,9 @@ Each session captures its rules at startup, and history/copy use the same result
 Voice editing instructions and results are not modified. Up to 500 rules, with
 256 UTF-16 units per phrase and 2,048 per replacement.
 
-Rules stay on this device and are separate from dictionary hints sent to OpenAI.
-Synchronization is deferred until Google Drive support is introduced.
+Rules are applied locally and remain separate from dictionary hints sent to OpenAI.
+Connect Google Drive in Settings to sync the rule list, individual rule states and
+the master switch with Android.
 
 ### Appearance
 
@@ -144,8 +145,8 @@ provider access and transcription accuracy; mock tests cannot establish either.
 
 ## Google Drive synchronization
 
-Connect Google Drive in Settings to sync the dictionary, dictation mode and
-selected models with Android. It uses a Desktop OAuth client from the same
+Connect Google Drive in Settings to sync the dictionary, word replacements, dictation
+mode and selected models with Android. It uses a Desktop OAuth client from the same
 Google Cloud project as the Android client, browser sign-in with PKCE and a
 temporary loopback callback listener. OAuth secrets/refresh tokens stay in a
 separate device-only Keychain item. Sync runs while the app is running and never

@@ -6,6 +6,7 @@ import OpenDictateCore
 @MainActor
 final class Preferences: ObservableObject {
     private let defaults: UserDefaults
+    let replacements: ReplacementStore
     @Published var theme: AppTheme { didSet { defaults.set(theme.rawValue, forKey: "theme") } }
     @Published var mode: DictationMode { didSet { defaults.set(mode.rawValue, forKey: "mode"); recordSyncChange() } }
     @Published var speechLanguage: String { didSet { defaults.set(speechLanguage, forKey: "speechLanguage") } }
@@ -32,8 +33,9 @@ final class Preferences: ObservableObject {
     private var applyingSync = false
     private(set) var syncStorageFailed = false
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, replacements: ReplacementStore? = nil) {
         self.defaults = defaults
+        self.replacements = replacements ?? ReplacementStore(defaults: defaults)
         theme = AppTheme(rawValue: defaults.string(forKey: "theme") ?? "") ?? .dark
         syncDeviceID = defaults.string(forKey: "syncDeviceID") ?? UUID().uuidString.lowercased()
         defaults.set(syncDeviceID, forKey: "syncDeviceID")
@@ -59,27 +61,39 @@ final class Preferences: ObservableObject {
         excludedApps = defaults.stringArray(forKey: "excludedApps") ?? []
         showStatus = defaults.object(forKey: "showStatus") as? Bool ?? true
         indicatorStyle = RecordingIndicatorStyle(rawValue: defaults.string(forKey: "indicatorStyle") ?? "") ?? .compact
-        if defaults.data(forKey: "syncDocument") == nil {
-            var seed = SettingsSyncDocument()
-            seed.record(syncValues, deviceId: syncDeviceID, now: 0, seed: true)
-            defaults.set(try? JSONEncoder().encode(seed), forKey: "syncDocument")
+        do {
+            var seed = try defaults.data(forKey: "syncDocument").map(SettingsSyncDocument.decode) ?? SettingsSyncDocument()
+            seed.record(try syncValues.filter { seed.entries[$0.key] == nil }, deviceId: syncDeviceID, now: 0, seed: true)
+            defaults.set(try JSONEncoder().encode(seed), forKey: "syncDocument")
+        } catch { syncStorageFailed = true }
+        self.replacements.onChange = { [weak self] in
+            self?.recordSyncChange()
+            self?.objectWillChange.send()
         }
     }
 
     private var syncValues: [String: String] {
-        ["dictionary": dictionary, "mode": mode.rawValue, "liveModel": liveModel,
-         "accurateModel": accurateModel, "textModel": textModel]
+        get throws {
+            var values = ["dictionary": dictionary, "mode": mode.rawValue, "liveModel": liveModel,
+                          "accurateModel": accurateModel, "textModel": textModel]
+            values.merge(try replacements.syncValues) { _, new in new }
+            guard values.values.allSatisfy({ $0.utf8.count <= 262_144 }) else { throw SyncFormatError.invalid }
+            return values
+        }
     }
     func syncDocument() throws -> SettingsSyncDocument {
-        guard !syncStorageFailed, let data = defaults.data(forKey: "syncDocument") else { throw SyncFormatError.invalid }
+        _ = try syncValues
+        guard let data = defaults.data(forKey: "syncDocument") else { throw SyncFormatError.invalid }
         return try SettingsSyncDocument.decode(data)
     }
     private func recordSyncChange() {
         guard !applyingSync else { return }
         do {
-            var document = try syncDocument()
-            document.record(syncValues, deviceId: syncDeviceID, now: Int64(Date().timeIntervalSince1970 * 1000))
-            defaults.set(try JSONEncoder().encode(document), forKey: "syncDocument")
+            var document = try defaults.data(forKey: "syncDocument").map(SettingsSyncDocument.decode) ?? SettingsSyncDocument()
+            document.record(try syncValues, deviceId: syncDeviceID, now: Int64(Date().timeIntervalSince1970 * 1000))
+            let data = try JSONEncoder().encode(document)
+            _ = try SettingsSyncDocument.decode(data)
+            defaults.set(data, forKey: "syncDocument"); syncStorageFailed = false
         } catch { syncStorageFailed = true }
     }
     func mergeSync(_ remote: SettingsSyncDocument) throws -> SettingsSyncDocument {
@@ -91,10 +105,15 @@ final class Preferences: ObservableObject {
             if let value = merged.entries[key]?.value,
                value.range(of: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", options: .regularExpression) == nil { throw SyncFormatError.invalid }
         }
+        let replacementJSON = merged.entries["wordReplacements"]?.value
+        try replacements.validateSync(json: replacementJSON)
+        let replacementEnabled = merged.entries["wordReplacementsEnabled"]?.value
+        guard replacementEnabled == nil || replacementEnabled == "true" || replacementEnabled == "false" else { throw SyncFormatError.invalid }
         let encoded = try JSONEncoder().encode(merged)
         _ = try SettingsSyncDocument.decode(encoded)
         applyingSync = true
         defer { applyingSync = false }
+        try replacements.applySync(json: replacementJSON, enabled: replacementEnabled.map { $0 == "true" })
         if let value = merged.entries["dictionary"]?.value, dictionary != value { dictionary = value }
         if let value = merged.entries["mode"]?.value, let next = DictationMode(rawValue: value), mode != next { mode = next }
         if let value = merged.entries["liveModel"]?.value, liveModel != value { liveModel = value }

@@ -67,8 +67,8 @@ struct ReplacementSettingsView: View {
                     }
                 }
             }
-            Text(t("Whole words and phrases, ignoring case. Replacements keep exactly the spelling you enter. Changes apply to the next dictation. Rules stay on this device.",
-                   "Целые слова и фразы без учёта регистра. Написание замены сохраняется как введено. Изменения действуют со следующей диктовки. Правила хранятся на этом устройстве."))
+            Text(t("Whole words and phrases, ignoring case. Replacements keep exactly the spelling you enter. Changes apply to the next dictation. Connect Google Drive in Settings to sync rules across devices.",
+                   "Целые слова и фразы без учёта регистра. Написание замены сохраняется как введено. Изменения действуют со следующей диктовки. Подключите Google Drive в настройках для синхронизации правил между устройствами."))
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }

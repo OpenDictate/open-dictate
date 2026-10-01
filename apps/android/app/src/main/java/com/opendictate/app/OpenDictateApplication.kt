@@ -5,8 +5,10 @@ import com.opendictate.app.audio.LastDictationAudioStore
 import com.opendictate.app.data.TranscriptHistoryStore
 
 class OpenDictateApplication : Application() {
-    val replacementStore by lazy { com.opendictate.app.data.ReplacementStore(this) }
-    val driveSync by lazy { com.opendictate.app.data.GoogleDriveSync(this) }
+    val replacementStore: com.opendictate.app.data.ReplacementStore by lazy {
+        com.opendictate.app.data.ReplacementStore(this).apply { onChange = { driveSync.replacementsChanged() } }
+    }
+    val driveSync: com.opendictate.app.data.GoogleDriveSync by lazy { com.opendictate.app.data.GoogleDriveSync(this, replacementStore) }
 
     override fun onCreate() {
         super.onCreate()

@@ -38,4 +38,12 @@ class WordReplacementTest {
         assertFalse(WordReplacement(source = "x".repeat(257), replacement = "Test").isValid)
         assertFalse(document.copy(schemaVersion = 2).isValid)
     }
+    @Test fun malformedWireTypesAndFutureVersionsAreRejected() {
+        val document = ReplacementDocument(listOf(WordReplacement(source = "cat", replacement = "dog"))).toJson()
+        listOf(document.replace("\"schemaVersion\":1", "\"schemaVersion\":1.5"),
+            document.replace("\"enabled\":true", "\"enabled\":\"true\""),
+            document.replace("\"source\":\"cat\"", "\"source\":123")).forEach {
+            assertThrows(Exception::class.java) { ReplacementDocument.fromJson(it) }
+        }
+    }
 }

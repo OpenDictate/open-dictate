@@ -1,8 +1,8 @@
 # Google Drive settings synchronization
 
 Connect Google Drive in Settings on Android and macOS, using the same Google
-account. Sync transfers the dictionary, Live/Accurate mode and selected Live,
-Accurate and text model IDs. API keys, audio, transcripts/history, app exclusions
+account. Sync transfers the dictionary, word replacement rules and enabled
+states, Live/Accurate mode and selected Live, Accurate and text model IDs. API keys, audio, transcripts/history, app exclusions
 and permissions are excluded. Model access still depends on each device's
 OpenAI API key and local model catalogue.
 
@@ -83,8 +83,12 @@ and then `value` break ties deterministically. Clocks advance past the largest
 observed timestamp even if the device clock moves backwards. New-device defaults
 have timestamp zero and yield to existing cloud values on first connection.
 **The dictionary is one preference:** simultaneous dictionary edits do not combine
-words; the latest dictionary replaces the earlier one. Offline changes use device
-clocks, so keep system clocks reasonably accurate.
+words; the latest dictionary replaces the earlier one. The replacement rule list
+is also one preference: simultaneous edits choose the latest complete list,
+including each rule’s ID and enabled state. Clearing exports an explicit empty
+list, so stale replicas cannot restore deleted rules. The master replacement
+switch merges independently from the list. Offline changes use device clocks,
+so keep system clocks reasonably accurate.
 
 Disconnect stops future sync and removes macOS OAuth credentials. Local settings
 and cloud files remain. Android leaves token caching to Google Play services.
@@ -96,7 +100,8 @@ Delete hidden app data.
 ## Extending the format
 
 Version 1 has an `entries` map whose keys currently are `dictionary`, `mode`,
-`liveModel`, `accurateModel` and `textModel`:
+`liveModel`, `accurateModel`, `textModel`, `wordReplacements` and
+`wordReplacementsEnabled`:
 
 ```json
 {
@@ -115,11 +120,19 @@ Add namespaced keys to the explicit export allowlists and storage adapters on bo
 platforms for new settings. Unknown entries survive merges and round trips.
 Unsupported schema versions fail closed rather than being overwritten. Values
 are strings; structured future sections can encode JSON inside their value.
+The `wordReplacements` value contains the shared version-1 replacement JSON
+(`schemaVersion` and `rules` with `id`, `source`, `replacement`, `enabled`).
+`wordReplacementsEnabled` is the string `true` or `false`. Existing five-field
+journals seed these additions at timestamp zero so new defaults yield to cloud
+values. Imported JSON is preserved verbatim to avoid platform-specific encoding
+creating a new edit. Remote rules are validated before any settings are applied.
+
 Clearing needs an explicit value, because removing a key leaves older replicas intact.
 
 Limits: 1 MiB per file, 100 replicas, 1,024 entries and 256 KiB per value.
 Malformed or oversized data stops synchronization without uploading a partial
-merge. Credentials, provider payloads and dictionary contents are never logged.
+merge. Credentials, provider payloads, dictionary contents and replacement rules are
+never logged.
 Network work runs separately from audio and away from the main thread/actor.
 
 ## Verification
@@ -133,7 +146,9 @@ Unit/mock tests cover convergence, separate settings, conflicts, clearing,
 clock rollback, first-link defaults, unknown-key preservation, export allowlists,
 schema rejection, pagination, private-folder creation, own-file-only updates and
 safe auth errors. macOS tests also cover local edits during download and active
-session model snapshots.
+session model snapshots, replacement import, deletion, switches, migration from
+five-field journals and invalid-rule rejection. A shared JSON fixture verifies
+the Android/macOS replacement wire format.
 
 Real-account checks require configured clients: connect both platforms, edit
 each synced preference, clear the dictionary, edit different/the same settings

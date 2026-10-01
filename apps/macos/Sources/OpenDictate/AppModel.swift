@@ -75,8 +75,8 @@ final class AppModel: ObservableObject {
 
     init(localOnly: Bool = false) {
         self.localOnly = localOnly
-        preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
         replacements = ReplacementStore(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
+        preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard, replacements: replacements)
         history = HistoryStore(inMemory: localOnly)
         driveSync = GoogleDriveSync(preferences: preferences, localOnly: localOnly)
         refreshPermissions()
