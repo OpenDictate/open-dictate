@@ -51,10 +51,8 @@ public struct TextDeliveryGuard: Sendable {
 }
 
 public enum TranscriptFormatter {
-    public static func format(_ text: String, keepTrailingPeriod: Bool) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keepTrailingPeriod, trimmed.hasSuffix("."), !trimmed.hasSuffix("...") else { return trimmed }
-        return String(trimmed.dropLast())
+    public static func format(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

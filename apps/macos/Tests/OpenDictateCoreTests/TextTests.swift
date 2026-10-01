@@ -40,9 +40,10 @@ final class TextTests: XCTestCase {
         XCTAssertFalse(HistorySearch.matches("another topic", query: "meeting"))
         XCTAssertTrue(HistorySearch.matches("anything", query: ""))
     }
-    func testFinalPunctuationKeepsEllipsisAndQuestions() {
-        XCTAssertEqual(TranscriptFormatter.format(" Hello. ", keepTrailingPeriod: false), "Hello")
-        XCTAssertEqual(TranscriptFormatter.format("Wait...", keepTrailingPeriod: false), "Wait...")
-        XCTAssertEqual(TranscriptFormatter.format("Really?", keepTrailingPeriod: false), "Really?")
+    func testFormattingTrimsWhitespaceAndPreservesProviderPunctuation() {
+        XCTAssertEqual(TranscriptFormatter.format(" Hello. "), "Hello.")
+        XCTAssertEqual(TranscriptFormatter.format("Hello"), "Hello")
+        XCTAssertEqual(TranscriptFormatter.format("Wait..."), "Wait...")
+        XCTAssertEqual(TranscriptFormatter.format("Really?"), "Really?")
     }
 }

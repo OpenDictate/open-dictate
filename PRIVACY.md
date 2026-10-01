@@ -10,7 +10,8 @@ An explicit AI history search may send that saved text to OpenAI.
 
 ## Optional punctuation correction
 
-**Correct punctuation in Accurate** is off by default on both platforms. When
+**Correct punctuation** appears only in Accurate mode and is off by default on
+both platforms. When
 enabled, Accurate sends only the recognized transcript directly to OpenAI's
 `gpt-6-luna` through the Responses API with `store: false`, before local word
 replacements. It adds a separate processing step; failures keep the original

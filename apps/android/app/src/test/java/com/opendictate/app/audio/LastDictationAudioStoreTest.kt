@@ -1,15 +1,39 @@
 package com.opendictate.app.audio
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 
 class LastDictationAudioStoreTest {
+    @Test
+    fun `late microphone chunk cancels cleanly after the writer scope is cancelled`() = runBlocking {
+        val directory = Files.createTempDirectory("last-dictation-test").toFile()
+        val writerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            val recording = LastDictationAudioStore(directory).begin(writerScope)
+            recording.append(byteArrayOf(1, 2))
+            // Service destruction cancels the writer while a blocking microphone read can still return.
+            writerScope.cancel()
+            runCatching { recording.finish() }
+            assertThrows(CancellationException::class.java) { recording.append(byteArrayOf(3, 4)) }
+            Unit
+        } finally {
+            writerScope.cancel()
+            directory.deleteRecursively()
+        }
+    }
+
     @Test
     fun `failed transcription can retry the complete latest recording`() = runBlocking {
         val directory = Files.createTempDirectory("last-dictation-test").toFile()

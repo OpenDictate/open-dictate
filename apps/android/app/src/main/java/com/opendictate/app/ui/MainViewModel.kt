@@ -51,7 +51,6 @@ data class MainUiState(
     val prompt: String = "",
     val selectionDictionaryActionEnabled: Boolean = true,
     val accuratePunctuationEnabled: Boolean = false,
-    val keepTrailingPeriod: Boolean = true,
     val transcriptionResponseTimeoutSeconds: Int? = TranscriptionResponseTimeout.DEFAULT_SECONDS,
     val excludedPackages: Set<String> = emptySet(),
     val installedApps: List<InstalledApp> = emptyList(),
@@ -305,11 +304,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mutableState.update { it.copy(accuratePunctuationEnabled = enabled) }
     }
 
-    fun setKeepTrailingPeriod(enabled: Boolean) {
-        settings.keepTrailingPeriod = enabled
-        mutableState.update { it.copy(keepTrailingPeriod = enabled) }
-    }
-
     fun setTranscriptionResponseTimeout(seconds: Int?) {
         settings.transcriptionResponseTimeoutSeconds = seconds
         mutableState.update { it.copy(transcriptionResponseTimeoutSeconds = seconds) }
@@ -431,7 +425,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prompt = settings.prompt,
         selectionDictionaryActionEnabled = isSelectionDictionaryActionEnabled(),
         accuratePunctuationEnabled = settings.accuratePunctuationEnabled,
-        keepTrailingPeriod = settings.keepTrailingPeriod,
         transcriptionResponseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
         excludedPackages = settings.excludedPackages,
     )

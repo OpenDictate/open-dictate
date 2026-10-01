@@ -89,11 +89,12 @@ preferences migrate automatically. Language hints remain local preferences.
 
 ### Optional punctuation correction
 
-Settings → Dictation → **Correct punctuation in Accurate** is off by default.
+Settings → Dictation → **Correct punctuation** appears only in Accurate mode
+and is off by default.
 When enabled, only ordinary Accurate dictation sends its recognized text to
 `gpt-6-luna` for punctuation/capitalization through Responses (`store: false`,
 `reasoning.effort: none`). Live and voice editing skip this step. Local word
-replacements and the final-period preference apply afterward. Invalid edits or
+replacements apply afterward. No separate final-period override is applied. Invalid edits or
 request failures retain the original transcription; cancellation prevents delivery.
 The switch is saved only on this Mac and does not sync through Google Drive.
 

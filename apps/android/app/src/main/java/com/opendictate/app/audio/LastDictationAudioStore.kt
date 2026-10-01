@@ -1,9 +1,11 @@
 package com.opendictate.app.audio
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.RandomAccessFile
@@ -42,9 +44,18 @@ class LastDictationAudioStore(private val directory: File) {
         }
 
         fun append(chunk: ByteArray) {
-            if (chunks.trySend(chunk).isFailure) {
+            val result = chunks.trySend(chunk)
+            // A blocking microphone read may return after service cancellation closes the writer.
+            if (result.isClosed) throw CancellationException("Audio recording is closed", result.exceptionOrNull())
+            if (result.isFailure) {
                 // Backpressure is rare, but dropping a chunk would make recovery incomplete.
-                runBlocking { chunks.send(chunk) }
+                runBlocking {
+                    try {
+                        chunks.send(chunk)
+                    } catch (closed: ClosedSendChannelException) {
+                        throw CancellationException("Audio recording is closed", closed)
+                    }
+                }
             }
         }
 

@@ -90,8 +90,6 @@
     <string name="dictation_languages_automatic">Detect automatically</string>
     <string name="dictation_languages_summary_auto">Auto</string>
     <string name="dictation_languages_summary_count">Selected: %1$d</string>
-    <string name="trailing_period_title">Final period</string>
-    <string name="trailing_period_subtitle">Add a period after the last phrase</string>
     <string name="dictionary_label">Vocabulary (optional)</string>
     <string name="dictionary_placeholder">Kotlin\nOpenDictate\nCompose</string>
     <string name="dictionary_supporting">One name, term, or uncommon word per line</string>
@@ -247,8 +245,8 @@
     <string name="drive_sync_connect">Connect Google Drive</string>
     <string name="drive_sync_disconnect">Disconnect</string>
     <string name="drive_sync_privacy">Only these settings are sent to Google. API keys, audio and history stay out of sync. Disconnecting keeps local and cloud settings.</string>
-    <string name="accurate_punctuation_title">Correct punctuation in Accurate</string>
-    <string name="accurate_punctuation_subtitle">Sends recognized text to OpenAI after recording and adds processing time. Saved only on this device.</string>
+    <string name="accurate_punctuation_title">Correct punctuation</string>
+    <string name="accurate_punctuation_subtitle">Via OpenAI. Only on this device.</string>
     <string name="overlay_correcting_punctuation_description">Correcting punctuation. Swipe left to cancel.</string>
     <string name="settings_correcting_punctuation">Correcting punctuation…</string>
 </resources>
