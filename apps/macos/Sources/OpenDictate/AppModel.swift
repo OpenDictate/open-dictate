@@ -25,6 +25,7 @@ final class AppModel: ObservableObject {
     @Published var loginEnabled = false
     let preferences: Preferences
     let history: HistoryStore
+    let replacements: ReplacementStore
     private let localOnly: Bool
     let hotKeys = HotKeys()
     private let client = OpenAIClient()
@@ -49,6 +50,7 @@ final class AppModel: ObservableObject {
         let textModel: String
         let keepTrailingPeriod: Bool
         let timeout: Int
+        let replacements: WordReplacementEngine
         let started = Date()
         var deliveryTask: Task<Void, Never>?
         var pendingPartial: String?
@@ -61,7 +63,8 @@ final class AppModel: ObservableObject {
         var pump: Task<Void, Never>?
         var setup: Task<Void, Never>?
         var completion: Task<Void, Never>?
-        init(target: TextTarget, transform: Bool, key: String, preferences: Preferences) {
+        init(target: TextTarget, transform: Bool, key: String, preferences: Preferences, replacements: WordReplacementEngine) {
+            self.replacements = replacements
             self.target = target; self.transform = transform; self.key = key
             mode = transform ? .accurate : preferences.mode
             context = preferences.context; textModel = preferences.textModel
@@ -72,6 +75,7 @@ final class AppModel: ObservableObject {
     init(localOnly: Bool = false) {
         self.localOnly = localOnly
         preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
+        replacements = ReplacementStore(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
         history = HistoryStore(inMemory: localOnly)
         refreshPermissions()
         loginEnabled = SMAppService.mainApp.status == .enabled
@@ -183,7 +187,7 @@ final class AppModel: ObservableObject {
             guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { throw DictationError.microphone }
             let target = try TextTarget.capture(exclusions: preferences.excludedApps, transform: transform)
             target.preserveOriginal()
-            let session = Session(target: target, transform: transform, key: key, preferences: preferences)
+            let session = Session(target: target, transform: transform, key: key, preferences: preferences, replacements: replacements.engine())
             current = session; phase = .preparing; partial = ""; audioLevels.reset(); elapsed = 0; message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
@@ -199,7 +203,7 @@ final class AppModel: ObservableObject {
             preferences.mode = .accurate
             let target = try TextTarget.capture(exclusions: [])
             target.preserveOriginal()
-            let session = Session(target: target, transform: false, key: "", preferences: preferences)
+            let session = Session(target: target, transform: false, key: "", preferences: preferences, replacements: replacements.engine())
             current = session; phase = .preparing; audioLevels.reset(); message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
@@ -299,6 +303,7 @@ final class AppModel: ObservableObject {
                 }
                 result = transformed
             }
+            if !session.transform { result = session.replacements.apply(result) }
             guard !result.isEmpty else { throw DictationError.tooShort }
             session.acceptsPartials = false
             await session.deliveryTask?.value
@@ -322,6 +327,7 @@ final class AppModel: ObservableObject {
 
     private func receive(_ text: String, id: UUID) {
         guard let session = current, session.id == id, !session.transform, session.acceptsPartials else { return }
+        let text = session.replacements.apply(text, final: false)
         partial = text
         guard !session.detached, session.target.writable, !text.isEmpty else { return }
         session.pendingPartial = text

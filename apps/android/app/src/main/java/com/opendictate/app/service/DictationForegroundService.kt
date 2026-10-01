@@ -106,6 +106,7 @@ class DictationForegroundService : Service() {
         val accurateModelId = settings.accurateModelId
         val transformationModelId = settings.transformationModelId
         val keepTrailingPeriod = settings.keepTrailingPeriod
+        val replacements = (application as OpenDictateApplication).replacementStore.engine()
         val sessionId = nextSession.incrementAndGet()
         activeOperation = operation
         stopSignal = CompletableDeferred()
@@ -168,7 +169,7 @@ class DictationForegroundService : Service() {
                                         operation = operation,
                                         model = model,
                                         transcript = if (operation == DictationOperation.DICTATION) {
-                                            TranscriptFormatter.format(text, keepTrailingPeriod)
+                                            replacements.apply(TranscriptFormatter.format(text, keepTrailingPeriod), final = false)
                                         } else {
                                             ""
                                         },
@@ -252,7 +253,7 @@ class DictationForegroundService : Service() {
                     modelMessage = transformation.message
                     transformation.text
                 } else {
-                    TranscriptFormatter.formatFinal(transcript, keepTrailingPeriod)
+                    replacements.apply(TranscriptFormatter.formatFinal(transcript, keepTrailingPeriod))
                 }
                 if (result.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_transformation_empty))
@@ -316,6 +317,7 @@ class DictationForegroundService : Service() {
             return
         }
         val settings = SettingsStore(this)
+        val replacements = (application as OpenDictateApplication).replacementStore.engine()
         val sessionId = nextSession.incrementAndGet()
         val model = TranscriptionModel.ACCURATE
         activeOperation = DictationOperation.DICTATION
@@ -339,10 +341,10 @@ class DictationForegroundService : Service() {
                 if (transcript.isBlank()) {
                     throw IllegalStateException(getString(R.string.error_speech_not_recognized))
                 }
-                val result = TranscriptFormatter.formatFinal(
+                val result = replacements.apply(TranscriptFormatter.formatFinal(
                     transcript,
                     settings.keepTrailingPeriod,
-                )
+                ))
                 val completed = publishWhileActive(
                     sessionId,
                     DictationState(

@@ -113,9 +113,26 @@
       "interaction": [
         "Readiness disclosure for API key, microphone, and Accessibility setup",
         "Full-row switches with one semantic target",
-        "Native language and dictionary sheets, model menus, and timeout dialog",
+        "Native language, word-replacement and dictionary sheets, model menus, and timeout dialog",
         "Status/navigation/IME insets and scrollable content"
       ],
+      "wordReplacements": {
+        "implementation": "ReplacementSheet.kt; SettingsScreen.kt Dictation entry",
+        "presentation": "Native keyboard-aware modal bottom sheet with lazy scrolling, 24dp horizontal padding and 12dp spacing.",
+        "controls": "Localized source/replacement outlined fields, global switch, Add/Save/Cancel, per-rule checkbox and accessible edit/delete actions, Done.",
+        "states": "Blank-input disabled saving, localized validation, empty example, storage-error guidance preserving saved data, and edit scroll to fields.",
+        "scope": "Local rules apply to the next Live or Accurate dictation; recognition hints remain separate. Synchronization deferred until Google Drive support exists.",
+        "review": {
+          "verdict": "ship",
+          "basis": "Scoped Operate extension of existing native settings; implementation inspection and native captures, with no new visual identity or HTML detector.",
+          "findings": "No material findings; reviewed captures have no clipping.",
+          "screenshots": [
+            ".impeccable/review/android-phone.png",
+            ".impeccable/review/android-phone-dark-large-text.png",
+            ".impeccable/review/android-tablet.png"
+          ]
+        }
+      },
       "surfaceBrief": ".impeccable/surfaces/android-settings.md"
     },
     "nativeSurfaces": {
@@ -141,6 +158,13 @@
           { "name": "Sidebar Navigation", "implementation": "SettingsView.navigation(_:_:_:)", "description": "SF Symbol plus sentence-case label; tonal selection, selected medium weight and separate native keyboard focus." },
           { "name": "Setup and Preferences Controls", "implementation": "SettingsView", "description": "Native secure/search fields, buttons, segmented mode picker, pop-up pickers, switches and confirmation alerts." },
           { "name": "Dictionary Editor", "implementation": "SettingsView.dictionaryPage", "description": "Native text editor with automatic saving, term count and clean-up action." },
+          {
+            "name": "Word Replacements",
+            "implementation": "ReplacementSettingsView; SettingsView replacements navigation",
+            "description": "Separate fifth sidebar page with inherited scrolling and native system controls: global switch, localized source/replacement fields, Add/Save/Cancel, per-rule checkbox and accessible edit/delete actions.",
+            "states": "Blank-input disabled saving, localized validation, empty example and storage-error guidance preserving saved data.",
+            "scope": "Local rules apply to the next Live or Accurate dictation; recognition hints remain separate. Synchronization deferred until Google Drive support exists."
+          },
           { "name": "History", "implementation": "SettingsView.historyPage", "description": "Native empty-state view or ruled transcript rows with copy/delete actions, local search and explicit AI search." },
           {
             "name": "Recording Indicator",
@@ -181,6 +205,14 @@
             ".impeccable/review/macos-history-en.png"
           ],
           "captureScope": "Settings pages in English/Russian and at minimum content size. The scoped recording-indicator review below adds recording and processing captures.",
+          "wordReplacements": {
+            "verdict": "ship",
+            "basis": "Scoped Operate extension of existing native settings; implementation inspection and native captures, with no new visual identity or HTML detector.",
+            "findings": "No material findings; reviewed captures have no clipping.",
+            "screenshots": [
+              ".impeccable/review/macos.png"
+            ]
+          },
           "recordingIndicator": {
             "verdict": "ship",
             "basis": "Fresh finish review of a narrow code-led refinement in the established visual world; implementation inspection and actual captures, with no comp, direction roll or native detector.",

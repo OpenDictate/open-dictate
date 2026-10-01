@@ -217,4 +217,19 @@
     <string name="settings_processing_hint">Текст появится, когда будет готов</string>
     <string name="settings_mode_accurate">Точнее</string>
     <string name="settings_mode_live">Сразу</string>
+    <string name="replacements_title">Автозамена</string>
+    <string name="replacements_summary">Заменять распознанные слова и фразы</string>
+    <string name="replacements_description">Нужное написание в Live и Accurate. Изменения действуют со следующей записи.</string>
+    <string name="replacements_enable">Включить автозамену</string>
+    <string name="replacements_add">Добавить замену</string>
+    <string name="replacements_edit">Изменить замену</string>
+    <string name="replacements_source">Распознанное слово или фраза</string>
+    <string name="replacements_target">Заменить на</string>
+    <string name="replacements_invalid">Введите уникальную фразу до 256 символов и замену до 2048. Максимум 500 правил.</string>
+    <string name="replacements_storage_error">Не удалось прочитать или сохранить автозамены. Данные сохранены. Восстановите настройки перед редактированием.</string>
+    <string name="replacements_empty">Пока нет замен. Например: опен диктейт → OpenDictate.</string>
+    <string name="replacements_note">Целые слова и фразы без учёта регистра. Написание замены сохраняется как введено. Правила хранятся на этом устройстве и не отправляются в OpenAI. Команды голосовой правки не меняются.</string>
+    <string name="replacements_edit_rule">Изменить замену для %1$s</string>
+    <string name="replacements_delete_rule">Удалить замену для %1$s</string>
+    <string name="replacements_toggle_rule">Включить замену для %1$s</string>
 </resources>
