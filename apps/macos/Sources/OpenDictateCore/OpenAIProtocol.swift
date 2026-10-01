@@ -8,6 +8,8 @@ public enum DictationMode: String, Codable, CaseIterable, Sendable {
 public struct TranscriptionContext: Sendable {
     public var languages: [String]
     public var dictionary: [String]
+    public var liveModel = DictationMode.live.model
+    public var accurateModel = DictationMode.accurate.model
     public init(languages: [String] = [], dictionary: [String] = []) {
         self.languages = languages; self.dictionary = dictionary
     }
@@ -22,7 +24,7 @@ public enum OpenAIRequest {
     public static let responsesURL = URL(string: "https://api.openai.com/v1/responses")!
 
     public static func sessionUpdate(context: TranscriptionContext) -> [String: Any] {
-        var transcription: [String: Any] = ["model": DictationMode.live.model]
+        var transcription: [String: Any] = ["model": context.liveModel]
         if !context.prompt.isEmpty { transcription["prompt"] = context.prompt }
         if !context.languages.isEmpty { transcription["languages"] = context.languages }
         if !context.dictionary.isEmpty { transcription["keywords"] = context.dictionary }
@@ -38,7 +40,7 @@ public enum OpenAIRequest {
         func field(_ name: String, _ value: String) {
             append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n")
         }
-        field("model", DictationMode.accurate.model)
+        field("model", context.accurateModel)
         field("response_format", "json")
         if !context.prompt.isEmpty { field("prompt", context.prompt) }
         for language in context.languages { field("languages[]", language) }

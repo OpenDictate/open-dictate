@@ -7,16 +7,16 @@ import OpenDictateCore
 final class Preferences: ObservableObject {
     private let defaults: UserDefaults
     @Published var theme: AppTheme { didSet { defaults.set(theme.rawValue, forKey: "theme") } }
-    @Published var mode: DictationMode { didSet { defaults.set(mode.rawValue, forKey: "mode") } }
+    @Published var mode: DictationMode { didSet { defaults.set(mode.rawValue, forKey: "mode"); recordSyncChange() } }
     @Published var speechLanguage: String { didSet { defaults.set(speechLanguage, forKey: "speechLanguage") } }
     @Published var interfaceLanguage: String { didSet { defaults.set(interfaceLanguage, forKey: "interfaceLanguage") } }
-    @Published var dictionary: String { didSet { defaults.set(dictionary, forKey: "dictionary") } }
+    @Published var dictionary: String { didSet { defaults.set(dictionary, forKey: "dictionary"); recordSyncChange() } }
     @Published var keepTrailingPeriod: Bool { didSet { defaults.set(keepTrailingPeriod, forKey: "keepTrailingPeriod") } }
     @Published var saveHistory: Bool { didSet { defaults.set(saveHistory, forKey: "saveHistory") } }
     @Published var shortcuts: ShortcutBindings {
         didSet { if let data = try? JSONEncoder().encode(shortcuts) { defaults.set(data, forKey: "shortcuts") } }
     }
-    @Published var textModel: String { didSet { defaults.set(textModel, forKey: "textModel") } }
+    @Published var textModel: String { didSet { defaults.set(textModel, forKey: "textModel"); recordSyncChange() } }
     @Published var timeout: Int { didSet { defaults.set(timeout, forKey: "timeout") } }
     @Published var excludedApps: [String] { didSet { defaults.set(excludedApps, forKey: "excludedApps") } }
     @Published var showStatus: Bool { didSet { defaults.set(showStatus, forKey: "showStatus") } }
@@ -24,9 +24,23 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(indicatorStyle.rawValue, forKey: "indicatorStyle") }
     }
 
+    @Published var liveModel: String { didSet { defaults.set(liveModel, forKey: "liveModel"); recordSyncChange() } }
+    @Published var accurateModel: String { didSet { defaults.set(accurateModel, forKey: "accurateModel"); recordSyncChange() } }
+    @Published var driveSyncEnabled: Bool { didSet { defaults.set(driveSyncEnabled, forKey: "driveSyncEnabled") } }
+    @Published var driveClientID: String { didSet { defaults.set(driveClientID, forKey: "driveClientID") } }
+    let syncDeviceID: String
+    private var applyingSync = false
+    private(set) var syncStorageFailed = false
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         theme = AppTheme(rawValue: defaults.string(forKey: "theme") ?? "") ?? .dark
+        syncDeviceID = defaults.string(forKey: "syncDeviceID") ?? UUID().uuidString.lowercased()
+        defaults.set(syncDeviceID, forKey: "syncDeviceID")
+        liveModel = defaults.string(forKey: "liveModel") ?? DictationMode.live.model
+        accurateModel = defaults.string(forKey: "accurateModel") ?? DictationMode.accurate.model
+        driveSyncEnabled = defaults.bool(forKey: "driveSyncEnabled")
+        driveClientID = defaults.string(forKey: "driveClientID") ?? ""
         mode = DictationMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .live
         speechLanguage = defaults.string(forKey: "speechLanguage") ?? "auto"
         interfaceLanguage = defaults.string(forKey: "interfaceLanguage") ?? "auto"
@@ -45,6 +59,49 @@ final class Preferences: ObservableObject {
         excludedApps = defaults.stringArray(forKey: "excludedApps") ?? []
         showStatus = defaults.object(forKey: "showStatus") as? Bool ?? true
         indicatorStyle = RecordingIndicatorStyle(rawValue: defaults.string(forKey: "indicatorStyle") ?? "") ?? .compact
+        if defaults.data(forKey: "syncDocument") == nil {
+            var seed = SettingsSyncDocument()
+            seed.record(syncValues, deviceId: syncDeviceID, now: 0, seed: true)
+            defaults.set(try? JSONEncoder().encode(seed), forKey: "syncDocument")
+        }
+    }
+
+    private var syncValues: [String: String] {
+        ["dictionary": dictionary, "mode": mode.rawValue, "liveModel": liveModel,
+         "accurateModel": accurateModel, "textModel": textModel]
+    }
+    func syncDocument() throws -> SettingsSyncDocument {
+        guard !syncStorageFailed, let data = defaults.data(forKey: "syncDocument") else { throw SyncFormatError.invalid }
+        return try SettingsSyncDocument.decode(data)
+    }
+    private func recordSyncChange() {
+        guard !applyingSync else { return }
+        do {
+            var document = try syncDocument()
+            document.record(syncValues, deviceId: syncDeviceID, now: Int64(Date().timeIntervalSince1970 * 1000))
+            defaults.set(try JSONEncoder().encode(document), forKey: "syncDocument")
+        } catch { syncStorageFailed = true }
+    }
+    func mergeSync(_ remote: SettingsSyncDocument) throws -> SettingsSyncDocument {
+        var merged = try syncDocument()
+        merged.merge(remote)
+        merged.promoteSeeds(deviceId: syncDeviceID, now: Int64(Date().timeIntervalSince1970 * 1000))
+        if let value = merged.entries["mode"]?.value, DictationMode(rawValue: value) == nil { throw SyncFormatError.invalid }
+        for key in ["liveModel", "accurateModel", "textModel"] {
+            if let value = merged.entries[key]?.value,
+               value.range(of: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", options: .regularExpression) == nil { throw SyncFormatError.invalid }
+        }
+        let encoded = try JSONEncoder().encode(merged)
+        _ = try SettingsSyncDocument.decode(encoded)
+        applyingSync = true
+        defer { applyingSync = false }
+        if let value = merged.entries["dictionary"]?.value, dictionary != value { dictionary = value }
+        if let value = merged.entries["mode"]?.value, let next = DictationMode(rawValue: value), mode != next { mode = next }
+        if let value = merged.entries["liveModel"]?.value, liveModel != value { liveModel = value }
+        if let value = merged.entries["accurateModel"]?.value, accurateModel != value { accurateModel = value }
+        if let value = merged.entries["textModel"]?.value, textModel != value { textModel = value }
+        defaults.set(encoded, forKey: "syncDocument")
+        return merged
     }
 
     var isRussian: Bool {
@@ -53,7 +110,9 @@ final class Preferences: ObservableObject {
     func t(_ english: String, _ russian: String) -> String { isRussian ? russian : english }
     var context: TranscriptionContext {
         let languages = speechLanguage == "ru-en" ? ["ru", "en"] : (speechLanguage == "auto" ? [] : [speechLanguage])
-        return TranscriptionContext(languages: languages, dictionary: DictionaryTerms.normalize(dictionary))
+        var context = TranscriptionContext(languages: languages, dictionary: DictionaryTerms.normalize(dictionary))
+        context.liveModel = liveModel; context.accurateModel = accurateModel
+        return context
     }
     var shortcutLabel: String { shortcuts.dictate.label }
     var editShortcutLabel: String { shortcuts.transform.label }

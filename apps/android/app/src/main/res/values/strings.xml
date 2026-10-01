@@ -235,4 +235,16 @@
     <string name="replacements_edit_rule">Edit replacement for %1$s</string>
     <string name="replacements_delete_rule">Delete replacement for %1$s</string>
     <string name="replacements_toggle_rule">Enable replacement for %1$s</string>
+    <string name="drive_sync_description">Sync your dictionary, dictation mode and selected models across Android and macOS.</string>
+    <string name="drive_sync_authorizing">Waiting for Google sign-in…</string>
+    <string name="drive_sync_busy">Synchronizing…</string>
+    <string name="drive_sync_sign_in_again">Sign in again to resume synchronization.</string>
+    <string name="drive_sync_failed">Could not sync. Your local settings are saved. Check your connection and try again.</string>
+    <string name="drive_sync_off">Not connected</string>
+    <string name="drive_sync_done">Settings synchronized. Changes sync automatically while the app is running.</string>
+    <string name="drive_sync_waiting">Waiting to synchronize</string>
+    <string name="drive_sync_now">Sync now</string>
+    <string name="drive_sync_connect">Connect Google Drive</string>
+    <string name="drive_sync_disconnect">Disconnect</string>
+    <string name="drive_sync_privacy">Only these settings are sent to Google. API keys, audio and history stay out of sync. Disconnecting keeps local and cloud settings.</string>
 </resources>

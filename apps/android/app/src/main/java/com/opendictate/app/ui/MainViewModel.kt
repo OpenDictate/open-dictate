@@ -105,6 +105,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         refreshModelCatalog()
+        viewModelScope.launch {
+            (application as OpenDictateApplication).driveSync.state.collect {
+                mutableState.update { current -> current.copy(model = settings.model, prompt = settings.prompt,
+                    liveModelId = settings.liveModelId, accurateModelId = settings.accurateModelId,
+                    transformationModelId = settings.transformationModelId) }
+            }
+        }
     }
     fun refreshPermissions() {
         mutableState.update {

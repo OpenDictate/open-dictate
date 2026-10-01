@@ -6,6 +6,25 @@ Word replacement rules are stored locally on each device and applied on-device
 after recognition. Rules are not uploaded as transcription hints or synchronized.
 Completed text saved to history or copied to the clipboard includes replacements.
 An explicit AI history search may send that saved text to OpenAI.
+## Optional Google Drive synchronization
+
+If you connect Google Drive in Settings, the dictionary, dictation mode and
+selected model IDs are sent directly to Google and stored in your account's
+hidden app-data folder. Sync requests only `drive.appdata`, without access to
+ordinary Drive files. API keys, audio, transcripts/history, exclusions and
+permissions are excluded; other preferences remain local.
+
+Android uses Google Play services authorization and token caching. macOS stores
+its OAuth client secret and refresh token in device-only, non-synchronizing
+Keychain storage. The client ID stays in preferences. macOS sign-in opens your
+browser and briefly listens on loopback for the OAuth response. That listener
+closes on success, failure, cancellation or timeout. No tokens or dictionary
+contents are logged.
+
+Disconnect stops sync and removes macOS OAuth credentials; local and cloud
+settings remain. An upload already accepted by Google may finish. Delete hidden
+data through Google Drive's Manage apps settings and revoke access through your
+Google Account. See [setup and conflict behavior](docs/google-drive-sync.md).
 
 ## macOS
 
@@ -46,8 +65,9 @@ An explicit AI history search may send that saved text to OpenAI.
 - Ordinary history search runs on-device. Only explicit AI search sends its
   query and saved transcript text directly to OpenAI. Search results are
   held in memory, and Responses requests set `store: false`.
-- Dictionary terms, excluded app bundle identifiers and preferences stay in
-  UserDefaults locally. Dictionary terms are sent to OpenAI as transcription
+- Dictionary terms, excluded app bundle identifiers and preferences are saved in
+  UserDefaults locally. With optional Drive sync, dictionary and model settings
+  also go to Google as described above. Dictionary terms are sent to OpenAI as transcription
   hints only when you start a session. Exclusions are checked before capture.
 - Launch at login is optional and uses macOS Login Items. OpenDictate does
   not install a background daemon or a network service.

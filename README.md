@@ -29,6 +29,8 @@ no backend, analytics or account to create.
 - English/Russian settings, automatic speech language detection and language hints.
 - Focus guards prevent delayed text from being inserted in another field or app.
 - Encrypted credentials: Android Keystore on Android, Keychain on macOS.
+- Optional Google Drive sync for the dictionary, dictation mode and selected
+  models. [Setup and conflict behavior](docs/google-drive-sync.md).
 
 ## Install on macOS
 

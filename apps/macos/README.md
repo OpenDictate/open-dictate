@@ -142,6 +142,15 @@ Test permissions granted/denied, startup, menu actions, both languages, Spaces,
 full-screen windows and logout/login. A real OpenAI key is required to validate
 provider access and transcription accuracy; mock tests cannot establish either.
 
+## Google Drive synchronization
+
+Connect Google Drive in Settings to sync the dictionary, dictation mode and
+selected models with Android. It uses a Desktop OAuth client from the same
+Google Cloud project as the Android client, browser sign-in with PKCE and a
+temporary loopback callback listener. OAuth secrets/refresh tokens stay in a
+separate device-only Keychain item. Sync runs while the app is running and never
+includes API keys, audio or history. See [setup and format](../../docs/google-drive-sync.md).
+
 ## Packaging and releases
 
 `scripts/package.sh` emits `dist/macos/OpenDictate.app`, a universal DMG, and a
