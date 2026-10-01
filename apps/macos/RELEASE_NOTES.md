@@ -1,4 +1,10 @@
-OpenDictate for macOS **0.2.0-rc.12** uses clipboard insertion in every supported editor. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.2.0-rc.13** adds a searchable, multilingual dictation picker. Requires macOS 14+ on Apple Silicon or Intel.
+
+- **Speech languages** now offers 64 languages with checkboxes. Select several without closing the list, search by English, Russian or native name (or language code), and choose **Automatic detection** to clear all hints.
+- Language choices save automatically, apply to both Live and Accurate, and preserve the previous Automatic, Russian, English, Ukrainian and Russian + English settings on upgrade.
+- Language changes apply to the next dictation. The picker is unavailable while a session is active.
+
+Includes the clipboard delivery improvements from rc.12:
 
 - Accurate, Live, voice editing and **Paste last transcript** now use one final clipboard paste in all applications, including Google Chrome and T3 Code. Editors that acknowledge Accessibility text writes without applying them no longer prevent clipboard delivery.
 - Live continues streaming recognition while you speak; text is inserted into the field after recording stops. Cancellation before delivery leaves the field unchanged.
@@ -12,7 +18,7 @@ This is a **prerelease**, published separately from the stable macOS download.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.0-rc.12-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
+Download `OpenDictate-macOS-0.2.0-rc.13-universal.dmg`, open it and drag OpenDictate to Applications. Save your own OpenAI API key and allow Microphone and Accessibility.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

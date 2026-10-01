@@ -266,6 +266,12 @@ macOS uses native SwiftUI buttons at the system's default or small control size.
 
 macOS uses rounded-border secure and search fields, native pop-up pickers, switches, and a segmented Live/Accurate control. The dictionary uses a native text editor with the scoped editor corner. Fields retain native selection, keyboard focus, and text editing. Localized Edit menu commands route Undo, Redo, Cut, Copy, Paste, and Select All through the AppKit responder chain.
 
+### Native Speech Language Picker
+
+The Dictation page uses a compact summary button and a SwiftUI/AppKit popover (340pt) for 64 ISO language choices. Keep system typography, semantic surfaces, native accent/focus and checkbox controls. A visible search caption sits above a rounded-border field; rows show the interface-localized name and, when different, the native name. Helper, caption, native-name, count and empty-result text use semantic primary foreground for readable light appearance. This contrast refinement is scoped to the picker.
+
+Search matches English, Russian, native names and language codes. Rows stay alphabetical in the interface language while multiple selections remain open and save immediately. Automatic detection clears selections; the footer shows the selection count and Done. Enter and Escape close the popover. The control is disabled during recording and follows the saved appearance choice. No new visual tokens or raster assets are introduced. Review evidence and the recognition-testing limit are recorded in `.impeccable/surfaces/apps-macos.md`.
+
 ### Cards / Containers
 
 - **Dictation Field:** An Instrument Panel surface with a 1px Hairline Slate border, 16px corners, metadata at the top, and a large cumulative transcript below.
