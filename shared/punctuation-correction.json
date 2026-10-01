@@ -1,0 +1,92 @@
+[
+  {
+    "source": "привет как дела",
+    "candidate": "Привет, как дела?",
+    "expected": "Привет, как дела?"
+  },
+  {
+    "source": "да я приду завтра",
+    "candidate": "Да, я приду завтра.",
+    "expected": "Да, я приду завтра."
+  },
+  {
+    "source": "hello world 🙂",
+    "candidate": "Hello, world! 🙂",
+    "expected": "Hello, world! 🙂"
+  },
+  {
+    "source": "привет мир",
+    "candidate": "Привет, мир!",
+    "expected": "Привет, мир!"
+  },
+  {
+    "source": "цена 1.5 рубля",
+    "candidate": "Цена 15 рубля.",
+    "expected": "цена 1.5 рубля"
+  },
+  {
+    "source": "пиши foo@example.com",
+    "candidate": "Пиши foo@example,com.",
+    "expected": "пиши foo@example.com"
+  },
+  {
+    "source": "открой https://example.com/a",
+    "candidate": "Открой https://example.com/b.",
+    "expected": "открой https://example.com/a"
+  },
+  {
+    "source": "это по-русски",
+    "candidate": "Это по русски.",
+    "expected": "это по-русски"
+  },
+  {
+    "source": "don't change words",
+    "candidate": "Dont change words.",
+    "expected": "don't change words"
+  },
+  {
+    "source": "минус -5",
+    "candidate": "Минус 5.",
+    "expected": "минус -5"
+  },
+  {
+    "source": "он не придёт",
+    "candidate": "Он придёт.",
+    "expected": "он не придёт"
+  },
+  {
+    "source": "кот спит",
+    "candidate": "Кот спокойно спит.",
+    "expected": "кот спит"
+  },
+  {
+    "source": "кот спит",
+    "candidate": "Спит кот.",
+    "expected": "кот спит"
+  },
+  {
+    "source": "кот спит",
+    "candidate": "",
+    "expected": "кот спит"
+  },
+  {
+    "source": "a b",
+    "candidate": "Ab.",
+    "expected": "a b"
+  },
+  {
+    "source": "да я приду",
+    "candidate": "«Да, я приду».\n",
+    "expected": "«Да, я приду»."
+  },
+  {
+    "source": "доля .5",
+    "candidate": "Доля 5.",
+    "expected": "доля .5"
+  },
+  {
+    "source": "открой https://example.com/a",
+    "candidate": "Открой https://example.com/A.",
+    "expected": "открой https://example.com/a"
+  }
+]

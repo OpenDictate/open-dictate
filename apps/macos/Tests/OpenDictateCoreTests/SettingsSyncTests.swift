@@ -7,6 +7,20 @@ final class SettingsSyncTests: XCTestCase {
         result.entries[key] = .init(value: value, modifiedAt: time, deviceId: device)
         return result
     }
+    func testSharedPunctuationToggleSeedsAndExplicitDisableDefeatsStaleReplica() throws {
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<5 { root.deleteLastPathComponent() }
+        let remote = try SettingsSyncDocument.decode(Data(contentsOf: root.appendingPathComponent("shared/settings-sync-punctuation.json")))
+        var merged = SettingsSyncDocument()
+        merged.record(["accuratePunctuationEnabled": "false"], deviceId: "mac", now: 0, seed: true)
+        merged.merge(remote)
+        XCTAssertEqual(merged.entries["accuratePunctuationEnabled"]?.value, "true")
+        merged.record(["accuratePunctuationEnabled": "false"], deviceId: "mac", now: 50)
+        merged.merge(remote)
+        XCTAssertEqual(merged.entries["accuratePunctuationEnabled"]?.value, "false")
+        XCTAssertEqual(merged.entries["future.preference"]?.value, "preserved")
+    }
+
     func testIndependentChangesAndConcurrentConflictsConverge() {
         var android = document("dictionary", "Android\nНикита", 100, "android")
         android.merge(document("textModel", "gpt-6-sol", 120, "android"))

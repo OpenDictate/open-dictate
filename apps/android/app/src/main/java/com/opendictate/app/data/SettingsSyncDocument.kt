@@ -41,7 +41,7 @@ data class SettingsSyncDocument(val entries: Map<String, SettingsSyncEntry> = em
     }).toString()
 
     companion object {
-        val KEYS = setOf("dictionary", "mode", "liveModel", "accurateModel", "textModel", "wordReplacements", "wordReplacementsEnabled")
+        val KEYS = setOf("dictionary", "mode", "liveModel", "accurateModel", "textModel", "wordReplacements", "wordReplacementsEnabled", "accuratePunctuationEnabled")
         const val MAXIMUM_BYTES = 1_048_576L
         fun fromJson(json: String): SettingsSyncDocument {
             require(json.toByteArray().size <= MAXIMUM_BYTES)

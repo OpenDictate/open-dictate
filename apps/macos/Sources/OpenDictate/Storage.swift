@@ -14,6 +14,7 @@ final class Preferences: ObservableObject {
     }
     @Published var interfaceLanguage: String { didSet { defaults.set(interfaceLanguage, forKey: "interfaceLanguage") } }
     @Published var dictionary: String { didSet { defaults.set(dictionary, forKey: "dictionary"); recordSyncChange() } }
+    @Published var accuratePunctuationEnabled: Bool { didSet { defaults.set(accuratePunctuationEnabled, forKey: "accuratePunctuationEnabled"); recordSyncChange() } }
     @Published var keepTrailingPeriod: Bool { didSet { defaults.set(keepTrailingPeriod, forKey: "keepTrailingPeriod") } }
     @Published var saveHistory: Bool { didSet { defaults.set(saveHistory, forKey: "saveHistory") } }
     @Published var shortcuts: ShortcutBindings {
@@ -54,6 +55,7 @@ final class Preferences: ObservableObject {
         defaults.set(languages, forKey: "speechLanguages")
         interfaceLanguage = defaults.string(forKey: "interfaceLanguage") ?? "auto"
         dictionary = defaults.string(forKey: "dictionary") ?? "OpenDictate"
+        accuratePunctuationEnabled = defaults.bool(forKey: "accuratePunctuationEnabled")
         keepTrailingPeriod = defaults.object(forKey: "keepTrailingPeriod") as? Bool ?? true
         saveHistory = defaults.object(forKey: "saveHistory") as? Bool ?? true
         if let data = defaults.data(forKey: "shortcuts"),
@@ -82,7 +84,8 @@ final class Preferences: ObservableObject {
     private var syncValues: [String: String] {
         get throws {
             var values = ["dictionary": dictionary, "mode": mode.rawValue, "liveModel": liveModel,
-                          "accurateModel": accurateModel, "textModel": textModel]
+                          "accurateModel": accurateModel, "textModel": textModel,
+                          "accuratePunctuationEnabled": String(accuratePunctuationEnabled)]
             values.merge(try replacements.syncValues) { _, new in new }
             guard values.values.allSatisfy({ $0.utf8.count <= 262_144 }) else { throw SyncFormatError.invalid }
             return values
@@ -118,6 +121,8 @@ final class Preferences: ObservableObject {
         try replacements.validateSync(json: replacementJSON)
         let replacementEnabled = merged.entries["wordReplacementsEnabled"]?.value
         guard replacementEnabled == nil || replacementEnabled == "true" || replacementEnabled == "false" else { throw SyncFormatError.invalid }
+        let punctuationEnabled = merged.entries["accuratePunctuationEnabled"]?.value
+        guard punctuationEnabled == nil || punctuationEnabled == "true" || punctuationEnabled == "false" else { throw SyncFormatError.invalid }
         let encoded = try JSONEncoder().encode(merged)
         _ = try SettingsSyncDocument.decode(encoded)
         applyingSync = true
@@ -128,6 +133,7 @@ final class Preferences: ObservableObject {
         if let value = merged.entries["liveModel"]?.value, liveModel != value { liveModel = value }
         if let value = merged.entries["accurateModel"]?.value, accurateModel != value { accurateModel = value }
         if let value = merged.entries["textModel"]?.value, textModel != value { textModel = value }
+        if let punctuationEnabled { accuratePunctuationEnabled = punctuationEnabled == "true" }
         defaults.set(encoded, forKey: "syncDocument")
         return merged
     }

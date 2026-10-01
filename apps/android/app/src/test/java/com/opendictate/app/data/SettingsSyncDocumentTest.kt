@@ -4,6 +4,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SettingsSyncDocumentTest {
+    @Test fun `shared punctuation toggle seeds and explicit disable defeats stale replicas`() {
+        val root = generateSequence(java.io.File(requireNotNull(System.getProperty("user.dir")))) { it.parentFile }
+            .first { java.io.File(it, "shared/settings-sync-punctuation.json").isFile }
+        val remote = SettingsSyncDocument.fromJson(java.io.File(root, "shared/settings-sync-punctuation.json").readText())
+        val merged = SettingsSyncDocument().record(mapOf("accuratePunctuationEnabled" to "false"), "mac", 0, seed = true).merge(remote)
+        assertEquals("true", merged.entries["accuratePunctuationEnabled"]?.value)
+        val disabled = merged.record(mapOf("accuratePunctuationEnabled" to "false"), "mac", 50).merge(remote)
+        assertEquals("false", disabled.entries["accuratePunctuationEnabled"]?.value)
+        assertEquals("preserved", disabled.entries["future.preference"]?.value)
+    }
+
     @Test fun `shared replacement document imports IDs flags and Unicode and clearing defeats stale replicas`() {
         val root = generateSequence(java.io.File(requireNotNull(System.getProperty("user.dir")))) { it.parentFile }
             .first { java.io.File(it, "shared/settings-sync-replacements.json").isFile }

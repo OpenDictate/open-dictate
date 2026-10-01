@@ -50,6 +50,7 @@ data class MainUiState(
     val languages: Set<DictationLanguage> = emptySet(),
     val prompt: String = "",
     val selectionDictionaryActionEnabled: Boolean = true,
+    val accuratePunctuationEnabled: Boolean = false,
     val keepTrailingPeriod: Boolean = true,
     val transcriptionResponseTimeoutSeconds: Int? = TranscriptionResponseTimeout.DEFAULT_SECONDS,
     val excludedPackages: Set<String> = emptySet(),
@@ -109,7 +110,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             (application as OpenDictateApplication).driveSync.state.collect {
                 mutableState.update { current -> current.copy(model = settings.model, prompt = settings.prompt,
                     liveModelId = settings.liveModelId, accurateModelId = settings.accurateModelId,
-                    transformationModelId = settings.transformationModelId) }
+                    transformationModelId = settings.transformationModelId,
+                    accuratePunctuationEnabled = settings.accuratePunctuationEnabled) }
             }
         }
     }
@@ -298,6 +300,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             else -> false
         }
 
+    fun setAccuratePunctuationEnabled(enabled: Boolean) {
+        settings.accuratePunctuationEnabled = enabled
+        mutableState.update { it.copy(accuratePunctuationEnabled = enabled) }
+    }
+
     fun setKeepTrailingPeriod(enabled: Boolean) {
         settings.keepTrailingPeriod = enabled
         mutableState.update { it.copy(keepTrailingPeriod = enabled) }
@@ -423,6 +430,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         languages = settings.languages,
         prompt = settings.prompt,
         selectionDictionaryActionEnabled = isSelectionDictionaryActionEnabled(),
+        accuratePunctuationEnabled = settings.accuratePunctuationEnabled,
         keepTrailingPeriod = settings.keepTrailingPeriod,
         transcriptionResponseTimeoutSeconds = settings.transcriptionResponseTimeoutSeconds,
         excludedPackages = settings.excludedPackages,

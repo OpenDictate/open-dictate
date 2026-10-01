@@ -160,6 +160,12 @@ struct SettingsView: View {
             }
             modelField(t("Live model", "Модель Live"), $preferences.liveModel)
             modelField(t("Accurate model", "Модель Accurate"), $preferences.accurateModel)
+            VStack(alignment: .leading, spacing: 6) {
+                settingToggle(t("Correct punctuation in Accurate", "Исправлять пунктуацию в Accurate"), $preferences.accuratePunctuationEnabled)
+                Text(t("Sends recognized text to OpenAI after recording and adds processing time. Synced through Google Drive.",
+                       "После записи отправляет распознанный текст в OpenAI и добавляет время обработки. Синхронизируется через Google Drive."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }.disabled(model.isActive)
             HStack {
                 Text(t("Speech languages", "Языки речи"))
                 Spacer()
