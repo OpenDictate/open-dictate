@@ -4,9 +4,10 @@
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
 
-- All 90 Swift tests pass. Delivery coverage exercises one final paste, delayed
+- All 91 Swift tests pass. Delivery coverage exercises one final paste, delayed
   readback, ignored paste without retries, UTF-16 selection replacement, whole-field
-  voice edits, focus/caret/user-edit guards and cancellation before delivery.
+  voice edits, focus/caret/user-edit guards, cancellation before delivery and
+  cancellation while an acknowledged selection update is still pending.
   Clipboard tests verify preserved formats, confidential transcript items and
   protection of a newer user copy.
 - A local-only debug bundle inserted synthetic text in Google Chrome's 2ch.org

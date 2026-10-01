@@ -127,6 +127,21 @@ final class AccessibilityTests: XCTestCase {
         XCTAssertEqual(paste.stages, 0)
     }
 
+    @MainActor func testCancellationDuringVoiceEditSelectionRestoresOriginalCaretWithoutPasting() async throws {
+        let snapshot = EditableTextSnapshot(original: "original", selection: NSRange(location: 3, length: 0))
+        let editor = Editor(snapshot), paste = Paste(editor); editor.delayedSelection = true
+        let target = editor.target(snapshot, clipboard: paste, transform: true)
+        let task = Task { await target.paste("new") }
+        try await Task.sleep(for: .milliseconds(10)); task.cancel()
+        let result = await task.value
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertFalse(result)
+        XCTAssertEqual(editor.text, snapshot.original)
+        XCTAssertEqual(editor.range, snapshot.selection)
+        XCTAssertEqual(paste.sends, 0)
+        XCTAssertEqual(paste.stages, 0)
+    }
+
     @MainActor func testVoiceEditAtCaretSelectsAndReplacesWholeFieldAfterReadback() async {
         let snapshot = EditableTextSnapshot(original: "🙂 original", selection: NSRange(location: 3, length: 0))
         let editor = Editor(snapshot), paste = Paste(editor); editor.delayedSelection = true

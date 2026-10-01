@@ -86,7 +86,7 @@ final class TextTarget {
         if selection != originalSelection {
             guard accessibility.setSelection(selection, in: element),
                   await settle(text: delivery.expectedText, selection: selection,
-                               previousSelection: originalSelection) else { return false }
+                               previousSelection: originalSelection, finishAcknowledgedWrite: true) else { return false }
         }
         guard !Task.isCancelled, matches(text: delivery.expectedText, selection: selection),
               clipboard.stage(transcript),
@@ -96,7 +96,7 @@ final class TextTarget {
         // Posting a key event is not proof of insertion. Never repeat an unacknowledged paste.
         return await settle(text: snapshot.compose(transcript), selection: snapshot.cursor(after: transcript),
                             previousText: delivery.expectedText, previousSelection: selection,
-                            finishPostedPaste: true)
+                            finishAcknowledgedWrite: true)
     }
 
     private func matches(text: String, selection: NSRange) -> Bool {
@@ -105,9 +105,9 @@ final class TextTarget {
     }
 
     private func settle(text: String, selection: NSRange, previousText: String? = nil,
-                        previousSelection: NSRange, finishPostedPaste: Bool = false) async -> Bool {
+                        previousSelection: NSRange, finishAcknowledgedWrite: Bool = false) async -> Bool {
         let deadline = ContinuousClock.now.advanced(by: .milliseconds(800))
-        while finishPostedPaste || !Task.isCancelled {
+        while finishAcknowledgedWrite || !Task.isCancelled {
             guard accessibility.isFocused(element, pid: pid) else { return false }
             let actual = accessibility.value(element)
             let range = accessibility.selection(element)
@@ -115,7 +115,7 @@ final class TextTarget {
             guard actual == text || actual == (previousText ?? text),
                   range == selection || range == previousSelection,
                   ContinuousClock.now < deadline else { return false }
-            // Once posted, finish readback even when the session is cancelled; do not issue another write.
+            // Finish acknowledged selection/paste readback even when cancelled; never repeat the write.
             await withCheckedContinuation { continuation in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { continuation.resume() }
             }
