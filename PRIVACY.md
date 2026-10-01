@@ -50,8 +50,9 @@ Google Account. See [setup and conflict behavior](docs/google-drive-sync.md).
   when focus changes. Changing focus or editing the target
   prevents further automatic insertion. A completed result remains available
   to copy explicitly from the menu.
-- Some editors require a final clipboard paste. In that case, only the
-  transcript is placed on the clipboard; the previous clipboard contents are
+- All macOS editors receive a final clipboard paste. Only the transcript is
+  placed on the clipboard, marked confidential for compatible clipboard utilities;
+  the previous clipboard contents are
   restored after insertion if no other app or user action changed them.
   Explicit copy keeps the transcript on the system clipboard. Other software
   on the Mac can access clipboard data.

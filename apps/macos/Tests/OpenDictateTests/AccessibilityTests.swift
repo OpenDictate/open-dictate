@@ -9,204 +9,175 @@ private final class Editor: TextAccessibility {
     var text: String
     var range: NSRange
     var focused = true
+    var delayedSelection = false
     var losesFocusWhenSelecting = false
-    var supportsSelectedText = true
-    var resetsCaretOnValueRead = false
-    var delayedWrites = false
-    var acknowledgesWithoutWriting = false
-    var pendingValue: String?
-    var valueWrites = 0
-    var selectedTextWrites = 0
+    var selectionWrites = 0
 
     init(_ snapshot: EditableTextSnapshot) { text = snapshot.original; range = snapshot.selection }
     func isFocused(_ element: AXUIElement, pid: pid_t) -> Bool { focused }
-    func value(_ element: AXUIElement) -> String? {
-        // Some editors acknowledge AXValue before updating their text and resetting the caret.
-        if let pendingValue {
-            text = pendingValue; range = NSRange(location: 0, length: 0); self.pendingValue = nil
-        }
-        return text
-    }
+    func value(_ element: AXUIElement) -> String? { text }
     func selection(_ element: AXUIElement) -> NSRange? { range }
-    func setValue(_ text: String, in element: AXUIElement) -> Bool {
-        valueWrites += 1
-        if acknowledgesWithoutWriting { return true }
-        if resetsCaretOnValueRead { pendingValue = text }
-        else { self.text = text; range = NSRange(location: 0, length: 0) }
-        return true
-    }
     func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool {
-        if delayedWrites { DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { self.range = range } }
+        selectionWrites += 1
+        if delayedSelection { DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { self.range = range } }
         else { self.range = range }
         if losesFocusWhenSelecting { focused = false }
         return true
     }
-    func setSelectedText(_ text: String, in element: AXUIElement) -> Bool {
-        guard supportsSelectedText else { return false }
-        selectedTextWrites += 1
-        if acknowledgesWithoutWriting { return true }
-        let replacement = (self.text as NSString).replacingCharacters(in: range, with: text)
-        let cursor = NSRange(location: range.location + (text as NSString).length, length: 0)
-        if delayedWrites {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { self.text = replacement; self.range = cursor }
-        } else { self.text = replacement; range = cursor }
-        return true
+    func insert(_ text: String) {
+        self.text = (self.text as NSString).replacingCharacters(in: range, with: text)
+        range = NSRange(location: range.location + (text as NSString).length, length: 0)
     }
-    func target(_ snapshot: EditableTextSnapshot, writable: Bool = true) -> TextTarget {
+    func target(_ snapshot: EditableTextSnapshot, clipboard: any TextPasting, transform: Bool = false) -> TextTarget {
         TextTarget(element: AXUIElementCreateApplication(getpid()), application: .current,
-                   snapshot: snapshot, writable: writable, accessibility: self)
+                   snapshot: snapshot, transform: transform, accessibility: self, clipboard: clipboard)
     }
 }
 
 @MainActor
-private final class NativeEditor: TextAccessibility {
-    let view = NSTextView()
-    func isFocused(_ element: AXUIElement, pid: pid_t) -> Bool { true }
-    func value(_ element: AXUIElement) -> String? { view.string }
-    func selection(_ element: AXUIElement) -> NSRange? { view.selectedRange() }
-    func setValue(_ text: String, in element: AXUIElement) -> Bool { view.setAccessibilityValue(text); return true }
-    func setSelection(_ range: NSRange, in element: AXUIElement) -> Bool {
-        view.setAccessibilitySelectedTextRange(range); return true
+private final class Paste: TextPasting {
+    let editor: Editor
+    var text = ""
+    var sends = 0
+    var stages = 0
+    var restores = 0
+    var delayed = false
+    var ignored = false
+    var beforeSend: (() -> Void)?
+    init(_ editor: Editor) { self.editor = editor }
+    func stage(_ text: String) -> Bool { stages += 1; self.text = text; beforeSend?(); return true }
+    func send(to pid: pid_t) -> Bool {
+        sends += 1
+        if ignored { return true }
+        if delayed { DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { self.editor.insert(self.text) } }
+        else { editor.insert(text) }
+        return true
     }
-    func setSelectedText(_ text: String, in element: AXUIElement) -> Bool {
-        view.setAccessibilitySelectedText(text); return true
-    }
+    func restore() { restores += 1 }
 }
 
 final class AccessibilityTests: XCTestCase {
-    private func assertResult(_ actual: Bool, _ expected: Bool, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertEqual(actual, expected, file: file, line: line)
+    @MainActor func testEveryEditorUsesOneFinalClipboardPasteWithoutAXTextWrites() async {
+        let snapshot = EditableTextSnapshot(original: "🙂 old after", selection: NSRange(location: 3, length: 3))
+        let editor = Editor(snapshot), paste = Paste(editor)
+        let target = editor.target(snapshot, clipboard: paste)
+        let result = await target.paste("Новое 🎤")
+        XCTAssertTrue(result)
+        XCTAssertEqual(editor.text, snapshot.compose("Новое 🎤"))
+        XCTAssertEqual(editor.range, snapshot.cursor(after: "Новое 🎤"))
+        XCTAssertEqual(editor.selectionWrites, 0)
+        XCTAssertEqual(paste.sends, 1)
+        XCTAssertEqual(paste.restores, 1)
     }
 
-    @MainActor func testT3CodeBypassesAcknowledgedButIneffectiveAXWritesForFinalPaste() async {
-        let snapshot = EditableTextSnapshot(original: "\n", selection: NSRange(location: 0, length: 0))
-        let editor = Editor(snapshot); editor.acknowledgesWithoutWriting = true
-        let writable = TextTarget.supportsDirectInsertion(bundleID: "com.t3tools.t3code", valueSettable: true)
-        let target = editor.target(snapshot, writable: writable)
-        XCTAssertFalse(target.writable)
-        assertResult(await target.apply("transcript"), false)
-        XCTAssertFalse(target.didInsert) // Final clipboard delivery remains available.
-        XCTAssertTrue(target.isCurrent)
-        XCTAssertEqual(editor.selectedTextWrites, 0)
-        XCTAssertEqual(editor.valueWrites, 0)
-        XCTAssertEqual(editor.text, snapshot.original)
-        XCTAssertEqual(editor.range, snapshot.selection)
-    }
-
-    @MainActor func testDirectInsertionRetainsCapabilityChecksForOtherApps() {
-        XCTAssertTrue(TextTarget.supportsDirectInsertion(bundleID: "com.apple.TextEdit", valueSettable: true))
-        XCTAssertTrue(TextTarget.supportsDirectInsertion(bundleID: "", valueSettable: true))
-        XCTAssertFalse(TextTarget.supportsDirectInsertion(bundleID: "com.apple.TextEdit", valueSettable: false))
-        XCTAssertFalse(TextTarget.supportsDirectInsertion(bundleID: "com.t3tools.t3code", valueSettable: false))
-    }
-
-    @MainActor func testDelayedEditorReadbackDoesNotRejectOrDuplicateTextAndCanRestore() async {
+    @MainActor func testDelayedPasteReadbackIsVerifiedWithoutRepeatingPaste() async {
         let snapshot = EditableTextSnapshot(original: "before old after", selection: NSRange(location: 7, length: 3))
-        let editor = Editor(snapshot); editor.delayedWrites = true
-        let target = editor.target(snapshot); target.preserveOriginal()
-        assertResult(await target.apply("new words"), true)
-        assertResult(await target.apply("new words 🙂"), true)
-        XCTAssertEqual(editor.text, snapshot.compose("new words 🙂"))
-        XCTAssertEqual(editor.range, snapshot.cursor(after: "new words 🙂"))
-        XCTAssertEqual(editor.selectedTextWrites, 2)
-        await target.restore()
-        XCTAssertEqual(editor.text, snapshot.original)
-        XCTAssertEqual(editor.range, snapshot.selection)
+        let editor = Editor(snapshot), paste = Paste(editor); paste.delayed = true
+        let result = await editor.target(snapshot, clipboard: paste).paste("new words")
+        XCTAssertTrue(result)
+        XCTAssertEqual(editor.text, snapshot.compose("new words"))
+        XCTAssertEqual(paste.sends, 1)
+        XCTAssertEqual(paste.restores, 1)
     }
 
-    @MainActor func testCancellationWaitsForAcknowledgedWriteBeforeRollback() async throws {
+    @MainActor func testIgnoredPasteIsNotReportedAsDeliveredOrRetried() async {
         let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
-        let editor = Editor(snapshot); editor.delayedWrites = true
-        let target = editor.target(snapshot); target.preserveOriginal()
-        let task = Task { await target.apply("new") }
-        try await Task.sleep(for: .milliseconds(10))
-        task.cancel()
-        _ = await task.value
-        await target.restore()
+        let editor = Editor(snapshot), paste = Paste(editor); paste.ignored = true
+        let result = await editor.target(snapshot, clipboard: paste).paste("new")
+        XCTAssertFalse(result)
         XCTAssertEqual(editor.text, "old")
-        XCTAssertEqual(editor.range, snapshot.selection)
+        XCTAssertEqual(paste.sends, 1)
+        XCTAssertEqual(paste.restores, 1)
     }
 
-    @MainActor func testCancellationDuringCumulativeSelectionRestoresOriginalTextAndCursor() async throws {
+    @MainActor func testFocusCaretAndUserEditsRejectPasteBeforeClipboardChanges() async {
         let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
-        let editor = Editor(snapshot); editor.delayedWrites = true
-        let target = editor.target(snapshot); target.preserveOriginal()
-        assertResult(await target.apply("first partial"), true)
-        let task = Task { await target.apply("later partial") }
-        try await Task.sleep(for: .milliseconds(10))
-        task.cancel()
-        _ = await task.value
-        await target.restore()
+        for change in 0..<3 {
+            let editor = Editor(snapshot), paste = Paste(editor)
+            let target = editor.target(snapshot, clipboard: paste)
+            if change == 0 { editor.focused = false }
+            if change == 1 { editor.range = NSRange(location: 3, length: 0) }
+            if change == 2 { editor.text = "user edit" }
+            let result = await target.paste("new")
+            XCTAssertFalse(result)
+            XCTAssertEqual(paste.stages, 0)
+            XCTAssertEqual(paste.sends, 0)
+        }
+    }
+
+    @MainActor func testFocusChangeDuringClipboardStagingPreventsPasteAndRestoresClipboard() async {
+        let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
+        let editor = Editor(snapshot), paste = Paste(editor)
+        paste.beforeSend = { editor.focused = false }
+        let result = await editor.target(snapshot, clipboard: paste).paste("new")
+        XCTAssertFalse(result)
+        XCTAssertEqual(paste.sends, 0)
+        XCTAssertEqual(paste.restores, 1)
         XCTAssertEqual(editor.text, "old")
-        XCTAssertEqual(editor.range, snapshot.selection)
-        XCTAssertEqual(editor.selectedTextWrites, 2) // First partial and rollback; no cancelled write.
     }
 
-    @MainActor func testNativeTextViewSelectionReplacementAndRollback() async {
-            let editor = NativeEditor()
-            editor.view.string = "🙂 old after"
-            editor.view.setSelectedRange(NSRange(location: 3, length: 3))
-            let snapshot = EditableTextSnapshot(original: editor.view.string, selection: editor.view.selectedRange())
-            let target = TextTarget(element: AXUIElementCreateApplication(getpid()), application: .current,
-                                    snapshot: snapshot, writable: true, accessibility: editor)
-            target.preserveOriginal()
-            assertResult(await target.apply("Проверка"), true)
-            assertResult(await target.apply("Проверка 🎤"), true)
-            XCTAssertEqual(editor.view.string, "🙂 Проверка 🎤 after")
-            XCTAssertEqual(editor.view.selectedRange(), snapshot.cursor(after: "Проверка 🎤"))
-            await target.restore()
-            XCTAssertEqual(editor.view.string, snapshot.original)
-            XCTAssertEqual(editor.view.selectedRange(), snapshot.selection)
+    @MainActor func testCancelledDeliveryLeavesOriginalTextAndClipboardUntouched() async {
+        let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
+        let editor = Editor(snapshot), paste = Paste(editor)
+        let target = editor.target(snapshot, clipboard: paste)
+        let task = Task { await target.paste("new") }; task.cancel()
+        let result = await task.value
+        XCTAssertFalse(result)
+        XCTAssertEqual(editor.text, "old")
+        XCTAssertEqual(paste.stages, 0)
     }
 
-    @MainActor func testSelectionInsertionLeavesCaretAfterCumulativeUTF16TextAndRestoresOriginal() async {
-            let snapshot = EditableTextSnapshot(original: "🙂 old after", selection: NSRange(location: 3, length: 3))
-            let editor = Editor(snapshot); editor.resetsCaretOnValueRead = true
-            let target = editor.target(snapshot); target.preserveOriginal()
-            assertResult(await target.apply("Новое"), true)
-            assertResult(await target.apply("Новое 🎤"), true)
-            XCTAssertEqual(editor.text, "🙂 Новое 🎤 after")
-            XCTAssertEqual(editor.range, snapshot.cursor(after: "Новое 🎤"))
-            XCTAssertEqual(editor.valueWrites, 0)
-            await target.restore()
-            XCTAssertEqual(editor.text, snapshot.original)
-            XCTAssertEqual(editor.range, snapshot.selection)
+    @MainActor func testVoiceEditAtCaretSelectsAndReplacesWholeFieldAfterReadback() async {
+        let snapshot = EditableTextSnapshot(original: "🙂 original", selection: NSRange(location: 3, length: 0))
+        let editor = Editor(snapshot), paste = Paste(editor); editor.delayedSelection = true
+        let target = editor.target(snapshot, clipboard: paste, transform: true)
+        let result = await target.paste("Новое 🎤")
+        XCTAssertTrue(result)
+        XCTAssertEqual(editor.text, "Новое 🎤")
+        XCTAssertEqual(editor.range, NSRange(location: 8, length: 0))
+        XCTAssertEqual(paste.sends, 1)
     }
 
-    @MainActor func testValueOnlyEditorFinishesTextUpdateBeforeSettingCaret() async {
-            let snapshot = EditableTextSnapshot(original: "before old after", selection: NSRange(location: 7, length: 3))
-            let editor = Editor(snapshot)
-            editor.supportsSelectedText = false; editor.resetsCaretOnValueRead = true
-            let target = editor.target(snapshot); target.preserveOriginal()
-            assertResult(await target.apply("new words"), true)
-            XCTAssertEqual(editor.text, "before new words after")
-            XCTAssertEqual(editor.range, NSRange(location: 16, length: 0))
-            await target.restore()
-            XCTAssertEqual(editor.text, snapshot.original)
-            XCTAssertEqual(editor.range, snapshot.selection)
+    @MainActor func testFocusLossDuringVoiceEditSelectionPreventsPaste() async {
+        let snapshot = EditableTextSnapshot(original: "original", selection: NSRange(location: 3, length: 0))
+        let editor = Editor(snapshot), paste = Paste(editor); editor.losesFocusWhenSelecting = true
+        let target = editor.target(snapshot, clipboard: paste, transform: true)
+        let result = await target.paste("new")
+        XCTAssertFalse(result)
+        XCTAssertEqual(editor.text, "original")
+        XCTAssertEqual(paste.sends, 0)
     }
 
-    @MainActor func testFocusChangeDuringSelectionPreventsTextWrite() async {
-            let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
-            let editor = Editor(snapshot); editor.losesFocusWhenSelecting = true
-            assertResult(await editor.target(snapshot).apply("new"), false)
-            XCTAssertEqual(editor.text, "old")
-            XCTAssertEqual(editor.valueWrites, 0)
-            XCTAssertEqual(editor.selectedTextWrites, 0)
+    @MainActor func testClipboardPreservesAllTypesAndDoesNotOverwriteNewUserCopy() {
+        let board = NSPasteboard.withUniqueName(); defer { board.releaseGlobally() }
+        let custom = NSPasteboard.PasteboardType("com.opendictate.test")
+        let item = NSPasteboardItem(); item.setString("existing", forType: .string); item.setData(Data([1, 2, 3]), forType: custom)
+        board.writeObjects([item])
+        let paste = ClipboardPaste(pasteboard: board, post: { _ in true })
+        XCTAssertTrue(paste.stage("transcript"))
+        XCTAssertEqual(board.string(forType: .string), "transcript")
+        XCTAssertNotNil(board.data(forType: NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")))
+        paste.restore()
+        XCTAssertEqual(board.string(forType: .string), "existing")
+        XCTAssertEqual(board.data(forType: custom), Data([1, 2, 3]))
+        XCTAssertTrue(paste.stage("another transcript"))
+        board.clearContents(); board.setString("new user copy", forType: .string)
+        XCTAssertFalse(paste.send(to: getpid()))
+        paste.restore()
+        XCTAssertEqual(board.string(forType: .string), "new user copy")
     }
 
-    @MainActor func testInsertionAndRollbackRejectUserEditsAndFocusChanges() async {
-            let snapshot = EditableTextSnapshot(original: "old", selection: NSRange(location: 0, length: 3))
-            let editor = Editor(snapshot); let target = editor.target(snapshot); target.preserveOriginal()
-            assertResult(await target.apply("new"), true)
-            editor.range = NSRange(location: 0, length: 0)
-            assertResult(await target.apply("later"), false)
-            await target.restore(); XCTAssertEqual(editor.text, "new")
-            editor.range = NSRange(location: 3, length: 0); editor.focused = false
-            assertResult(await target.apply("later"), false)
-            await target.restore(); XCTAssertEqual(editor.text, "new")
-            editor.focused = true; editor.text = "new!"
-            assertResult(await target.apply("later"), false)
-            await target.restore(); XCTAssertEqual(editor.text, "new!")
+    @MainActor func testNativeTextViewReceivesClipboardReplacement() async {
+        let board = NSPasteboard.withUniqueName(); defer { board.releaseGlobally() }
+        let snapshot = EditableTextSnapshot(original: "🙂 old after", selection: NSRange(location: 3, length: 3))
+        let editor = Editor(snapshot)
+        let view = NSTextView(); view.string = snapshot.original; view.setSelectedRange(snapshot.selection)
+        let paste = ClipboardPaste(pasteboard: board, post: { _ in
+            view.insertText(board.string(forType: .string)!, replacementRange: view.selectedRange())
+            editor.text = view.string; editor.range = view.selectedRange(); return true
+        })
+        let result = await editor.target(snapshot, clipboard: paste).paste("Проверка 🎤")
+        XCTAssertTrue(result)
+        XCTAssertEqual(view.string, "🙂 Проверка 🎤 after")
     }
 }

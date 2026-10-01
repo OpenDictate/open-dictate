@@ -123,7 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             insertion.target = self; applicationMenu.addItem(insertion)
             let cancellation = NSMenuItem(title: "Local check: cancel in 3 seconds", action: #selector(checkCancellation), keyEquivalent: "")
             cancellation.target = self; applicationMenu.addItem(cancellation)
-            let sequence = NSMenuItem(title: "Local check: insertion and rollback in 3 seconds", action: #selector(checkSequence), keyEquivalent: "")
+            let sequence = NSMenuItem(title: "Local check: verified clipboard insertion in 3 seconds", action: #selector(checkSequence), keyEquivalent: "")
             sequence.target = self; applicationMenu.addItem(sequence)
             let session = NSMenuItem(title: "Local check: recording and insertion in 5 seconds", action: #selector(checkRecordingSession), keyEquivalent: "")
             session.target = self; applicationMenu.addItem(session)
@@ -217,7 +217,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.cancel() }
     }
     @objc private func checkSequence() {
-        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.verifyInsertionAndRollback() }
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await localChecks?.verifyClipboardInsertion() }
     }
     #endif
 }

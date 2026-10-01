@@ -39,10 +39,11 @@ displayed verbatim. Text Responses requests disable storage.
 
 Accessibility insertion checks the original process and exact element, current
 text, selection and secure-field subrole before every write. UUID session guards
-discard stale callbacks. Clipboard fallback is directed at the original process
-and rechecks the field before posting Paste. Clipboard restoration is skipped
-if another action changed the clipboard. Cancellation restores only an unchanged
-original target. Secure fields and user-excluded apps are rejected before capture.
+discard stale callbacks. Final clipboard delivery is directed at the original process
+and rechecks the field before posting Paste. No AX text writes or app-specific
+exceptions are used. Each paste is posted once and verified by text/caret readback.
+Clipboard restoration is skipped
+if another action changed the clipboard. Cancellation before final delivery leaves the original field unchanged. Secure fields and user-excluded apps are rejected before capture.
 
 Ordinary shortcuts use exclusive Carbon registrations. Only configured Globe/Fn
 or modifier-only shortcuts enable AppKit event monitors with Accessibility access;

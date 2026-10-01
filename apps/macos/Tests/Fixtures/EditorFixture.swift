@@ -35,6 +35,12 @@ struct EditorFixture {
         let menu = NSMenu(), item = NSMenuItem(), submenu = NSMenu()
         item.submenu = submenu; menu.addItem(item)
         submenu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        let editItem = NSMenuItem(), edit = NSMenu(title: "Edit")
+        editItem.submenu = edit; menu.addItem(editItem)
+        edit.addItem(NSMenuItem(title: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x"))
+        edit.addItem(NSMenuItem(title: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c"))
+        edit.addItem(NSMenuItem(title: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v"))
+        edit.addItem(NSMenuItem(title: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"))
         NSApp.mainMenu = menu
     }
     @objc private func activateEditor() { NSApp.activate(ignoringOtherApps: true) }
