@@ -246,4 +246,6 @@
     <string name="drive_sync_privacy">В Google отправляются только эти настройки. API-ключи, звук и история не синхронизируются. Отключение сохраняет локальные и облачные настройки.</string>
     <string name="accurate_punctuation_title">Исправлять пунктуацию в Accurate</string>
     <string name="accurate_punctuation_subtitle">После записи отправляет распознанный текст в OpenAI и добавляет время обработки. Синхронизируется через Google Drive.</string>
+    <string name="overlay_correcting_punctuation_description">Исправление пунктуации. Потяните влево, чтобы отменить.</string>
+    <string name="settings_correcting_punctuation">Исправление пунктуации…</string>
 </resources>
