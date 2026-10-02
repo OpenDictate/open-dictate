@@ -187,7 +187,7 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 
 The native settings surface follows a saved System/Light/Dark choice (Dark by default) and uses semantic system roles rather than hard-coded copies of the web palette. The recording HUD keeps its dark appearance. `windowBackgroundColor` supplies the graphite body and recording indicator; `controlBackgroundColor` supplies the sidebar and message footer; `textBackgroundColor` supplies the dictionary editor. Primary and secondary text use SwiftUI's corresponding foreground styles. Sidebar selection uses the current primary foreground at 9% opacity.
 
-The recording indicator uses `Color.red` for its finish control and `Color.white` for the stop glyph. During recording, the menu-bar microphone head is filled with `NSColor.systemRed`; its cradle and stem retain `NSColor.labelColor`. Recording red is scoped to these recording states.
+The recording indicator uses `Color.red` for its finish control and `Color.white` for the stop glyph. During recording, the menu bar shows a white filled microphone centered on a 20pt `NSColor.systemRed` circle. Recording red is scoped to these recording states.
 
 System accent color remains on selected segmented controls, enabled switches, picker focus, and keyboard focus rings. The review screenshots show the standard blue accent; its value belongs to macOS rather than a new OpenDictate brand color.
 
@@ -328,7 +328,7 @@ The Waveform style uses a black capsule with a nominal width of 50pt and height 
 
 The borderless, nonactivating AppKit panel retains its native shadow and sits centered on the current screen's visible frame, 28pt above its bottom edge. It cannot become key or main. The preparing/recording finish control invokes `model.stop()` without taking keyboard focus; only processing ignores mouse events. Finish label/help and processing accessibility label are localized.
 
-The menu bar always retains a microphone, independently of HUD style. Only recording uses `mic.fill` with a red filled head and the normal foreground cradle/stem. Idle, preparation and processing use the template `mic` symbol. Processing adds no ellipsis or other title, keeping the status-item width stable. `MenuBarIconTests` verifies the state mapping, equal icon sizes, filled head and foreground cradle/stem in both native appearances.
+The menu bar always retains a microphone, independently of HUD style. Only recording uses a white `mic.fill` on a 20pt red circle. Its visible silhouette is 14pt high and centered by its ink bounds, compensating for asymmetric transparent SF Symbol padding. Idle, preparation and processing use the template `mic` symbol on the same 20 × 20pt canvas. Processing adds no ellipsis or other title, keeping the status-item width stable. `MenuBarIconTests` verifies state mapping, equal icon sizes, the filled white silhouette, the circular red background, and equal opposite insets in both native appearances at 1×, 2× and 8×.
 
 The committed recording/processing captures at `.impeccable/review/macos-indicator-recording.png` and `.impeccable/review/macos-indicator-processing.png` document rc.1. The rc.4 refinement halves both dimensions and shows the finish control during preparation; production-view raster tests and offscreen native captures verify its geometry. The built SwiftUI/AppKit indicator is the visual authority.
 

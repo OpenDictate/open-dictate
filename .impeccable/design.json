@@ -201,8 +201,8 @@
           {
             "name": "Menu Bar Microphone",
             "implementation": "MenuBarIcon.swift; AppDelegate.updateState()",
-            "description": "The microphone remains in every phase. Only recording fills its head with systemRed while labelColor preserves the cradle/stem. Other phases use template mic. No processing ellipsis or title.",
-            "verification": "MenuBarIconTests checks state mapping, equal icon sizes and head-only red fill in Aqua and Dark Aqua. Live microphone and network behavior are outside this icon check."
+            "description": "The microphone remains in every phase on a 20pt canvas. Only recording shows a 14pt filled white microphone centered on a systemRed circle. The native symbol is tightly cropped and cached at high resolution in memory to remove asymmetric and scale-dependent padding. Other phases use template mic. No processing ellipsis or title.",
+            "verification": "MenuBarIconTests checks state mapping, equal icon sizes, a filled white silhouette, a circular red background and equal opposite insets in Aqua and Dark Aqua at 1x, 2x and 8x. Live microphone and network behavior are outside this icon check."
           },
           { "name": "Native Edit Commands", "implementation": "AppDelegate.updateState()", "description": "Localized Undo, Redo, Cut, Copy, Paste and Select All use the AppKit responder chain." }
         ],

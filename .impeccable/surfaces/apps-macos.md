@@ -29,8 +29,8 @@ at the minimum, the longer Russian supporting copy scrolls vertically. Headings
 use 27pt semibold system type; navigation uses 13pt regular/selected-medium type.
 The selected row's tonal fill and the native keyboard focus ring are distinct.
 
-The menu bar always shows a microphone. During recording, its filled head is
-red while the cradle and stem retain the native foreground color. Preparation,
+The menu bar always shows a microphone. During recording, its filled white
+silhouette is centered on a red circle. Preparation,
 idle and processing show the template microphone; processing adds no ellipsis.
 The recording indicator is a
 nonactivating AppKit panel that cannot become key or main. During preparation and recording,
@@ -163,10 +163,14 @@ circle for either style. These current production values supersede earlier
 waveform and RC7 dimensions above; the production view and render tests are
 geometry authority.
 
-`MenuBarIcon.swift` keeps the microphone in every phase. Only `.recording`
-fills its head with `NSColor.systemRed`; the cradle/stem use `NSColor.labelColor`.
-`mic.fill` is a single palette layer, so its head is tinted separately. Other
-phases retain the native template `mic`. No title is added while processing.
-`MenuBarIconTests` covers phase mapping, stable icon dimensions and head-only
-fill in Aqua and Dark Aqua using production-image renders. This check covers
-the icon, not live microphone, TCC or network transcription behavior.
+`MenuBarIcon.swift` keeps the microphone in every phase on a stable 20 × 20pt
+canvas. Only `.recording` shows a white `mic.fill` on an `NSColor.systemRed`
+circle. The visible silhouette is 14pt high; its ink bounds determine centering
+so transparent SF Symbol padding cannot produce unequal opposite insets.
+The tightly cropped native symbol is cached at high resolution in memory,
+avoiding scale-dependent symbol padding without a persistent raster asset.
+Other phases retain the native template `mic`. No title is added while processing.
+`MenuBarIconTests` covers phase mapping, stable icon dimensions, a filled white
+microphone, a circular red background and equal opposite insets in Aqua and Dark
+Aqua at 1×, 2× and 8× using production-image renders. This check covers the icon,
+not live microphone, TCC or network transcription behavior.
