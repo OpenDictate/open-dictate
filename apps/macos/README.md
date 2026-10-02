@@ -216,6 +216,10 @@ temporary copy so it does not hold the image busy, and deletes that copy on exit
 It uses normal macOS ejection without forcing busy volumes, Apple Events or
 additional permissions. Busy-image errors explain how to retry; successful
 ejection needs no confirmation. Eject is not installed in Applications.
+The image opens in icon view with one fixed row, left to right: **Applications →
+Install OpenDictate.txt → OpenDictate.app → Eject.app**. Packaging requires Python 3
+and installs pinned `ds_store` dependencies into an isolated `.build` environment
+to generate Finder layout metadata. They are not included in either application.
 The default uses an ad-hoc signature with a stable identifier requirement so
 local Accessibility grants can survive rebuilds. This is not a Developer ID
 signature or Apple notarization.

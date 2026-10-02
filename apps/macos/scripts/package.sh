@@ -67,6 +67,13 @@ fi
 codesign --verify --deep --strict "$eject_app"
 architectures="$(lipo -archs "$eject_app/Contents/MacOS/OpenDictateEject")"
 [[ "$architectures" == "x86_64 arm64" || "$architectures" == "arm64 x86_64" ]]
+layout_venv="$macos_root/.build/dmg-layout-venv"
+if [[ ! -x "$layout_venv/bin/python" ]]; then
+    python3 -m venv "$layout_venv"
+fi
+"$layout_venv/bin/python" -m pip install --quiet --disable-pip-version-check \
+    --requirement "$macos_root/scripts/dmg-layout-requirements.txt"
+"$layout_venv/bin/python" "$macos_root/scripts/write-dmg-layout.py" "$staging"
 dmg="$output/OpenDictate-macOS-$version-universal.dmg"
 rm -f "$dmg"
 hdiutil create -volname "OpenDictate $version" -srcfolder "$staging" -fs HFS+ -format UDZO "$dmg"
