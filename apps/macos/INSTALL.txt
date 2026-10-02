@@ -1,7 +1,7 @@
 OpenDictate for macOS 14 or later · Apple Silicon and Intel
 
-1. Drag OpenDictate.app to Applications. Double-click Eject to close this
-   disk image window and eject it. Leave Eject on the disk image.
+1. Drag OpenDictate.app to Applications. When copying finishes, press
+   Command + E in the disk image's Finder window to eject it.
 2. Open OpenDictate from Applications.
 3. This release is locally signed and is not notarized by Apple.
    If macOS blocks opening it, open System Settings → Privacy & Security,
@@ -20,8 +20,8 @@ API usage is billed by OpenAI separately from a ChatGPT subscription.
 
 Установка
 
-Перетащите OpenDictate.app в Программы, затем дважды нажмите Eject:
-окно образа закроется, а образ будет извлечён. Eject копировать в Программы не нужно.
+Перетащите OpenDictate.app в Программы. После завершения копирования нажмите
+Command + E в окне образа в Finder, чтобы извлечь его.
 Если macOS блокирует запуск, откройте Системные настройки → Конфиденциальность
 и безопасность и нажмите «Всё равно открыть» для OpenDictate.
 Сохраните свой ключ API OpenAI и разрешите доступ к микрофону и Универсальному

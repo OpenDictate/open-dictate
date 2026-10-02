@@ -11,7 +11,6 @@ def write_layout(folder: Path) -> None:
         "Applications",
         "Install OpenDictate.txt",
         "OpenDictate.app",
-        "Eject.app",
     )
     for name in items:
         if not (folder / name).exists():
@@ -21,7 +20,7 @@ def write_layout(folder: Path) -> None:
         store["."]["vSrn"] = ("long", 1)
         store["."]["icvl"] = ("type", b"icnv")
         store["."]["bwsp"] = {
-            "WindowBounds": "{{100, 100}, {880, 200}}",
+            "WindowBounds": "{{100, 100}, {660, 200}}",
             "ShowToolbar": False,
             "ShowSidebar": False,
             "ShowStatusBar": False,
