@@ -103,6 +103,25 @@ replacements apply afterward. No separate final-period override is applied. Inva
 request failures retain the original transcription; cancellation prevents delivery.
 The switch is saved only on this Mac and does not sync through Google Drive.
 
+### Retranscribe the last recording
+
+Choose **Retranscribe last recording** in the menu bar to recognize the latest
+ordinary Live or Accurate recording again through Accurate, without recording
+new audio. The command uses the current Accurate model, speech languages,
+dictionary, timeout, punctuation option and word replacements. The selected
+dictation mode stays unchanged. Results are inserted into the eligible field
+focused when you invoke the command; switching fields during processing prevents
+insertion. With no eligible field (including secure or excluded fields), the
+result stays available through Copy/Paste last transcript and optional history.
+Escape cancels processing and leaves the recording available for another try.
+
+Only one recording, bounded by the existing eight-minute limit, is retained in
+memory. It remains available after recognition succeeds or fails, until the next
+ordinary dictation starts or the app quits. Cancelling a new recording discards
+it; voice-edit instructions are never retained for retry and do not replace the
+last ordinary recording. No audio is written to disk or synced. The command is
+disabled while busy or when there is no recording to retry.
+
 ### Word replacements
 
 Settings → Word replacements manages local “recognized phrase → replacement”
@@ -186,6 +205,9 @@ its captured audio is discarded in memory. The debug application menu also
 offers “Local check: start recording in 3 seconds” for switching windows during
 a production recording session; stop with the HUD to deliver synthetic text
 into the active field.
+After a local recording, “Local check: retranscribe last recording in 3 seconds”
+exercises the production retry lifecycle and delivery with synthetic text, without
+reading credentials or calling OpenAI. The delay lets the fixture regain focus.
 
 Use a disposable editor document to check final clipboard insertion, cancellation before
 delivery, cursor movement, switching fields/apps, secure fields and clipboard restoration.

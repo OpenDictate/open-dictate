@@ -99,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         add(menu, p.t("Edit text by voice", "Изменить текст голосом"), #selector(transform), key: p.editShortcutLabel, enabled: !model.isActive)
         if model.isActive { add(menu, p.t("Cancel", "Отменить"), #selector(cancel), key: "Esc") }
         menu.addItem(.separator())
+        add(menu, p.t("Retranscribe last recording", "Перетранскрибировать последнюю запись"), #selector(retranscribeLast), enabled: model.canRetranscribe)
         add(menu, p.t("Copy last transcript", "Скопировать последний текст"), #selector(copyLast), enabled: !model.lastTranscript.isEmpty)
         add(menu, p.t("Paste last transcript", "Вставить последний текст"), #selector(pasteLast), enabled: !model.isActive && !model.lastTranscript.isEmpty)
         add(menu, p.t("Add selection to dictionary", "Добавить выделение в словарь"), #selector(addSelection), enabled: !model.isActive)
@@ -147,6 +148,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             sequence.target = self; applicationMenu.addItem(sequence)
             let session = NSMenuItem(title: "Local check: recording and insertion in 5 seconds", action: #selector(checkRecordingSession), keyEquivalent: "")
             session.target = self; applicationMenu.addItem(session)
+            let retranscription = NSMenuItem(title: "Local check: retranscribe last recording in 3 seconds", action: #selector(checkRetranscription), keyEquivalent: "")
+            retranscription.target = self; applicationMenu.addItem(retranscription)
             let recording = NSMenuItem(title: "Local check: preview recording indicator", action: #selector(previewRecording), keyEquivalent: "")
             recording.target = self; applicationMenu.addItem(recording)
             let processing = NSMenuItem(title: "Local check: preview processing indicator", action: #selector(previewProcessing), keyEquivalent: "")
@@ -231,6 +234,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func transform() { afterMenu { self.model.toggle(transform: true) } }
     @objc private func cancel() { model.cancel() }
     @objc private func copyLast() { model.copyLast() }
+    @objc private func retranscribeLast() { afterMenu { self.model.retranscribeLast() } }
     @objc private func pasteLast() { afterMenu { self.model.pasteLast() } }
     @objc private func addSelection() { afterMenu { self.model.addSelectionToDictionary() } }
     @objc private func setMode(_ sender: NSMenuItem) {
@@ -251,6 +255,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func checkRecordingSession() {
         hudPreviewPhase = nil
         Task { try? await Task.sleep(nanoseconds: 5_000_000_000); model.toggleLocalRecording(autoStop: true) }
+    }
+    @objc private func checkRetranscription() {
+        Task { try? await Task.sleep(nanoseconds: 3_000_000_000); model.retranscribeLast() }
     }
     @objc private func checkMicrophone() {
         hudPreviewPhase = .recording; updateState(); localChecks?.record()

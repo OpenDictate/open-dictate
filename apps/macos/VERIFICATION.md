@@ -1,5 +1,31 @@
 # macOS verification
 
+## 0.3.0 — retranscribe the latest recording
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-02.
+
+- All 132 Swift tests pass. Seven new session tests cover retained Live audio,
+  current Accurate settings and replacements, Accurate history entries,
+  duplicate retry suppression, recognition/recording failures, repeated retries,
+  unavailable/secure/excluded fields, focus changes, noncooperative late results,
+  cancellation during recording/processing/retry, replacement by a new recording,
+  short recordings, voice-edit isolation and shutdown availability.
+- Android debug unit tests/lint/assembly and release lint/assembly pass.
+  Stable/RC release-version checks pass. Universal packaging verifies both CPU
+  slices, the ad-hoc signature, DMG integrity and SHA-256 output.
+- The local-only debug bundle recorded through the real microphone and inserted
+  a synthetic result into the first disposable AppKit field. Its delayed retry
+  action reused that recording and inserted into the second field without a new
+  microphone session. Retrying with focus in the fixture's secure field left
+  that field unchanged and showed the copy-result fallback message. The test
+  bundle and fixture were quit afterward, releasing the retained recording.
+
+Local checks never read the user's API key/history or call OpenAI. Model access,
+recognition accuracy, provider latency, physical global hotkeys and Intel/macOS 14
+hardware remain manual checks. The production status-menu command's availability
+and delivery lifecycle are covered by model tests; the native retry check uses a
+debug-only delayed menu action to let the editor regain focus.
+
 ## 0.2.0-rc.22 — keep dictation active across window changes
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-01.
