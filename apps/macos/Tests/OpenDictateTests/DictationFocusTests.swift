@@ -6,12 +6,43 @@ import OpenDictateCore
 
 private actor FocusRecorder: AudioRecording {
     private(set) var stops = 0
+    private(set) var starts = 0
+    private(set) var keepsAudio = false
+    private var pcm: Data
+    private var onError: (@Sendable (DictationError) -> Void)?
+    init(pcm: Data = Data(repeating: 0, count: 4_800)) { self.pcm = pcm }
     func start(keepAudio: Bool, onChunk: @escaping @Sendable (Data) -> Void,
                onLevel: @escaping @Sendable (Float) -> Void,
-               onError: @escaping @Sendable (DictationError) -> Void) async throws {}
+               onError: @escaping @Sendable (DictationError) -> Void) async throws {
+        starts += 1; keepsAudio = keepAudio; self.onError = onError
+    }
+    func interrupt() { onError?(.connection) }
     func stop() async -> (Data, Int) {
         stops += 1
-        return (Data(repeating: 0, count: 4_800), 4_800)
+        let result = (pcm, pcm.count)
+        pcm = Data()
+        return result
+    }
+}
+
+private actor ReplayTranscriber {
+    struct Call: Sendable { let audio: Data; let context: TranscriptionContext; let timeout: Int }
+    private(set) var calls: [Call] = []
+    var failNext = false
+    var holdNext = false
+    private var pending: CheckedContinuation<String, Never>?
+    func fail() { failNext = true }
+    func hold() { holdNext = true }
+    func release() { pending?.resume(returning: "late result"); pending = nil }
+    func transcribe(_ audio: Data, context: TranscriptionContext, timeout: Int) async throws -> String {
+        calls.append(Call(audio: audio, context: context, timeout: timeout))
+        if failNext { failNext = false; throw DictationError.connection }
+        if holdNext {
+            holdNext = false
+            // Deliberately ignores cancellation to exercise the session's late-result guard.
+            return await withCheckedContinuation { pending = $0 }
+        }
+        return "synthetic transcript"
     }
 }
 
@@ -41,6 +72,16 @@ private actor FocusRecorder: AudioRecording {
 }
 
 final class DictationFocusTests: XCTestCase {
+    private var defaultsDomains: [String] = []
+    private func isolatedDefaults() -> UserDefaults {
+        let domain = "com.opendictate.tests.retranscribe.\(UUID().uuidString)"
+        defaultsDomains.append(domain)
+        return UserDefaults(suiteName: domain)!
+    }
+    override func tearDown() {
+        for domain in defaultsDomains { UserDefaults.standard.removePersistentDomain(forName: domain) }
+        super.tearDown()
+    }
     @MainActor private func waitFor(_ phase: AppModel.Phase, in model: AppModel) async {
         let deadline = ContinuousClock.now + .seconds(2)
         while model.phase != phase && ContinuousClock.now < deadline { await Task.yield() }
@@ -176,6 +217,215 @@ final class DictationFocusTests: XCTestCase {
         // Cancel before completion; local checks never make a voice-edit provider request.
         model.cancel()
         await waitFor(.idle, in: model)
+        XCTAssertEqual(editor.sends, 0)
+    }
+
+    @MainActor func testRetranscriptionUsesSameLiveAudioAndCurrentAccurateSettingsWithoutRecording() async {
+        let first = FocusEditor("first "), second = FocusEditor("second ")
+        var active = first
+        let audio = Data(repeating: 7, count: 4_800), recorder = FocusRecorder(pcm: Data(repeating: 7, count: 4_800))
+        let transcriber = ReplayTranscriber()
+        let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in active.target() }, makeRecorder: { recorder },
+                             accessibilityTrust: { true }, transcribeAudio: { pcm, _, context, timeout in
+            try await transcriber.transcribe(pcm, context: context, timeout: timeout)
+        })
+        defer { model.shutdown() }
+        XCTAssertFalse(model.canRetranscribe)
+        model.retranscribeLast()
+        XCTAssertEqual(model.phase, .idle)
+        model.toggleLocalRecording(mode: .live)
+        await waitFor(.recording, in: model)
+        model.stop()
+        await waitFor(.idle, in: model)
+        XCTAssertTrue(model.canRetranscribe)
+        let keepsAudio = await recorder.keepsAudio
+        XCTAssertTrue(keepsAudio)
+        first.focused = false; active = second
+        model.preferences.accurateModel = "synthetic-accurate-model"
+        model.preferences.speechLanguages = ["de"]
+        model.preferences.dictionary = "SyntheticTerm"
+        model.preferences.timeout = 120
+        model.preferences.saveHistory = true
+        XCTAssertTrue(model.replacements.save(source: "synthetic", replacement: "replaced"))
+        model.retranscribeLast()
+        XCTAssertEqual(model.phase, .processing)
+        XCTAssertFalse(model.canRetranscribe)
+        model.retranscribeLast() // Repeated menu actions cannot start overlapping requests.
+        model.stop()
+        await waitFor(.idle, in: model)
+        let calls = await transcriber.calls, starts = await recorder.starts
+        XCTAssertEqual(starts, 1)
+        XCTAssertEqual(calls.count, 2)
+        XCTAssertEqual(calls.last?.audio, audio)
+        XCTAssertEqual(calls.last?.context.accurateModel, "synthetic-accurate-model")
+        XCTAssertEqual(calls.last?.context.languages, ["de"])
+        XCTAssertEqual(calls.last?.context.dictionary, ["SyntheticTerm"])
+        XCTAssertEqual(calls.last?.timeout, 120)
+        XCTAssertEqual(model.preferences.mode, .live)
+        XCTAssertEqual(model.lastTranscript, "replaced transcript")
+        XCTAssertEqual(first.sends, 1)
+        XCTAssertEqual(second.sends, 1)
+        XCTAssertEqual(second.text, "second replaced transcript")
+        XCTAssertEqual(model.history.entries.first?.mode, "accurate")
+        XCTAssertEqual(model.history.entries.first?.text, model.lastTranscript)
+        XCTAssertTrue(model.canRetranscribe)
+    }
+
+    @MainActor func testFailedRecognitionKeepsAudioForRepeatedRetries() async {
+        let editor = FocusEditor("original "), transcriber = ReplayTranscriber()
+        let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in editor.target() }, makeRecorder: { FocusRecorder() },
+                             accessibilityTrust: { true }, transcribeAudio: { pcm, _, context, timeout in
+            try await transcriber.transcribe(pcm, context: context, timeout: timeout)
+        })
+        defer { model.shutdown() }
+        await transcriber.fail()
+        model.toggleLocalRecording()
+        await waitFor(.recording, in: model)
+        model.stop()
+        await waitFor(.idle, in: model)
+        XCTAssertTrue(model.canRetranscribe)
+        XCTAssertTrue(model.lastTranscript.isEmpty)
+        await transcriber.fail()
+        model.retranscribeLast()
+        await waitFor(.idle, in: model)
+        XCTAssertTrue(model.canRetranscribe)
+        XCTAssertEqual(editor.sends, 0)
+        model.retranscribeLast()
+        await waitFor(.idle, in: model)
+        XCTAssertFalse(model.lastTranscript.isEmpty)
+        XCTAssertEqual(editor.sends, 1)
+    }
+
+    @MainActor func testRetryWithoutEligibleFieldKeepsTextForCopyAndNeverPastes() async {
+        for error in [DictationError.noField, .secureField, .excluded, .accessibility] {
+            let editor = FocusEditor("original ")
+            var denyCapture = false
+            let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in
+                if denyCapture { throw error }; return editor.target()
+            }, makeRecorder: { FocusRecorder() }, accessibilityTrust: { true })
+            model.toggleLocalRecording()
+            await waitFor(.recording, in: model)
+            model.stop()
+            await waitFor(.idle, in: model)
+            denyCapture = true
+            model.retranscribeLast()
+            await waitFor(.idle, in: model)
+            XCTAssertEqual(editor.sends, 1)
+            XCTAssertFalse(model.lastTranscript.isEmpty)
+            XCTAssertTrue(model.canRetranscribe)
+            model.shutdown()
+            XCTAssertFalse(model.canRetranscribe)
+        }
+    }
+
+    @MainActor func testRetryFocusChangeAndCancellationRejectLateResultButKeepAudio() async {
+        for cancel in [false, true] {
+            let first = FocusEditor("first "), second = FocusEditor("second ")
+            var active = first
+            let transcriber = ReplayTranscriber()
+            let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in active.target() }, makeRecorder: { FocusRecorder() },
+                                 accessibilityTrust: { true }, transcribeAudio: { pcm, _, context, timeout in
+                try await transcriber.transcribe(pcm, context: context, timeout: timeout)
+            })
+            model.toggleLocalRecording()
+            await waitFor(.recording, in: model)
+            model.stop()
+            await waitFor(.idle, in: model)
+            let previous = model.lastTranscript
+            await transcriber.hold()
+            model.retranscribeLast()
+            let deadline = ContinuousClock.now + .seconds(2)
+            while await transcriber.calls.count < 2 && ContinuousClock.now < deadline { await Task.yield() }
+            if cancel { model.cancel() }
+            else { first.focused = false; active = second; model.tick() }
+            await transcriber.release()
+            await waitFor(.idle, in: model)
+            XCTAssertEqual(first.sends, 1)
+            XCTAssertEqual(second.sends, 0)
+            XCTAssertEqual(model.lastTranscript, cancel ? previous : "late result")
+            XCTAssertTrue(model.canRetranscribe)
+            model.shutdown()
+        }
+    }
+
+    @MainActor func testNewDictationReplacesAudioAndCancelledOrShortRecordingCannotBeRetried() async {
+        let editor = FocusEditor("original "), transcriber = ReplayTranscriber()
+        var nextAudio = Data(repeating: 1, count: 4_800)
+        let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in editor.target() },
+                             makeRecorder: { FocusRecorder(pcm: nextAudio) }, accessibilityTrust: { true },
+                             transcribeAudio: { pcm, _, context, timeout in
+            try await transcriber.transcribe(pcm, context: context, timeout: timeout)
+        })
+        defer { model.shutdown() }
+        for marker in [UInt8(1), 2] {
+            nextAudio = Data(repeating: marker, count: 4_800)
+            model.toggleLocalRecording()
+            XCTAssertFalse(model.canRetranscribe)
+            await waitFor(.recording, in: model)
+            model.stop()
+            await waitFor(.idle, in: model)
+            model.retranscribeLast()
+            await waitFor(.idle, in: model)
+            let call = await transcriber.calls.last
+            XCTAssertEqual(call?.audio, nextAudio)
+        }
+        model.toggleLocalRecording()
+        await waitFor(.recording, in: model)
+        model.cancel()
+        await waitFor(.idle, in: model)
+        XCTAssertFalse(model.canRetranscribe)
+        nextAudio = Data(repeating: 3, count: 100)
+        model.toggleLocalRecording()
+        await waitFor(.recording, in: model)
+        model.stop()
+        await waitFor(.idle, in: model)
+        XCTAssertFalse(model.canRetranscribe)
+    }
+
+    @MainActor func testRecordingFailurePreservesCapturedAudioButVoiceEditDoesNotReplaceIt() async {
+        let editor = FocusEditor("original "), transcriber = ReplayTranscriber()
+        let recorder = FocusRecorder(pcm: Data(repeating: 5, count: 4_800))
+        var next: any AudioRecording = recorder
+        let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in editor.target() },
+                             makeRecorder: { next }, accessibilityTrust: { true }, transcribeAudio: { pcm, _, context, timeout in
+            try await transcriber.transcribe(pcm, context: context, timeout: timeout)
+        })
+        defer { model.shutdown() }
+        model.toggleLocalRecording(mode: .live)
+        await waitFor(.recording, in: model)
+        await recorder.interrupt()
+        await waitFor(.idle, in: model)
+        XCTAssertTrue(model.canRetranscribe)
+        next = FocusRecorder(pcm: Data(repeating: 9, count: 4_800))
+        model.toggleLocalRecording(transform: true)
+        await waitFor(.recording, in: model)
+        model.cancel()
+        await waitFor(.idle, in: model)
+        XCTAssertTrue(model.canRetranscribe)
+        model.retranscribeLast()
+        await waitFor(.idle, in: model)
+        let audio = await transcriber.calls.last?.audio
+        XCTAssertEqual(audio, Data(repeating: 5, count: 4_800))
+    }
+
+    @MainActor func testCancellingOriginalProcessingDiscardsAudioAndLateTranscript() async {
+        let editor = FocusEditor("original "), transcriber = ReplayTranscriber()
+        let model = AppModel(localOnly: true, defaults: isolatedDefaults(), captureTarget: { _, _ in editor.target() },
+                             makeRecorder: { FocusRecorder() }, accessibilityTrust: { true }, transcribeAudio: { pcm, _, context, timeout in
+            try await transcriber.transcribe(pcm, context: context, timeout: timeout)
+        })
+        defer { model.shutdown() }
+        await transcriber.hold()
+        model.toggleLocalRecording()
+        await waitFor(.recording, in: model)
+        model.stop()
+        let deadline = ContinuousClock.now + .seconds(2)
+        while await transcriber.calls.isEmpty && ContinuousClock.now < deadline { await Task.yield() }
+        model.cancel()
+        await transcriber.release()
+        await waitFor(.idle, in: model)
+        XCTAssertFalse(model.canRetranscribe)
+        XCTAssertTrue(model.lastTranscript.isEmpty)
         XCTAssertEqual(editor.sends, 0)
     }
 

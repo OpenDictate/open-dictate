@@ -99,7 +99,12 @@ after stopping detach delivery; voice editing remains bound to the original
 source and stops when it changes. Final results remain available to copy.
 The status HUD never activates. Use registered hotkeys, without Input Monitoring.
 
-macOS audio remains in memory for both paths and is discarded on all exits.
+macOS audio remains in memory for both paths. One bounded ordinary dictation
+recording remains available for explicit Accurate retranscription after success
+or failure, until the next ordinary dictation starts or the app quits. Cancelling
+a new dictation discards its audio; cancelling a retry preserves the retained
+recording. Voice-edit audio is not retained for retry. Retry captures delivery
+at invocation and uses the same focus guards, cancellation and final-result path.
 Keep audio and request encoding off the main actor. History is an existing
 product capability, stored locally with explicit deletion and an off switch.
 Read `apps/macos/README.md` for protocol references, native smoke checks and

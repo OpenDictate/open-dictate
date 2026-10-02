@@ -48,7 +48,12 @@ Google Account. See [setup and conflict behavior](docs/google-drive-sync.md).
   Other software on the Mac can still access clipboard data.
 - Dictation sends microphone audio directly to OpenAI. Live streams 24 kHz
   PCM in memory; Accurate uploads a WAV constructed in memory. Audio is
-  discarded after completion, failure or cancellation and is never written to disk.
+  never written to disk. The latest ordinary dictation recording (up to eight
+  minutes) stays only in memory after completion or failure so you can explicitly
+  retranscribe it through Accurate. Starting a new ordinary dictation or quitting
+  clears it; cancelled recordings and voice-edit instructions are not retained
+  for retry. Cancelling a retranscription keeps the existing recording available.
+  Retranscribing sends that audio directly to OpenAI again using current settings.
 - Microphone access is used only for a session you start. Accessibility reads
   the focused editable control and its selection, and inserts transcription
   there. Secure text fields are excluded; unrelated screen contents are not collected.

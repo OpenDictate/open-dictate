@@ -1,13 +1,14 @@
-OpenDictate for macOS **0.2.4** updates the recording microphone in the menu bar. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.3.0** adds retranscription of your latest recording. Requires macOS 14+ on Apple Silicon or Intel.
 
-- Shows a filled white microphone on a red circle while recording.
-- Centers the visible microphone silhouette inside the circle, with equal opposite insets in light and dark menu bars.
-- Keeps the menu-bar item width stable when recording starts or stops.
-- Removes the Eject helper from the installer. Use Command + E in the disk image's Finder window to eject it.
+- Choose **Retranscribe last recording** (Перетранскрибировать последнюю запись) in the menu bar to recognize the latest Live or Accurate recording again through Accurate, without recording new audio.
+- Uses current Accurate settings, including model, languages, dictionary, punctuation correction and word replacements, without changing your selected dictation mode.
+- Keeps the recording available after recognition errors and cancelled retries. Escape cancels processing; duplicate requests are blocked while busy.
+- Inserts into the eligible field focused at invocation. If focus changes or no eligible field exists, the result is available to copy and in optional history.
+- Retains only the latest ordinary dictation audio in memory until the next ordinary dictation or quitting. Cancelled recordings and voice-edit instructions are not retained for retry. Audio is never saved to disk or synced.
 
 ### Install
 
-Download `OpenDictate-macOS-0.2.4-universal.dmg`, open it and drag OpenDictate to Applications. Quit an existing copy before replacing it. Existing settings and your Keychain API key are retained. Allow Microphone and Accessibility if prompted.
+Download `OpenDictate-macOS-0.3.0-universal.dmg`, open it and drag OpenDictate to Applications. Quit an existing copy before replacing it. Existing settings and your Keychain API key are retained. Allow Microphone and Accessibility if prompted.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

@@ -6,6 +6,7 @@ import OpenDictateCore
 
 @MainActor
 final class AppModel: ObservableObject {
+    typealias AudioTranscriber = @Sendable (Data, String, TranscriptionContext, Int) async throws -> String
     enum Phase {
         case idle, preparing, recording, processing
         var showsFinishControl: Bool { self == .preparing || self == .recording }
@@ -15,6 +16,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var elapsed = 0
     @Published private(set) var partial = ""
     @Published private(set) var lastTranscript = ""
+    @Published private var lastDictationAudio: Data?
     @Published private(set) var message = ""
     @Published private(set) var hasKey = false
     @Published private(set) var microphoneAllowed = false
@@ -31,6 +33,7 @@ final class AppModel: ObservableObject {
     private let captureTarget: @MainActor ([String], Bool) throws -> TextTarget
     private let makeRecorder: () -> any AudioRecording
     private let accessibilityTrust: () -> Bool
+    private let transcribeAudio: AudioTranscriber?
     let hotKeys = HotKeys()
     private let client = OpenAIClient()
     private var current: Session?
@@ -40,15 +43,17 @@ final class AppModel: ObservableObject {
     private var pasteTask: Task<Void, Never>?
     private var searchID: UUID?
     private var recordingShortcut = false
+    private var shuttingDown = false
     var showSettings: (() -> Void)?
     var onStateChange: (() -> Void)?
 
     @MainActor private final class Session {
         let id = UUID()
-        let target: TextTarget
+        let target: TextTarget?
         let exclusions: [String]
         var deliveryTarget: TextTarget?
-        let recorder: any AudioRecording
+        let recorder: (any AudioRecording)?
+        let replayAudio: Data?
         let mode: DictationMode
         let transform: Bool
         let key: String
@@ -67,12 +72,13 @@ final class AppModel: ObservableObject {
         var pump: Task<Void, Never>?
         var setup: Task<Void, Never>?
         var completion: Task<Void, Never>?
-        init(target: TextTarget, transform: Bool, key: String, preferences: Preferences, replacements: WordReplacementEngine, recorder: any AudioRecording) {
+        init(target: TextTarget?, transform: Bool, key: String, preferences: Preferences, replacements: WordReplacementEngine, recorder: (any AudioRecording)?, replayAudio: Data? = nil) {
             self.recorder = recorder
+            self.replayAudio = replayAudio
             self.replacements = replacements
             self.exclusions = preferences.excludedApps
             self.target = target; self.transform = transform; self.key = key
-            mode = transform ? .accurate : preferences.mode
+            mode = transform || replayAudio != nil ? .accurate : preferences.mode
             context = preferences.context; textModel = preferences.textModel
             accuratePunctuationEnabled = preferences.accuratePunctuationEnabled
             timeout = preferences.timeout
@@ -80,15 +86,19 @@ final class AppModel: ObservableObject {
     }
 
     init(localOnly: Bool = false,
+         defaults: UserDefaults? = nil,
          captureTarget: @escaping @MainActor ([String], Bool) throws -> TextTarget = { try TextTarget.capture(exclusions: $0, transform: $1) },
          makeRecorder: @escaping () -> any AudioRecording = { AudioRecorder() },
-         accessibilityTrust: @escaping () -> Bool = { AXIsProcessTrusted() }) {
+         accessibilityTrust: @escaping () -> Bool = { AXIsProcessTrusted() },
+         transcribeAudio: AudioTranscriber? = nil) {
         self.captureTarget = captureTarget
         self.makeRecorder = makeRecorder
         self.accessibilityTrust = accessibilityTrust
+        self.transcribeAudio = transcribeAudio
         self.localOnly = localOnly
-        replacements = ReplacementStore(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
-        preferences = Preferences(defaults: localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard, replacements: replacements)
+        let defaults = defaults ?? (localOnly ? UserDefaults(suiteName: "com.opendictate.mac.local-tests")! : .standard)
+        replacements = ReplacementStore(defaults: defaults)
+        preferences = Preferences(defaults: defaults, replacements: replacements)
         history = HistoryStore(inMemory: localOnly)
         driveSync = GoogleDriveSync(preferences: preferences, localOnly: localOnly)
         refreshPermissions()
@@ -118,6 +128,7 @@ final class AppModel: ObservableObject {
     }
 
     var isActive: Bool { phase != .idle }
+    var canRetranscribe: Bool { !shuttingDown && !isActive && pasteTask == nil && lastDictationAudio != nil }
     var stateLabel: String {
         switch phase {
         case .idle: return preferences.t("Ready", "Готово")
@@ -126,7 +137,7 @@ final class AppModel: ObservableObject {
         case .processing: return preferences.t("Finishing…", "Обработка…")
         }
     }
-    var targetName: String { current?.target.applicationName ?? "" }
+    var targetName: String { current?.target?.applicationName ?? "" }
     var detached: Bool { current?.detached ?? false }
 
     func refreshPermissions() {
@@ -201,6 +212,7 @@ final class AppModel: ObservableObject {
             guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { throw DictationError.microphone }
             let target = try captureTarget(preferences.excludedApps, transform)
             let session = Session(target: target, transform: transform, key: key, preferences: preferences, replacements: replacements.engine(), recorder: makeRecorder())
+            if !transform { lastDictationAudio = nil }
             current = session; phase = .preparing; partial = ""; audioLevels.reset(); elapsed = 0; message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
@@ -209,13 +221,14 @@ final class AppModel: ObservableObject {
 
     #if DEBUG
     /// Exercises production capture, focus monitoring, stop and delivery without credentials/network.
-    func toggleLocalRecording(autoStop: Bool = false, transform: Bool = false) {
+    func toggleLocalRecording(autoStop: Bool = false, transform: Bool = false, mode: DictationMode = .accurate) {
         guard localOnly else { return }
         if isActive { stop(); return }
         do {
-            preferences.mode = .accurate
+            preferences.mode = mode
             let target = try captureTarget(preferences.excludedApps, transform)
             let session = Session(target: target, transform: transform, key: "", preferences: preferences, replacements: replacements.engine(), recorder: makeRecorder())
+            if !transform { lastDictationAudio = nil }
             current = session; phase = .preparing; audioLevels.reset(); message = ""
             hotKeys.setCancelEnabled(true); onStateChange?()
             session.setup = Task { await start(session) }
@@ -229,10 +242,26 @@ final class AppModel: ObservableObject {
     }
     #endif
 
+    func retranscribeLast() {
+        guard canRetranscribe, let audio = lastDictationAudio else { return }
+        do {
+            let key = localOnly ? "" : try APIKeyStore.load() ?? ""
+            guard localOnly || !key.isEmpty else { throw DictationError.missingKey }
+            // A missing/secure/excluded field still permits recognition for explicit copying.
+            let target = try? captureTarget(preferences.excludedApps, false)
+            let session = Session(target: target, transform: false, key: key, preferences: preferences,
+                                  replacements: replacements.engine(), recorder: nil, replayAudio: audio)
+            session.deliveryTarget = target
+            current = session; partial = ""; audioLevels.reset(); elapsed = 0; message = ""
+            hotKeys.setCancelEnabled(true)
+            beginCompletion(session)
+        } catch { present(error); showSettings?() }
+    }
+
     private func start(_ session: Session) async {
         let id = session.id
         do {
-            if session.mode == .live {
+            if session.mode == .live && !localOnly {
                 let live = LiveTranscriptionSession(key: session.key, context: session.context) { [weak self] text in
                     Task { @MainActor in self?.receive(text, id: id) }
                 }
@@ -247,7 +276,7 @@ final class AppModel: ObservableObject {
             }
             try Task.checkCancellation()
             let continuation = session.continuation
-            try await session.recorder.start(keepAudio: session.mode == .accurate, onChunk: { [weak self] chunk in
+            try await session.recorder?.start(keepAudio: true, onChunk: { [weak self] chunk in
                 if case .dropped = continuation?.yield(chunk) {
                     Task { @MainActor [weak self] in if self?.current?.id == id { self?.fail(DictationError.queueFull, session: session) } }
                 }
@@ -292,14 +321,23 @@ final class AppModel: ObservableObject {
 
     private func complete(_ session: Session) async {
         do {
-            let (pcm, bytes) = await session.recorder.stop()
+            let (pcm, bytes): (Data, Int)
+            if let audio = session.replayAudio { (pcm, bytes) = (audio, audio.count) }
+            else { (pcm, bytes) = await session.recorder?.stop() ?? (Data(), 0) }
+            try Task.checkCancellation()
+            guard current?.id == session.id else { return }
+            if !shuttingDown && !session.transform && session.replayAudio == nil && pcm.count >= 4_800 {
+                lastDictationAudio = pcm
+            }
             session.continuation?.finish()
             await session.pump?.value
             try Task.checkCancellation()
             guard current?.id == session.id else { return }
             guard bytes >= 4_800 else { throw DictationError.tooShort }
             let transcript: String
-            if localOnly {
+            if let transcribeAudio {
+                transcript = try await transcribeAudio(pcm, session.key, session.context, session.timeout)
+            } else if localOnly {
                 transcript = "Локальная проверка 🙂"
             } else if let live = session.live {
                 transcript = try await live.finish(timeout: session.timeout)
@@ -318,7 +356,8 @@ final class AppModel: ObservableObject {
             var result = TranscriptFormatter.format(corrected)
             if session.transform && !localOnly {
                 guard !result.isEmpty else { throw DictationError.tooShort }
-                let (transformed, responseMessage) = try await client.transform(source: session.target.snapshot.selectedText,
+                guard let target = session.target else { throw DictationError.noField }
+                let (transformed, responseMessage) = try await client.transform(source: target.snapshot.selectedText,
                     instruction: result, key: session.key, model: session.textModel)
                 try Task.checkCancellation()
                 guard current?.id == session.id else { return }
@@ -363,12 +402,16 @@ final class AppModel: ObservableObject {
     private func terminate(_ session: Session, error: Error?) {
         guard current?.id == session.id, !session.cancelling else { return }
         session.cancelling = true; session.acceptsPartials = false
+        if error == nil && !session.transform && session.replayAudio == nil { lastDictationAudio = nil }
         session.setup?.cancel(); session.completion?.cancel()
         session.continuation?.finish(); session.pump?.cancel()
         phase = .processing; onStateChange?()
         Task {
             await session.setup?.value
-            _ = await session.recorder.stop()
+            let audio = await session.recorder?.stop().0 ?? Data()
+            if !shuttingDown && error != nil && !(error is CancellationError) && !session.transform && session.replayAudio == nil && audio.count >= 4_800 {
+                lastDictationAudio = audio
+            }
             await session.live?.close()
             await session.completion?.value
             guard current?.id == session.id else { return }
@@ -389,7 +432,7 @@ final class AppModel: ObservableObject {
         session.continuation?.finish(); session.pump?.cancel()
         Task {
             await session.setup?.value
-            _ = await session.recorder.stop()
+            _ = await session.recorder?.stop()
             await session.live?.close()
         }
     }
@@ -510,5 +553,5 @@ final class AppModel: ObservableObject {
         onStateChange?()
     }
     func clearMessage() { message = "" }
-    func shutdown() { cancel(); cancelSearch(); pasteTask?.cancel(); timer?.invalidate(); hotKeys.shutdown() }
+    func shutdown() { shuttingDown = true; cancel(); lastDictationAudio = nil; cancelSearch(); pasteTask?.cancel(); timer?.invalidate(); hotKeys.shutdown() }
 }

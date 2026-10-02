@@ -67,8 +67,14 @@ No Input Monitoring permission is requested. Monitored shortcuts cannot suppress
 other applications' or macOS's own keyboard actions.
 
 Local transcript history has owner-only directory/file permissions and can be
-disabled or deleted. macOS backup software is controlled by the user. Unlike
-Android, macOS stores no retry recording. The app is not sandboxed because it
+disabled or deleted. macOS backup software is controlled by the user. macOS keeps
+one bounded retry recording only in memory, never in a file or backup. Starting
+a new ordinary dictation or quitting releases it. Cancellation discards a new
+recording; cancelling a retry preserves the previous recording. Voice-edit audio
+is not retained for retry. Only an explicit menu action resends it to OpenAI via
+the existing Accurate upload path. Retry captures and validates an eligible field
+at invocation and cannot deliver after focus changes; without an eligible field,
+the result remains available for explicit copying. The app is not sandboxed because it
 uses system-wide Accessibility insertion; its entitlements allow microphone input,
 with macOS privacy permissions still required. It has no privileged helper.
 
