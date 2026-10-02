@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-30T22:00:29+04:00",
+  "generatedAt": "2026-10-02T13:04:35+00:00",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
@@ -140,20 +140,21 @@
         "platform": "macOS 14+",
         "technology": "SwiftUI/AppKit; no third-party UI dependency",
         "surfaceBrief": ".impeccable/surfaces/apps-macos.md",
-        "colorScheme": "dark",
+        "colorScheme": "Saved System/Light/Dark choice; Dark by default. Recording HUD stays dark.",
         "colorRoles": [
           { "nativeValue": "Color(nsColor: .windowBackgroundColor)", "purpose": "Settings body and recording indicator." },
           { "nativeValue": "Color(nsColor: .controlBackgroundColor)", "purpose": "Sidebar and message footer." },
           { "nativeValue": "Color(nsColor: .textBackgroundColor)", "purpose": "Dictionary editor." },
           { "nativeValue": "foregroundStyle(.primary / .secondary)", "purpose": "Native text hierarchy." },
-          { "nativeValue": "Color.white.opacity(0.09)", "purpose": "Selected sidebar row; independent of keyboard focus." },
+          { "nativeValue": "Color.primary.opacity(0.09)", "purpose": "Selected sidebar row; independent of keyboard focus." },
           { "nativeValue": "System accent color", "purpose": "Selected segments, enabled switches and native keyboard focus; captured as blue, not a brand token." },
-          { "nativeValue": "Color.red", "purpose": "Recording indicator finish circle only." },
+          { "nativeValue": "Color.red", "purpose": "Recording indicator finish circle." },
+          { "nativeValue": "NSColor.systemRed / NSColor.labelColor", "purpose": "Menu-bar recording microphone head / cradle and stem." },
           { "nativeValue": "Color.white", "purpose": "Recording indicator stop glyph." }
         ],
         "typographyRendering": "Frontmatter's macos-* tokens describe native points and system type. SwiftUI semantic body/callout/caption styles and monospaced shortcut variants remain native; no web display font is loaded.",
         "elevation": "Settings content stays flat. AppKit window chrome and the floating recording panel retain native shadows.",
-        "motion": "No decorative motion or web hover lift; a native small spinner communicates preparing and processing state.",
+        "motion": "No decorative motion or web hover lift; a native mini spinner communicates processing. Waveform levels interpolate over 40ms with Reduce Motion support.",
         "components": [
           { "name": "Sidebar Navigation", "implementation": "SettingsView.navigation(_:_:_:)", "description": "SF Symbol plus sentence-case label; tonal selection, selected medium weight and separate native keyboard focus." },
           { "name": "Setup and Preferences Controls", "implementation": "SettingsView", "description": "Native secure/search fields, buttons, segmented mode picker, pop-up pickers, switches and confirmation alerts." },
@@ -178,22 +179,30 @@
           { "name": "History", "implementation": "SettingsView.historyPage", "description": "Native empty-state view or ruled transcript rows with copy/delete actions, local search and explicit AI search." },
           {
             "name": "Recording Indicator",
-            "implementation": "RecordingIndicator, RecordingStatusView and AppDelegate.updateState()",
-            "description": "Recording shows only a microphone and interactive red finish circle with a white stop square; preparing and processing show only a centered native small spinner. Idle is hidden. No visible text, timer, waveform or shortcut hint.",
+            "implementation": "RecordingIndicator, RecordingStatusView, WaveformGeometry and AppDelegate.updateState()",
+            "description": "Preparation and recording offer the finish action in either Microphone or Waveform style. Processing shows the shared compact circular mini spinner. Idle is hidden. No visible text, timer or shortcut hint.",
             "geometry": {
               "units": "points",
-              "recordingSize": "88 × 44",
-              "busySize": "44 × 44",
-              "microphone": "SF mic.fill, 18pt medium, 20pt frame",
-              "finishCircle": "28pt",
-              "stopGlyph": "9pt white square, 2pt corner",
-              "finishHitArea": "32pt circle",
-              "contentSpacing": "12pt",
-              "background": "windowBackgroundColor in Capsule, dark color scheme",
+              "scale": 1.25,
+              "microphoneSize": "55 × 27.5",
+              "waveformSize": "62.5 × 28.32",
+              "busySize": "27.5 × 27.5",
+              "microphone": "SF mic.fill, nominal 9pt medium, 22pt frame",
+              "finishCircle": "Nominal 14pt; rendered 17.5pt",
+              "stopGlyph": "Nominal 4.5pt white square, 1pt corner",
+              "finishHitArea": "Nominal 16pt circle; rendered 20pt",
+              "waveformBars": "Ten white bars, 1.875pt wide, 2.5–17.5pt high; full waveform 38.63 × 17.5pt; golden-ratio capsule bounds",
+              "background": "Dark windowBackgroundColor in compact Capsule; black waveform Capsule with nominal 0.5pt white border at 14% opacity",
               "placement": "Centered on the current screen's visible frame, 28pt above its bottom edge"
             },
-            "interaction": "The finish control invokes model.stop(). The borderless nonactivating panel cannot become key or main; preparing and processing ignore mouse events.",
-            "accessibility": "Localized finish label/help and preparing/processing labels; decorative microphone is hidden from accessibility."
+            "interaction": "Finish invokes model.stop() without taking focus. The borderless nonactivating panel cannot become key or main. Only processing ignores mouse events.",
+            "accessibility": "Localized finish label/help and processing label; decorative microphone is hidden from accessibility."
+          },
+          {
+            "name": "Menu Bar Microphone",
+            "implementation": "MenuBarIcon.swift; AppDelegate.updateState()",
+            "description": "The microphone remains in every phase. Only recording fills its head with systemRed while labelColor preserves the cradle/stem. Other phases use template mic. No processing ellipsis or title.",
+            "verification": "MenuBarIconTests checks state mapping, equal icon sizes and head-only red fill in Aqua and Dark Aqua. Live microphone and network behavior are outside this icon check."
           },
           { "name": "Native Edit Commands", "implementation": "AppDelegate.updateState()", "description": "Localized Undo, Redo, Cut, Copy, Paste and Select All use the AppKit responder chain." }
         ],
@@ -306,7 +315,7 @@
   ],
   "narrative": {
     "northStar": "The Live Dictation Instrument",
-    "overview": "OpenDictate presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nWebsite tokens and instrument rules describe the public website. Android settings use the separate androidSettings extension: native system type and neutral Material 3 themes following Android light/dark appearance. Do not mechanically transplant web pixels or fonts into Android.\n\nmacOS adapts the same white microphone and graphite identity through SwiftUI/AppKit system colors, system typography, SF Symbols, and native controls. Its dark settings surface is compact and direct; selected controls and keyboard focus retain the macOS accent. Native measurements use points, and the web's display fonts, control dimensions, and hover motion do not apply to this surface.",
+    "overview": "The OpenDictate website presents speech as a precise, observable input process rather than an abstract AI effect. Black surfaces, graphite layers, compact instrument labels, a live caret, and the waveform demo make the interface feel focused and calm. A white microphone is the app mark and the primary action. Silver distinguishes alternate states.\n\nThe frontmatter and the following instrument rules describe the public website. Android settings follow the scoped override under Components and the surface brief at `.impeccable/surfaces/android-settings.md`. Settings use native system typography and offer a saved System/Light/Dark appearance choice. The dictation overlay and launcher mark retain their existing identity. Do not mechanically transplant web pixels or fonts into Android.\n\nmacOS adapts the same white microphone and graphite identity through SwiftUI/AppKit system colors, system typography, SF Symbols, and native controls. Its dark settings surface is compact and direct; selected controls and keyboard focus retain the macOS accent. Native measurements use points, and the web's display fonts, control dimensions, and hover motion do not apply to this surface.",
     "keyCharacteristics": [
       "Black website work surfaces with no light-theme inversion.",
       "White microphone mark, white primary actions, and a white live caret.",
@@ -317,14 +326,46 @@
       "System typography and native controls on macOS, with English/Russian copy and visible keyboard focus."
     ],
     "rules": [
-      {"name": "The Contrast Rule", "body": "On the website, white marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.", "section": "colors"},
-      {"name": "The Dark-Only Rule", "body": "The public website is authored as a true dark scheme; Android settings follow the system light/dark appearance.", "section": "colors"},
-      {"name": "The Native Controls Rule", "body": "On macOS, keep semantic system colors and native accent/focus states. Do not force white brand fills onto platform controls.", "section": "colors"},
-      {"name": "The Three-Voice Rule", "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic. Android settings do not use this three-font system.", "section": "typography"},
-      {"name": "The Native Type Rule", "body": "Keep macOS in system typography. The website display/body pairing is specific to that surface.", "section": "typography"},
-      {"name": "The Working-Surface Rule", "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.", "section": "layout"},
-      {"name": "The Flat-by-Default Rule", "body": "A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.", "section": "elevation"},
-      {"name": "The Shape-Hierarchy Rule", "body": "Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.", "section": "shapes"}
+      {
+        "name": "The Contrast Rule",
+        "body": "On the website, white marks the primary action and live activity; silver marks a deliberate alternate state. Use shape and labels as well as shade to distinguish state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark-Only Rule",
+        "body": "The public website is authored as a true dark scheme, not as colors awaiting automatic inversion. This rule does not apply to Android settings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Native Controls Rule",
+        "body": "On macOS, keep semantic system colors and native accent/focus states. Do not force white brand fills onto platform controls.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-Voice Rule",
+        "body": "Display type states the proposition, Golos explains it, and mono labels the instrument. On GitHub Pages, Literata fills the display role in both Latin and Cyrillic. Android settings do not use this three-font system.",
+        "section": "typography"
+      },
+      {
+        "name": "The Native Type Rule",
+        "body": "Keep macOS in system typography. The website display/body pairing is specific to that surface.",
+        "section": "typography"
+      },
+      {
+        "name": "The Working-Surface Rule",
+        "body": "Organize information as one continuous instrument panel separated by rules; do not replace the ledger with a generic feature-card mosaic.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-by-Default Rule",
+        "body": "A surface earns separation through tone and structure. Never add ambient card shadows or glass effects.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Shape-Hierarchy Rule",
+        "body": "Curves belong to touchable controls and live signal geometry. Content organization remains rectilinear and ruled.",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do make the waveform, caret, route lines, and state labels explain how speech reaches text.",

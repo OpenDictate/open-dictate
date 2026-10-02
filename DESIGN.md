@@ -1,6 +1,6 @@
 ---
 name: OpenDictate
-description: The dark public website system, with a scoped native Android settings override.
+description: The dark public website system, with scoped native Android and macOS settings.
 colors:
   ink: "#080808"
   ink-deep: "#030303"
@@ -185,9 +185,9 @@ The palette is a dark technical field with luminous, deliberately scarce signals
 
 ### Native macOS
 
-The native surface fixes `preferredColorScheme(.dark)` and uses semantic system roles rather than hard-coded copies of the web palette. `windowBackgroundColor` supplies the graphite body and recording indicator; `controlBackgroundColor` supplies the sidebar and message footer; `textBackgroundColor` supplies the dictionary editor. Primary and secondary text use SwiftUI's corresponding foreground styles. Sidebar selection is a white overlay at 9% opacity.
+The native settings surface follows a saved System/Light/Dark choice (Dark by default) and uses semantic system roles rather than hard-coded copies of the web palette. The recording HUD keeps its dark appearance. `windowBackgroundColor` supplies the graphite body and recording indicator; `controlBackgroundColor` supplies the sidebar and message footer; `textBackgroundColor` supplies the dictionary editor. Primary and secondary text use SwiftUI's corresponding foreground styles. Sidebar selection uses the current primary foreground at 9% opacity.
 
-The recording indicator uses `Color.red` for its finish control and `Color.white` for the stop glyph. These roles are scoped to the recording indicator.
+The recording indicator uses `Color.red` for its finish control and `Color.white` for the stop glyph. During recording, the menu-bar microphone head is filled with `NSColor.systemRed`; its cradle and stem retain `NSColor.labelColor`. Recording red is scoped to these recording states.
 
 System accent color remains on selected segmented controls, enabled switches, picker focus, and keyboard focus rings. The review screenshots show the standard blue accent; its value belongs to macOS rather than a new OpenDictate brand color.
 
@@ -322,11 +322,13 @@ Rules stay on the device and changes apply to the next dictation in Live and Acc
 
 ### Native Recording Indicator
 
-From preparation through recording, the macOS indicator is a dark capsule (44 × 22pt) containing only an SF `mic.fill` symbol (9pt) and a red circular finish control (14pt). A centered white stop square (4.5pt) sits inside its circular hit area (16pt). The microphone and finish control each occupy a centered 22 × 22pt half of the capsule; the circle has equal 4pt top, bottom and trailing insets. These nominal measurements scale uniformly by 1.25 in the built indicator. Processing shows only a centered native circular `ProgressView` at mini control size on a dark capsule (22 × 22pt). Idle is hidden. There is no visible text, timer, waveform, or shortcut hint in the indicator.
+Settings offers two persisted styles: Microphone and Waveform. The compact Microphone treatment shows `mic.fill` and a red finish circle with a white stop square during preparation and recording. Nominal geometry is a 44 × 22pt capsule, 9pt medium microphone, 14pt finish circle, 4.5pt stop square with a 1pt corner, and 16pt circular hit area. A uniform 1.25 scale produces the current 55 × 27.5pt control. Processing uses a centered native mini `ProgressView` in a nominal 22 × 22pt circle, scaled to 27.5 × 27.5pt. Idle is hidden. No visible text, timer or shortcut hint belongs to either style.
 
-The borderless, nonactivating AppKit panel retains its native shadow and sits centered on the current screen's visible frame, 28pt above its bottom edge. It cannot become key or main. The preparing/recording finish control invokes `model.stop()` without taking keyboard focus; only processing ignores mouse events. The finish control has localized accessibility label and help, while the spinner has a localized processing label. The menu bar retains a microphone at rest, waveform during an active session, and an ellipsis while processing.
+The Waveform style uses a black capsule with a nominal width of 50pt and height of 14 × φ pt (φ is the golden ratio), scaled to 62.5 × 28.32pt. Ten white bars are nominally 1.5pt wide; spacing keeps their combined full-level bounds at 50 / φ × 14pt. Scaled bars range from 2.5pt in silence to 17.5pt at full input. New microphone RMS levels enter on the right, with square-root mapping and 40ms linear interpolation disabled by Reduce Motion. The whole capsule finishes dictation. Both styles use the same 27.5 × 27.5pt processing spinner. Existing installations retain Microphone; the visibility switch applies to either style.
 
-Settings offers two persisted indicator styles: Microphone (the existing compact treatment) and Waveform (the user-supplied black capsule reference). The waveform is 50 × 22pt, with a black fill and 0.5pt white border at 14% opacity. Ten white capsules are 1.5pt wide, separated by 1.5pt, centered horizontally and vertically. Bar heights range from 2pt for silence to 10pt for full input, using a square-root mapping of the normalized microphone RMS level. The newest of ten recent input levels is on the right. Linear 40ms interpolation is disabled by Reduce Motion; this is measured volume history rather than a decorative looping animation. The whole capsule finishes dictation without activation; processing retains its 50 × 22pt size with a centered mini spinner. Existing installations retain Microphone, and the status visibility switch applies to either style.
+The borderless, nonactivating AppKit panel retains its native shadow and sits centered on the current screen's visible frame, 28pt above its bottom edge. It cannot become key or main. The preparing/recording finish control invokes `model.stop()` without taking keyboard focus; only processing ignores mouse events. Finish label/help and processing accessibility label are localized.
+
+The menu bar always retains a microphone, independently of HUD style. Only recording uses `mic.fill` with a red filled head and the normal foreground cradle/stem. Idle, preparation and processing use the template `mic` symbol. Processing adds no ellipsis or other title, keeping the status-item width stable. `MenuBarIconTests` verifies the state mapping, equal icon sizes, filled head and foreground cradle/stem in both native appearances.
 
 The committed recording/processing captures at `.impeccable/review/macos-indicator-recording.png` and `.impeccable/review/macos-indicator-processing.png` document rc.1. The rc.4 refinement halves both dimensions and shows the finish control during preparation; production-view raster tests and offscreen native captures verify its geometry. The built SwiftUI/AppKit indicator is the visual authority.
 

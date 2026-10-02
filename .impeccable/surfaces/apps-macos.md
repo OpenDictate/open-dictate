@@ -29,8 +29,10 @@ at the minimum, the longer Russian supporting copy scrolls vertically. Headings
 use 27pt semibold system type; navigation uses 13pt regular/selected-medium type.
 The selected row's tonal fill and the native keyboard focus ring are distinct.
 
-A menu bar microphone reports recording state, becoming a waveform while active
-and gaining an ellipsis while processing. The recording indicator is a
+The menu bar always shows a microphone. During recording, its filled head is
+red while the cradle and stem retain the native foreground color. Preparation,
+idle and processing show the template microphone; processing adds no ellipsis.
+The recording indicator is a
 nonactivating AppKit panel that cannot become key or main. During preparation and recording,
 its red finish control invokes `model.stop()` without taking keyboard focus;
 only processing ignores mouse events. Escape cancels only during a
@@ -121,7 +123,7 @@ appears at the right, and older values move left. Ten normalized levels stay
 in memory and are cleared at the start/end of each session.
 
 The whole waveform capsule is the finish action, including during preparation;
-processing replaces its bars with a mini spinner at the same capsule size.
+processing replaces its bars with the shared compact circular mini spinner.
 The panel never activates or takes editor focus. The existing visibility switch
 hides either style. The native picker and guidance are localized in English and
 Russian. Linear 40ms height interpolation follows audio updates and is disabled
@@ -150,3 +152,21 @@ Search accepts English, Russian, native names and ISO codes. Checkboxes save imm
 Implementation authority: `SpeechLanguagePicker.swift`, `SettingsView.swift`, `OpenDictateCore/SpeechLanguage.swift` and `Storage.swift`. Actual native interaction verified search in English/Russian/native names/codes, multiple selection without closing, automatic reset, Done, Enter, Escape, light/dark appearance and a local microphone check. Final evidence is `.impeccable/review/macos-languages-en-dark-retina.png` and `.impeccable/review/macos-languages-ru-light-retina.png`: offscreen production `NSHostingView` captures at 2× (680px for 340pt), held as ignored review artifacts rather than shipping artwork.
 
 Finish reviewer disposition: **ship** for inspected UI quality and flow after both contrast fixes were resolved. Both captures fit without clipping; sampled Russian light text exceeds 4.5:1 contrast. No web detector ran on this native surface. Recognition across all 64 catalog languages was not network-tested.
+
+## Current recording and menu-bar geometry
+
+The current Waveform capsule is 62.5 × 28.32pt after the uniform 1.25 scale.
+Ten bars are 1.875pt wide and range from 2.5pt in silence to 17.5pt at full input;
+the full-level waveform spans 38.63 × 17.5pt. Both width and height ratios
+between capsule and waveform equal φ. Processing is a shared 27.5 × 27.5pt
+circle for either style. These current production values supersede earlier
+waveform and RC7 dimensions above; the production view and render tests are
+geometry authority.
+
+`MenuBarIcon.swift` keeps the microphone in every phase. Only `.recording`
+fills its head with `NSColor.systemRed`; the cradle/stem use `NSColor.labelColor`.
+`mic.fill` is a single palette layer, so its head is tinted separately. Other
+phases retain the native template `mic`. No title is added while processing.
+`MenuBarIconTests` covers phase mapping, stable icon dimensions and head-only
+fill in Aqua and Dark Aqua using production-image renders. This check covers
+the icon, not live microphone, TCC or network transcription behavior.
