@@ -180,8 +180,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func updateState() {
         NSApp.mainMenu = makeMainMenu(preferences: model.preferences)
-        statusItem.button?.image = NSImage(systemSymbolName: model.isActive ? "waveform" : "mic", accessibilityDescription: "OpenDictate")
-        statusItem.button?.title = model.phase == .processing ? " …" : ""
+        #if DEBUG
+        let phase = hudPreviewPhase ?? model.phase
+        #else
+        let phase = model.phase
+        #endif
+        statusItem.button?.image = MenuBarIcon.image(for: phase)
+        statusItem.button?.title = ""
         statusItem.button?.toolTip = "OpenDictate · \(model.stateLabel) · \(model.preferences.shortcutLabel)"
         #if DEBUG
         if let phase = hudPreviewPhase {

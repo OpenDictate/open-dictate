@@ -4,7 +4,7 @@
 
 ## Platform
 
-android and macos
+adaptive
 
 ## Users
 
