@@ -7,6 +7,7 @@ version="${APP_VERSION:-$(cat "$macos_root/VERSION")}"
 output="$repo_root/dist/macos"
 staging="$macos_root/.build/dmg-staging"
 app="$output/OpenDictate.app"
+eject_app="$staging/Eject.app"
 signing_identity="${MACOS_SIGNING_IDENTITY:--}"
 
 bundle_version="$(bash "$macos_root/scripts/release-version.sh" "$version")"
@@ -14,6 +15,8 @@ mkdir -p "$output"
 for architecture in arm64 x86_64; do
     swift build --package-path "$macos_root" --build-system native --configuration release \
         --triple "${architecture}-apple-macosx14.0" --scratch-path "$macos_root/.build/$architecture" --product OpenDictate
+    swift build --package-path "$macos_root" --build-system native --configuration release \
+        --triple "${architecture}-apple-macosx14.0" --scratch-path "$macos_root/.build/$architecture" --product OpenDictateEject
 done
 rm -rf "$app" "$staging"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$staging"
@@ -48,6 +51,22 @@ architectures="$(lipo -archs "$app/Contents/MacOS/OpenDictate")"
 ditto "$app" "$staging/OpenDictate.app"
 ln -s /Applications "$staging/Applications"
 cp "$macos_root/INSTALL.txt" "$staging/Install OpenDictate.txt"
+mkdir -p "$eject_app/Contents/MacOS" "$eject_app/Contents/Resources"
+lipo -create \
+    "$macos_root/.build/arm64/arm64-apple-macosx/release/OpenDictateEject" \
+    "$macos_root/.build/x86_64/x86_64-apple-macosx/release/OpenDictateEject" \
+    -output "$eject_app/Contents/MacOS/OpenDictateEject"
+cp "$macos_root/Resources/Eject-Info.plist" "$eject_app/Contents/Info.plist"
+swift "$macos_root/scripts/generate-eject-icon.swift" "$macos_root/.build/Eject.iconset"
+iconutil -c icns "$macos_root/.build/Eject.iconset" -o "$eject_app/Contents/Resources/Eject.icns"
+if [[ "$signing_identity" == "-" ]]; then
+    codesign --force --sign - "$eject_app"
+else
+    codesign --force --sign "$signing_identity" --options runtime --timestamp "$eject_app"
+fi
+codesign --verify --deep --strict "$eject_app"
+architectures="$(lipo -archs "$eject_app/Contents/MacOS/OpenDictateEject")"
+[[ "$architectures" == "x86_64 arm64" || "$architectures" == "arm64 x86_64" ]]
 dmg="$output/OpenDictate-macOS-$version-universal.dmg"
 rm -f "$dmg"
 hdiutil create -volname "OpenDictate $version" -srcfolder "$staging" -fs HFS+ -format UDZO "$dmg"
