@@ -36,6 +36,10 @@ final class TextTarget {
         guard let app = NSWorkspace.shared.frontmostApplication,
               app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { throw DictationError.noField }
         guard !exclusions.contains(app.bundleIdentifier ?? "") else { throw DictationError.excluded }
+        ApplicationAccessibility(pid: app.processIdentifier).prepare()
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier else {
+            throw DictationError.noField
+        }
         guard let element = focused(in: app.processIdentifier) else { throw DictationError.noField }
         let role = string(element, kAXRoleAttribute)
         let subrole = string(element, kAXSubroleAttribute)
@@ -156,14 +160,7 @@ final class TextTarget {
     }
 
     private static func focused(in pid: pid_t) -> AXUIElement? {
-        let application = AXUIElementCreateApplication(pid)
-        AXUIElementSetMessagingTimeout(application, 0.15)
-        var result: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &result) == .success,
-              let result, CFGetTypeID(result) == AXUIElementGetTypeID() else { return nil }
-        let element = unsafeBitCast(result, to: AXUIElement.self)
-        AXUIElementSetMessagingTimeout(element, 0.15)
-        return element
+        ApplicationAccessibility(pid: pid).focusedElement()
     }
     private static func string(_ element: AXUIElement, _ attribute: String) -> String {
         var result: CFTypeRef?
