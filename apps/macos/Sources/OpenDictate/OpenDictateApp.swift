@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var model: AppModel!
     private var statusItem: NSStatusItem!
     private var settingsWindow: NSWindow?
+    private var accessibilityActivationObserver: NSObjectProtocol?
     private let recordingIndicator = RecordingIndicator()
     #if DEBUG
     private var localChecks: LocalSmokeChecks?
@@ -44,6 +45,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
         #endif
+        // Electron publishes its tree asynchronously. Prepare when the user
+        // enters an app so the first shortcut can capture an already exposed field.
+        accessibilityActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.prepareAccessibility() }
+        }
+        prepareAccessibility()
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         model.showSettings = { [weak self] in self?.openSettings() }
         model.onStateChange = { [weak self] in self?.updateState() }
@@ -64,7 +73,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         openSettings(); return true
     }
-    func applicationWillTerminate(_ notification: Notification) { model.shutdown() }
+    func applicationWillTerminate(_ notification: Notification) {
+        if let accessibilityActivationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(accessibilityActivationObserver)
+        }
+        model.shutdown()
+    }
+
+    private func prepareAccessibility() {
+        ApplicationAccessibility.prepareFrontmost(exclusions: model.preferences.excludedApps)
+    }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()

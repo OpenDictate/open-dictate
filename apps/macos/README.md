@@ -62,6 +62,11 @@ The universal build targets `arm64` and `x86_64`, with a macOS 14 deployment tar
   detaches delivery. Final results remain available to copy.
 
 Supported editors expose an Accessibility string value and selected text range.
+On activation and before capture, OpenDictate enables supported
+`AXManualAccessibility` / `AXEnhancedUserInterface` flags so Electron editors
+such as T3 Code expose their focused field even without VoiceOver. This
+preparation reads only those flags and skips excluded apps; it does not activate
+windows or read unrelated UI contents.
 All applications receive one final clipboard paste, including Chrome, native editors
 and T3 Code. Live still streams recognition immediately, but delivery to the field
 happens when recording finishes, just like Accurate. Accessibility is used to
