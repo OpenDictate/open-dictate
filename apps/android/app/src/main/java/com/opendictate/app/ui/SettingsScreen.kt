@@ -292,7 +292,7 @@ internal fun SettingsScreen(
                     }
                 }
 
-                SectionTitle("Google Drive")
+                SectionTitle(stringResource(R.string.drive_sync_title))
                 SettingsGroup { GoogleDriveSyncSettings() }
 
                 val testFieldLabel = stringResource(R.string.test_field_label)

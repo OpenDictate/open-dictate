@@ -230,7 +230,7 @@
     <string name="replacements_edit_rule">Изменить замену для %1$s</string>
     <string name="replacements_delete_rule">Удалить замену для %1$s</string>
     <string name="replacements_toggle_rule">Включить замену для %1$s</string>
-    <string name="drive_sync_description">Синхронизация словаря, автозамен, режима диктовки и выбранных моделей между Android и macOS.</string>
+    <string name="drive_sync_title">Синхронизация</string>
     <string name="drive_sync_authorizing">Ожидание входа в Google…</string>
     <string name="drive_sync_busy">Синхронизация…</string>
     <string name="drive_sync_sign_in_again">Войдите снова, чтобы возобновить синхронизацию.</string>
