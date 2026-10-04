@@ -57,6 +57,34 @@ public struct SettingsSyncDocument: Codable, Equatable, Sendable {
         }
     }
 
+    public enum ConnectionSource: Sendable { case cloud, local }
+
+    /// Compare user-visible synced values, excluding timestamps and unknown future settings.
+    public func hasSameSettings(as other: Self) -> Bool {
+        Self.keys.allSatisfy { entries[$0]?.value == other.entries[$0]?.value }
+    }
+
+    public func needsConnectionChoice(with remote: Self) -> Bool {
+        Self.keys.contains { key in
+            remote.entries[key].map { $0.value != entries[key]?.value } ?? false
+        }
+    }
+
+    /// An explicit source choice overrides offline clocks, preserving unknown future entries.
+    public func resolvingConnection(with remote: Self, source: ConnectionSource,
+                                    deviceId: String, now: Int64) -> Self {
+        var result = self
+        result.merge(remote)
+        let preferred = source == .cloud ? remote : self
+        let values = preferred.entries.mapValues(\.value)
+        // Include losing entries too, so stale replicas cannot undo the explicit choice.
+        let latest = max(syncEntries.values.map(\.modifiedAt).max() ?? 0,
+                         remote.syncEntries.values.map(\.modifiedAt).max() ?? 0)
+        result.record(values, deviceId: deviceId, now: max(now, latest + 1))
+        result.promoteSeeds(deviceId: deviceId, now: now)
+        return result
+    }
+
     /// Defaults on a newly linked device must not supersede an existing cloud preference.
     public mutating func promoteSeeds(deviceId: String, now: Int64) {
         entries = syncEntries

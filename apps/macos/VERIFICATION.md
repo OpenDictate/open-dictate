@@ -1,5 +1,33 @@
 # macOS verification
 
+## 0.4.0 — choose settings when connecting Google Drive
+
+Verified on macOS 26.6.2, Apple Silicon, on 2026-10-04.
+
+- All 138 Swift tests pass. New pure tests cover empty/matching clouds,
+  explicit cloud/local choices despite offline clocks, cleared dictionaries,
+  stale replicas, missing cloud fields and unknown-entry preservation.
+- Mock coordinator tests verify no application/upload before choosing,
+  cancellation without settings changes, changed-cloud re-prompting,
+  network failure/restart persistence and publishing local settings.
+- Native production-view renders cover English/Russian in Aqua/Dark Aqua.
+  Android emulator tests cover source actions and the download/choice/upload
+  lifecycle, plus light phone, dark Russian phone at 1.3 font scale and tablet.
+- Android debug unit tests/lint/assembly and release lint/assembly pass.
+  Stable/RC release-version checks and universal macOS packaging verify CPU
+  slices, ad-hoc signature, DMG integrity and SHA-256 output.
+- The isolated local-only smoke bundle inserted synthetic text into a selected
+  range of the disposable editor, preserving surrounding text. Secure-field
+  insertion was rejected; changing fields rejected final delivery, and cancelling
+  a captured target preserved its text. The real microphone captured 24 kHz PCM and discarded
+  it in memory. These checks did not access API keys/history or call OpenAI.
+
+Real-account source selection and Android/macOS cloud convergence remain manual
+checks. Physical global hotkeys, microphone permission denial and Intel/macOS 14
+hardware are not established by these tests. Native source-choice renders verify
+the production view layout, not a live OAuth session or attached macOS sheet.
+
+
 ## 0.3.0 — retranscribe the latest recording
 
 Verified on macOS 26.6.2, Apple Silicon, on 2026-10-02.

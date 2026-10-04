@@ -24,15 +24,21 @@ import kotlin.coroutines.resumeWithException
 
 data class DriveSyncState(val enabled: Boolean = false, val busy: Boolean = false,
     val lastSyncedAt: Long = 0, val needsAuthorization: Boolean = false, val failed: Boolean = false,
-    val settingsRevision: Long = 0)
+    val settingsRevision: Long = 0, val needsSourceSelection: Boolean = false)
 
 /** Process-owned: includes dictionary edits from the share and selection activities. */
-class GoogleDriveSync(context: Context, private val replacements: ReplacementStore) {
+class GoogleDriveSync(context: Context, private val replacements: ReplacementStore,
+    private val client: GoogleDriveSettingsClient = GoogleDriveSettingsClient(),
+    private val tokenProvider: (suspend () -> String)? = null,
+    automaticallySync: Boolean = true,
+) {
     private val settings = SettingsStore(context)
     private val authorization = Identity.getAuthorizationClient(context)
-    private val client = GoogleDriveSettingsClient()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutex = Mutex()
+    private data class ConnectionChoice(val local: SettingsSyncDocument, val cloud: SettingsSyncDocument,
+        val source: SettingsSyncDocument.ConnectionSource? = null)
+    private var connectionChoice: ConnectionChoice? = null
     private var generation = 0
     private var schedule = SettingsSyncSchedule()
     private val mutableState = MutableStateFlow(DriveSyncState(enabled = settings.driveSyncEnabled))
@@ -49,10 +55,12 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
         // Seed before the first local edit, including migration from the original five fields.
         runCatching { settings.syncDocument() }
         context.getSharedPreferences("opendictate_settings", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(listener)
-        scope.launch { while (true) { requestSync(); delay(60_000) } }
+        if (automaticallySync) scope.launch { while (true) { requestSync(); delay(60_000) } }
     }
 
     fun connect(token: String) {
+        settings.driveConnectionPending = true
+        connectionChoice = null
         settings.driveSyncEnabled = true
         mutableState.value = DriveSyncState(enabled = true)
         schedule.refresh()
@@ -62,9 +70,19 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
     fun disconnect() {
         generation++
         settings.driveSyncEnabled = false
+        settings.driveConnectionPending = false
+        connectionChoice = null
         changeJob?.cancel()
         schedule = SettingsSyncSchedule()
         mutableState.value = DriveSyncState()
+    }
+
+    fun chooseSource(source: SettingsSyncDocument.ConnectionSource) {
+        val choice = connectionChoice ?: return
+        if (!mutableState.value.needsSourceSelection) return
+        connectionChoice = choice.copy(source = source)
+        mutableState.value = mutableState.value.copy(needsSourceSelection = false)
+        requestSync()
     }
 
     fun authorizationFailed() {
@@ -80,7 +98,7 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
     fun replacementsChanged() { settings.recordReplacementChange() }
 
     private fun pump(suppliedToken: String? = null) {
-        if (!settings.driveSyncEnabled || mutex.isLocked || schedule.busy) return
+        if (!settings.driveSyncEnabled || mutableState.value.needsSourceSelection || mutex.isLocked || schedule.busy) return
         changeJob?.cancel()
         val now = SystemClock.elapsedRealtime()
         if (!schedule.begin(now)) {
@@ -105,6 +123,7 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
         mutableState.value = mutableState.value.copy(busy = true, failed = false)
         var token: String? = suppliedToken
         try {
+            if (token == null && tokenProvider != null) token = tokenProvider.invoke()
             if (token == null) token = suspendCancellableCoroutine { continuation ->
                 authorization.authorize(request()).addOnSuccessListener { result ->
                     if (continuation.isActive) {
@@ -122,15 +141,34 @@ class GoogleDriveSync(context: Context, private val replacements: ReplacementSto
                 mutableState.value = mutableState.value.copy(busy = false)
                 return@withLock
             }
-            val merged = settings.mergeSyncDocument(remote.document, replacements)
+            var source: SettingsSyncDocument.ConnectionSource? = null
+            if (settings.driveConnectionPending) {
+                settings.validateSyncDocument(remote.document)
+                val local = settings.syncDocument()
+                if (local.needsConnectionChoice(remote.document)) {
+                    val choice = connectionChoice
+                    if (choice?.source != null && choice.local.hasSameSettings(local) && choice.cloud.hasSameSettings(remote.document)) {
+                        source = choice.source
+                    } else {
+                        connectionChoice = ConnectionChoice(local, remote.document)
+                        mutableState.value = mutableState.value.copy(busy = false, needsSourceSelection = true)
+                        return@withLock
+                    }
+                }
+            }
+            val merged = settings.mergeSyncDocument(remote.document, replacements, source)
             // Refresh open editors as soon as incoming preferences apply, before the upload suspends.
             mutableState.value = mutableState.value.copy(settingsRevision = mutableState.value.settingsRevision + 1)
             if (runGeneration != generation) return@withLock
             if (remote.needsUpload(merged)) {
                 client.upload(accessToken, settings.syncDeviceId, remote.ownFileId, merged)
             }
-            if (runGeneration == generation) mutableState.value = mutableState.value.copy(enabled = true, busy = false, failed = false,
-                needsAuthorization = false, lastSyncedAt = System.currentTimeMillis())
+            if (runGeneration == generation) {
+                settings.driveConnectionPending = false
+                connectionChoice = null
+                mutableState.value = mutableState.value.copy(enabled = true, busy = false, failed = false,
+                    needsAuthorization = false, lastSyncedAt = System.currentTimeMillis())
+            }
         } catch (error: Exception) {
             if (error is CancellationException) throw error
             if (error is DriveSyncException && error.status == 401) token?.let {

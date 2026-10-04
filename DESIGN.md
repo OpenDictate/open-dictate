@@ -314,6 +314,14 @@ Android's Synchronization section lists providers in one rounded group. Google D
 
 macOS settings offer the same three choices from a native menu button at the top right. The saved choice applies across all five pages; Dark preserves the previous default. Light appearance uses semantic AppKit surfaces and foreground colors, including the selected navigation row. The recording HUD retains its dark nonactivating appearance.
 
+### Native Synchronization Source Choice
+
+First-connection source choice extends the existing Operate settings surfaces through a native Material 3 `AlertDialog` on Android and a SwiftUI sheet on macOS. Keep system typography, established appearance choices, semantic foregrounds and native radio states. Cloud is selected initially; each choice explains its replacement consequence, including propagation to other connected devices for Local. One confirm action names the selected result, alongside Cancel.
+
+Android makes each option a full-row radio target in one selectable group, with vertically scrollable explanatory content and native dialog actions. macOS uses a native `radioGroup` picker, wrapping copy and a 480pt sheet; Enter confirms and Escape cancels through default/cancel keyboard actions. These are scoped component details, not new global dimensions or tokens.
+
+Cloud is read before prompting. Only differing known synced settings require a choice; matching or empty cloud settings continue directly. Cancel disconnects while preserving local and cloud settings. A durable pending-connection gate prevents automatic merging before resolution, including after errors or restart; confirmation re-downloads and checks both sources before applying the chosen authority. Explicit choice overrides offline timestamp order. Successful resolution restores ordinary automatic synchronization. Surface briefs and the sidecar record native review evidence and its limits. No new visual world, raster asset or token is introduced.
+
 ### Local Word Replacements
 
 Word replacements extend the existing native settings world: a separate Replacements page in the macOS sidebar and a modal bottom sheet from Android's Dictation group. Recognition hints remain in Dictionary. Both surfaces use English/Russian labels, a global switch, and paired recognized-phrase and replacement fields. Add becomes Save during editing, with Cancel to discard the edit. Saved rules show the source above the replacement, with an individual checkbox and labeled edit/delete controls. Use native system focus and control states; retain Android's minimum touch targets.

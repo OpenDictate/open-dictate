@@ -94,4 +94,30 @@ class SettingsSyncDocumentTest {
             assertThrows(Exception::class.java) { SettingsSyncDocument.fromJson(value) }
         }
     }
+    @Test fun connectionChoiceOnlyForDifferentKnownCloudValues() {
+        val local = document("dictionary", "Local", 500, "android")
+        assertFalse(local.needsConnectionChoice(SettingsSyncDocument()))
+        assertFalse(local.needsConnectionChoice(document("future.setting", "unknown", 600, "mac")))
+        assertFalse(local.needsConnectionChoice(document("dictionary", "Local", 1, "mac")))
+        assertTrue(local.needsConnectionChoice(document("dictionary", "Cloud", 1, "mac")))
+        assertTrue(local.needsConnectionChoice(document("dictionary", "", 1, "mac")))
+        assertTrue(local.hasSameSettings(document("dictionary", "Local", 1, "mac")))
+    }
+
+    @Test fun explicitSourceWinsOverOfflineClocksAndStaleReplicas() {
+        val local = document("dictionary", "Local", 500, "android").merge(document("mode", "live", 500, "android"))
+        val cloud = document("dictionary", "", 100, "mac").merge(document("mode", "accurate", 900, "mac"))
+            .merge(document("future.setting", "preserved", 1000, "future"))
+        SettingsSyncDocument.ConnectionSource.entries.forEach { source ->
+            val resolved = local.resolvingConnection(cloud, source, "new", 10)
+            assertEquals(if (source == SettingsSyncDocument.ConnectionSource.CLOUD) "" else "Local", resolved.entries["dictionary"]?.value)
+            assertEquals(if (source == SettingsSyncDocument.ConnectionSource.CLOUD) "accurate" else "live", resolved.entries["mode"]?.value)
+            assertEquals(cloud.entries["future.setting"], resolved.entries["future.setting"])
+            assertEquals(resolved, resolved.merge(local).merge(cloud))
+        }
+        val partial = local.resolvingConnection(document("dictionary", "Cloud", 1, "a"),
+            SettingsSyncDocument.ConnectionSource.CLOUD, "new", 2)
+        assertEquals("live", partial.entries["mode"]?.value)
+    }
+
 }

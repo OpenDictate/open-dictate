@@ -79,6 +79,28 @@ saving credentials.
 The OAuth clients must belong to the same Cloud project to share the application
 data space. No permission to ordinary Drive files is requested. There is no backend.
 
+## Connecting and choosing a source
+
+On Android and macOS, every connection or reconnection reads Drive before applying
+or uploading any settings. If a known synced setting differs, choose **Cloud settings**
+(the default) or **Local settings**. Cloud replaces this device's synced values;
+Local publishes this device's synced values for other connected devices to receive.
+The dictionary and replacement list are each selected as a whole, without combining
+words or rules. Cancel disconnects without changing either source.
+
+An empty cloud or matching synced values connects without a source dialog. Fields
+missing from an older cloud journal keep their local values. Unknown future entries
+still merge normally. An explicit source choice overrides offline timestamps and
+advances clocks so stale replicas cannot undo it. The app reads Drive again before
+using the choice; changes to local or cloud values require choosing again. This is
+not a cross-device transaction: edits made after the final read follow normal
+per-preference conflict rules.
+
+Automatic sync cannot bypass a pending choice, including after a network failure
+or app restart. After a successful connection, ordinary automatic synchronization
+continues using the conflict rules below. Existing connected installations keep
+automatic sync; the choice appears when they reconnect.
+
 ## Storage and conflicts
 
 The hidden `appDataFolder` contains one `opendictate-settings-v1-<device>.json`
@@ -90,7 +112,7 @@ replicas cannot resurrect a cleared dictionary.
 Each preference merges independently. The latest `modifiedAt` wins; `deviceId`
 and then `value` break ties deterministically. Clocks advance past the largest
 observed timestamp even if the device clock moves backwards. New-device defaults
-have timestamp zero and yield to existing cloud values on first connection.
+have timestamp zero and yield to existing cloud values when merged. A differing first connection now asks for a source.
 **The dictionary is one preference:** simultaneous dictionary edits do not combine
 words; the latest dictionary replaces the earlier one. The replacement rule list
 is also one preference: simultaneous edits choose the latest complete list,

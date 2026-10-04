@@ -1,4 +1,5 @@
 import SwiftUI
+import OpenDictateCore
 
 struct GoogleDriveSettingsView: View {
     @ObservedObject var sync: GoogleDriveSync
@@ -28,7 +29,7 @@ struct GoogleDriveSettingsView: View {
                        ? t("Sync now", "Синхронизировать") : t("Connect Google Drive", "Подключить Google Drive")) {
                     if preferences.driveSyncEnabled && !sync.needsSignIn { sync.syncNow() }
                     else { sync.connect(clientSecret: clientSecret); clientSecret = "" }
-                }.disabled(sync.status == .busy || (!preferences.driveSyncEnabled && preferences.driveClientID.isEmpty))
+                }.disabled(sync.status == .busy || sync.needsSourceSelection || (!preferences.driveSyncEnabled && preferences.driveClientID.isEmpty))
                 if preferences.driveSyncEnabled || sync.status == .busy {
                     Button(sync.status == .busy && !preferences.driveSyncEnabled ? t("Cancel", "Отмена") : t("Disconnect", "Отключить"),
                            action: sync.disconnect)
@@ -37,6 +38,11 @@ struct GoogleDriveSettingsView: View {
             Text(t("Only these settings go to Google. API keys, audio and history are never synced. Disconnecting keeps local and cloud settings.",
                    "В Google отправляются только эти настройки. API-ключи, звук и история не синхронизируются. Отключение сохраняет локальные и облачные настройки."))
                 .font(.caption).foregroundStyle(.secondary)
+        }
+        .sheet(isPresented: Binding(get: { sync.needsSourceSelection }, set: { shown in
+            if !shown && sync.needsSourceSelection { sync.disconnect() }
+        })) {
+            DriveSourceSelectionView(preferences: preferences, onChoose: sync.chooseSource, onCancel: sync.disconnect)
         }
     }
     private var statusText: String {
@@ -48,6 +54,7 @@ struct GoogleDriveSettingsView: View {
             let date = sync.lastSyncedAt?.formatted(date: .abbreviated, time: .shortened) ?? ""
             return t("Last synced: \(date). Changes sync automatically while the app is running.",
                      "Последняя синхронизация: \(date). Изменения синхронизируются автоматически, пока приложение работает.")
+        case .sourceSelection: return t("Choose a settings source to finish connecting.", "Выберите источник настроек, чтобы завершить подключение.")
         case .failed: return t("Could not sync. Local settings are saved. Check your connection and try again.",
                                "Не удалось синхронизировать. Локальные настройки сохранены. Проверьте соединение и повторите.")
         case .authorization: return t("Sign in again to resume synchronization.", "Войдите снова, чтобы возобновить синхронизацию.")
@@ -55,5 +62,44 @@ struct GoogleDriveSettingsView: View {
                                       "Время ожидания входа в Google истекло. Подключитесь снова и завершите вход в течение 10 минут.")
         case .configuration: return t("Enter a valid Desktop OAuth client ID.", "Введите корректный ID OAuth-клиента типа Desktop.")
         }
+    }
+}
+
+struct DriveSourceSelectionView: View {
+    @ObservedObject var preferences: Preferences
+    let onChoose: (SettingsSyncDocument.ConnectionSource) -> Void
+    let onCancel: () -> Void
+    @State private var source: SettingsSyncDocument.ConnectionSource = .cloud
+    private func t(_ en: String, _ ru: String) -> String { preferences.t(en, ru) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text(t("Choose settings to sync", "Какие настройки синхронизировать?"))
+                .font(.headline)
+            Text(t("Google Drive and this Mac have different settings. Choose which dictionary, word replacements, dictation mode and models to use. Sync waits for your choice.",
+                   "Настройки на Google Диске и этом Mac различаются. Выберите источник словаря, автозамен, режима диктовки и моделей. Синхронизация ждёт вашего выбора."))
+                .fixedSize(horizontal: false, vertical: true)
+            Picker(t("Settings source", "Источник настроек"), selection: $source) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(t("Cloud settings", "Облачные настройки"))
+                    Text(t("Replace synced settings on this Mac with those from Google Drive.",
+                           "Заменить синхронизируемые настройки на этом Mac настройками с Google Диска."))
+                        .font(.callout).foregroundStyle(.primary)
+                }.tag(SettingsSyncDocument.ConnectionSource.cloud)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(t("Local settings", "Локальные настройки"))
+                    Text(t("Publish this Mac’s synced settings to Google Drive. Other connected devices will receive them.",
+                           "Отправить синхронизируемые настройки этого Mac на Google Диск. Их получат остальные подключённые устройства."))
+                        .font(.callout).foregroundStyle(.primary)
+                }.tag(SettingsSyncDocument.ConnectionSource.local)
+            }.pickerStyle(.radioGroup).labelsHidden()
+            HStack {
+                Button(t("Cancel", "Отмена"), action: onCancel).keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(source == .cloud ? t("Use cloud settings", "Использовать облачные")
+                       : t("Use local settings", "Использовать локальные")) { onChoose(source) }
+                    .keyboardShortcut(.defaultAction)
+            }
+        }.padding(24).frame(width: 480)
     }
 }

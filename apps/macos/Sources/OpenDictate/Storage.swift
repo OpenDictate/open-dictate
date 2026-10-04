@@ -30,6 +30,10 @@ final class Preferences: ObservableObject {
     @Published var liveModel: String { didSet { defaults.set(liveModel, forKey: "liveModel"); recordSyncChange() } }
     @Published var accurateModel: String { didSet { defaults.set(accurateModel, forKey: "accurateModel"); recordSyncChange() } }
     @Published var driveSyncEnabled: Bool { didSet { defaults.set(driveSyncEnabled, forKey: "driveSyncEnabled") } }
+    var driveConnectionPending: Bool {
+        get { defaults.bool(forKey: "driveConnectionPending") }
+        set { defaults.set(newValue, forKey: "driveConnectionPending") }
+    }
     @Published var driveClientID: String { didSet { defaults.set(driveClientID, forKey: "driveClientID") } }
     let syncDeviceID: String
     private var applyingSync = false
@@ -105,10 +109,33 @@ final class Preferences: ObservableObject {
             if document != previous { syncChanges.send() }
         } catch { syncStorageFailed = true }
     }
-    func mergeSync(_ remote: SettingsSyncDocument) throws -> SettingsSyncDocument {
+    func mergeSync(_ remote: SettingsSyncDocument,
+                   source: SettingsSyncDocument.ConnectionSource? = nil) throws -> SettingsSyncDocument {
         var merged = try syncDocument()
-        merged.merge(remote)
-        merged.promoteSeeds(deviceId: syncDeviceID, now: Int64(Date().timeIntervalSince1970 * 1000))
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        if let source {
+            merged = merged.resolvingConnection(with: remote, source: source, deviceId: syncDeviceID, now: now)
+        } else {
+            merged.merge(remote)
+            merged.promoteSeeds(deviceId: syncDeviceID, now: now)
+        }
+        try validateSync(merged)
+        let replacementJSON = merged.entries["wordReplacements"]?.value
+        let replacementEnabled = merged.entries["wordReplacementsEnabled"]?.value
+        let encoded = try JSONEncoder().encode(merged)
+        applyingSync = true
+        defer { applyingSync = false }
+        try replacements.applySync(json: replacementJSON, enabled: replacementEnabled.map { $0 == "true" })
+        if let value = merged.entries["dictionary"]?.value, dictionary != value { dictionary = value }
+        if let value = merged.entries["mode"]?.value, let next = DictationMode(rawValue: value), mode != next { mode = next }
+        if let value = merged.entries["liveModel"]?.value, liveModel != value { liveModel = value }
+        if let value = merged.entries["accurateModel"]?.value, accurateModel != value { accurateModel = value }
+        if let value = merged.entries["textModel"]?.value, textModel != value { textModel = value }
+        defaults.set(encoded, forKey: "syncDocument")
+        return merged
+    }
+
+    func validateSync(_ merged: SettingsSyncDocument) throws {
         if let value = merged.entries["mode"]?.value, DictationMode(rawValue: value) == nil { throw SyncFormatError.invalid }
         for key in ["liveModel", "accurateModel", "textModel"] {
             if let value = merged.entries[key]?.value,
@@ -120,16 +147,6 @@ final class Preferences: ObservableObject {
         guard replacementEnabled == nil || replacementEnabled == "true" || replacementEnabled == "false" else { throw SyncFormatError.invalid }
         let encoded = try JSONEncoder().encode(merged)
         _ = try SettingsSyncDocument.decode(encoded)
-        applyingSync = true
-        defer { applyingSync = false }
-        try replacements.applySync(json: replacementJSON, enabled: replacementEnabled.map { $0 == "true" })
-        if let value = merged.entries["dictionary"]?.value, dictionary != value { dictionary = value }
-        if let value = merged.entries["mode"]?.value, let next = DictationMode(rawValue: value), mode != next { mode = next }
-        if let value = merged.entries["liveModel"]?.value, liveModel != value { liveModel = value }
-        if let value = merged.entries["accurateModel"]?.value, accurateModel != value { accurateModel = value }
-        if let value = merged.entries["textModel"]?.value, textModel != value { textModel = value }
-        defaults.set(encoded, forKey: "syncDocument")
-        return merged
     }
 
     var isRussian: Bool {

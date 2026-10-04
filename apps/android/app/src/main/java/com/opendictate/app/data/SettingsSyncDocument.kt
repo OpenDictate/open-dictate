@@ -30,6 +30,26 @@ data class SettingsSyncDocument(val entries: Map<String, SettingsSyncEntry> = em
         return SettingsSyncDocument(result)
     }
 
+    enum class ConnectionSource { CLOUD, LOCAL }
+
+    /** Compare visible settings, excluding clocks and unknown future entries. */
+    fun hasSameSettings(other: SettingsSyncDocument): Boolean =
+        KEYS.all { entries[it]?.value == other.entries[it]?.value }
+
+    fun needsConnectionChoice(remote: SettingsSyncDocument): Boolean = KEYS.any { key ->
+        remote.entries[key]?.let { it.value != entries[key]?.value } == true
+    }
+
+    /** An explicit choice wins over offline clocks without deleting unknown settings. */
+    fun resolvingConnection(remote: SettingsSyncDocument, source: ConnectionSource,
+                            deviceId: String, now: Long): SettingsSyncDocument {
+        val preferred = if (source == ConnectionSource.CLOUD) remote else this
+        val latest = maxOf(syncEntries().values.maxOfOrNull { it.modifiedAt } ?: 0L,
+            remote.syncEntries().values.maxOfOrNull { it.modifiedAt } ?: 0L)
+        return merge(remote).record(preferred.entries.mapValues { it.value.value }, deviceId, maxOf(now, latest + 1))
+            .promoteSeeds(deviceId, now)
+    }
+
     fun promoteSeeds(deviceId: String, now: Long): SettingsSyncDocument {
         val synced = syncEntries()
         val clock = maxOf(now, (synced.values.maxOfOrNull { it.modifiedAt } ?: 0L) + 1)

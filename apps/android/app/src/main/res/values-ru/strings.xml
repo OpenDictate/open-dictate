@@ -246,4 +246,12 @@
     <string name="accurate_punctuation_subtitle">Через OpenAI. Только на этом устройстве.</string>
     <string name="overlay_correcting_punctuation_description">Исправление пунктуации. Потяните влево, чтобы отменить.</string>
     <string name="settings_correcting_punctuation">Исправление пунктуации…</string>
+    <string name="drive_sync_source_title">Источник настроек</string>
+    <string name="drive_sync_source_message">Настройки в облаке и на устройстве различаются. Выберите источник словаря, автозамен, режима диктовки и моделей.</string>
+    <string name="drive_sync_source_cloud">Облачные настройки</string>
+    <string name="drive_sync_source_cloud_description">Заменить настройки на этом устройстве облачными.</string>
+    <string name="drive_sync_source_local">Локальные настройки</string>
+    <string name="drive_sync_source_local_description">Заменить настройки в облаке локальными. Их получат остальные подключённые устройства.</string>
+    <string name="drive_sync_use_cloud">Использовать облачные</string>
+    <string name="drive_sync_use_local">Использовать локальные</string>
 </resources>
