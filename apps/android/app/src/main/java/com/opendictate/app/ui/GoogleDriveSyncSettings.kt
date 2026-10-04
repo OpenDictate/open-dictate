@@ -3,15 +3,23 @@ package com.opendictate.app.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.identity.Identity
 import com.opendictate.app.OpenDictateApplication
@@ -33,21 +41,18 @@ internal fun GoogleDriveSyncSettings() {
             } catch (_: Exception) { sync.authorizationFailed() }
         }
     }
-    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.drive_sync_description), style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(when {
-            authorizing -> R.string.drive_sync_authorizing
-            state.busy -> R.string.drive_sync_busy
-            state.needsAuthorization -> R.string.drive_sync_sign_in_again
-            state.failed -> R.string.drive_sync_failed
-            !state.enabled -> R.string.drive_sync_off
-            state.lastSyncedAt > 0 -> R.string.drive_sync_done
-            else -> R.string.drive_sync_waiting
-        }), style = MaterialTheme.typography.bodySmall,
-            color = if (state.failed) MaterialTheme.colorScheme.error else SettingsMuted)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(enabled = !state.busy && !authorizing, onClick = {
-                if (state.enabled && !state.needsAuthorization) sync.requestSync()
+    LaunchedEffect(state.failed, state.needsAuthorization) {
+        if (state.failed) {
+            Toast.makeText(context, if (state.needsAuthorization) R.string.drive_sync_sign_in_again
+                else R.string.drive_sync_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+    val checked = state.enabled && !state.needsAuthorization
+    val authorizationStatus = stringResource(R.string.drive_sync_authorizing)
+    Row(
+        Modifier.fillMaxWidth()
+            .toggleable(value = checked, enabled = !authorizing, role = Role.Switch, onValueChange = { enabled ->
+                if (!enabled) sync.disconnect()
                 else {
                     val activity = context.findActivity()
                     if (activity == null) sync.authorizationFailed()
@@ -66,10 +71,17 @@ internal fun GoogleDriveSyncSettings() {
                             }.addOnFailureListener { authorizing = false; sync.authorizationFailed() }
                     }
                 }
-            }) { Text(stringResource(if (state.enabled && !state.needsAuthorization) R.string.drive_sync_now else R.string.drive_sync_connect)) }
-            if (state.enabled) TextButton(onClick = sync::disconnect) { Text(stringResource(R.string.drive_sync_disconnect)) }
-        }
-        Text(stringResource(R.string.drive_sync_privacy), style = MaterialTheme.typography.bodySmall, color = SettingsMuted)
+            })
+            .semantics { if (authorizing) stateDescription = authorizationStatus }
+            .heightIn(min = 80.dp)
+            .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(painterResource(R.drawable.ic_google_drive_24), null, Modifier.size(24.dp), tint = Color.Unspecified)
+        Spacer(Modifier.width(14.dp))
+        Text(stringResource(R.string.drive_sync_provider), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = null, enabled = !authorizing)
     }
 }
 

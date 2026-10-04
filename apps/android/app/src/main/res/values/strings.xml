@@ -233,7 +233,8 @@
     <string name="replacements_edit_rule">Edit replacement for %1$s</string>
     <string name="replacements_delete_rule">Delete replacement for %1$s</string>
     <string name="replacements_toggle_rule">Enable replacement for %1$s</string>
-    <string name="drive_sync_description">Sync your dictionary, word replacements, dictation mode and selected models across Android and macOS.</string>
+    <string name="drive_sync_title">Synchronization</string>
+    <string name="drive_sync_provider" translatable="false">Google Drive</string>
     <string name="drive_sync_authorizing">Waiting for Google sign-in…</string>
     <string name="drive_sync_busy">Synchronizing…</string>
     <string name="drive_sync_sign_in_again">Sign in again to resume synchronization.</string>

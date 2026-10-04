@@ -10,8 +10,8 @@ val keyAliasValue = providers.environmentVariable("KEY_ALIAS")
 val keyPasswordValue = providers.environmentVariable("KEY_PASSWORD")
 val storePasswordValue = providers.environmentVariable("STORE_PASSWORD")
 val releaseStore = layout.buildDirectory.file("keystore/opendictate-release.jks")
-val appVersionName = providers.gradleProperty("appVersionName").orElse("0.11.0")
-val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(59)
+val appVersionName = providers.gradleProperty("appVersionName").orElse("0.11.1")
+val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(60)
 val previewVersionSuffix = providers.gradleProperty("previewVersionSuffix").orElse("-preview")
 
 if (signingKey.isPresent) {

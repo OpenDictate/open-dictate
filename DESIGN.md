@@ -310,6 +310,8 @@ Use native Material 3 sans-serif typography for headings, labels, and body copy;
 
 The signature component is a compact readiness disclosure above the settings groups: it exposes API key, microphone, and Accessibility setup on demand and reports active dictation state. Dictation groups mode, recognition model, languages, punctuation, word replacements, and dictionary. Keyboard controls group transformation, selected-text dictionary actions, and app exclusions. Advanced contains timeout and model refresh; a test field and privacy note finish the page. Languages, word replacements, and dictionary open native modal sheets; model choices use native menus and timeout uses a dialog. Toggle the whole row with one switch semantic target; preserve selected-state checks, disabled/loading/error feedback, and keyboard-safe editing. See the surface brief for interaction details and the sidecar’s `extensions.androidSettings` for native theme roles.
 
+Android's Synchronization section lists providers in one rounded group. Google Drive is the only provider: a 24 dp color vector logo, its name, and a trailing native switch in an 80 dp minimum full-row target. Keep descriptions and action buttons out of this group; enabling opens Google authorization when needed, disabling disconnects, and errors use a transient toast. Automatic synchronization remains unchanged.
+
 macOS settings offer the same three choices from a native menu button at the top right. The saved choice applies across all five pages; Dark preserves the previous default. Light appearance uses semantic AppKit surfaces and foreground colors, including the selected navigation row. The recording HUD retains its dark nonactivating appearance.
 
 ### Local Word Replacements
