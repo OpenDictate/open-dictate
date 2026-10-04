@@ -174,3 +174,13 @@ Other phases retain the native template `mic`. No title is added while processin
 microphone, a circular red background and equal opposite insets in Aqua and Dark
 Aqua at 1×, 2× and 8× using production-image renders. This check covers the icon,
 not live microphone, TCC or network transcription behavior.
+
+## Google Drive source-choice extension
+
+Mode remains Operate in the established SwiftUI/AppKit world. `GoogleDriveSettingsView.swift` presents a native sheet after cloud has been read and known synced dictionary, replacements, dictation mode or model choices differ. `DriveSourceSelectionView` uses system headline/body/callout styles, semantic primary text, wrapping explanatory copy and a native `radioGroup` picker. The sheet is 480pt wide with 24pt padding and 20pt main-stack spacing. Cloud is selected initially; descriptions explain replacing this Mac's synced settings or publishing local settings to the other connected devices. One result-named confirm action has the default Enter shortcut; Cancel has the Escape shortcut. Cancellation or sheet dismissal disconnects and keeps local and cloud settings.
+
+The durable pending-connection gate survives errors and restart. Confirmation re-downloads cloud and checks both sources against the presented choice before applying it; a changed source renews the prompt. Explicit choice overrides offline clocks. Empty or matching cloud settings proceed without a prompt, and ordinary automatic synchronization resumes after success. Existing connection controls and saved appearance remain in place.
+
+Implementation authority: `GoogleDriveSettingsView.swift` and `GoogleDriveSync.swift`. Final native evidence is `.impeccable/review/drive-source-en-NSAppearanceNameAqua.png`, `.impeccable/review/drive-source-en-NSAppearanceNameDarkAqua.png`, `.impeccable/review/drive-source-ru-NSAppearanceNameAqua.png`, and `.impeccable/review/drive-source-ru-NSAppearanceNameDarkAqua.png`. These are production `NSHostingView` renders in English/Russian and both native appearances; they do not demonstrate a live sheet presentation or Google OAuth interaction. The supplied Swift verification reports 138 passing tests. No HTML detector ran on this native surface.
+
+Finish reviewer disposition: **ship** for this narrow addition; all five finish-review sections passed, with no material fixes. No new token, shipping raster asset or visual world is introduced; captures remain review evidence.

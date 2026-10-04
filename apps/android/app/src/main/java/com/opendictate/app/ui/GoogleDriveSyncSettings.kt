@@ -8,7 +8,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +29,7 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.opendictate.app.OpenDictateApplication
 import com.opendictate.app.R
 import com.opendictate.app.data.GoogleDriveSync
+import com.opendictate.app.data.SettingsSyncDocument
 
 @Composable
 internal fun GoogleDriveSyncSettings() {
@@ -46,6 +51,9 @@ internal fun GoogleDriveSyncSettings() {
             Toast.makeText(context, if (state.needsAuthorization) R.string.drive_sync_sign_in_again
                 else R.string.drive_sync_failed, Toast.LENGTH_LONG).show()
         }
+    }
+    if (state.needsSourceSelection) {
+        DriveSourceSelectionDialog(onChoose = sync::chooseSource, onCancel = sync::disconnect)
     }
     val checked = state.enabled && !state.needsAuthorization
     val authorizationStatus = stringResource(R.string.drive_sync_authorizing)
@@ -89,4 +97,48 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+@Composable
+internal fun DriveSourceSelectionDialog(
+    onChoose: (SettingsSyncDocument.ConnectionSource) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var source by remember { mutableStateOf(SettingsSyncDocument.ConnectionSource.CLOUD) }
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.drive_sync_source_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(stringResource(R.string.drive_sync_source_message), color = MaterialTheme.colorScheme.onSurface)
+                Column(Modifier.selectableGroup()) {
+                    SettingsSyncDocument.ConnectionSource.entries.forEach { option ->
+                        val cloud = option == SettingsSyncDocument.ConnectionSource.CLOUD
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .selectable(selected = source == option, role = Role.RadioButton, onClick = { source = option })
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            RadioButton(selected = source == option, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(stringResource(if (cloud) R.string.drive_sync_source_cloud else R.string.drive_sync_source_local),
+                                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(if (cloud) R.string.drive_sync_source_cloud_description else R.string.drive_sync_source_local_description),
+                                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onChoose(source) }) {
+                Text(stringResource(if (source == SettingsSyncDocument.ConnectionSource.CLOUD)
+                    R.string.drive_sync_use_cloud else R.string.drive_sync_use_local))
+            }
+        },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) } },
+    )
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-02T13:04:35+00:00",
+  "generatedAt": "2026-10-04T06:46:04.564787Z",
   "title": "Design System: OpenDictate",
   "extensions": {
     "colorMeta": {
@@ -133,6 +133,25 @@
           ]
         }
       },
+      "driveSourceChoice": {
+        "implementation": "GoogleDriveSyncSettings.kt; localized values/values-ru strings.xml; GoogleDriveSync.kt",
+        "presentation": "Scoped Operate extension: native Material 3 AlertDialog, established neutral light/dark schemes and system typography; scrollable explanatory content, full-row radio targets in one selectable group.",
+        "interaction": "Cloud default; explicit replacement consequences and propagation for Local; one result-named confirm plus Cancel. Dismissal cancels.",
+        "behavior": "Cloud is read before choice; only differing known synced settings prompt. Empty or matching cloud bypasses choice. Cancel disconnects without replacing either source. Durable pending-connection state gates automatic merging across errors/restart. Confirmation re-downloads and checks both sources, renewing choice if either changed; explicit source overrides offline clocks. Ordinary automatic synchronization resumes after success.",
+        "review": {
+          "verdict": "ship",
+          "scope": "Narrow first-connection source-choice addition",
+          "findings": "All five finish-review sections passed; no material fixes.",
+          "basis": "Native implementation, emulator captures and action/network-gate instrumentation; no HTML detector.",
+          "screenshots": [
+            ".impeccable/review/drive-source-android-phone.png",
+            ".impeccable/review/drive-source-android-phone-dark-large-ru.png",
+            ".impeccable/review/drive-source-android-tablet-dark-ru.png"
+          ],
+          "captureScope": "English light phone; Russian dark phone at font scale 1.3; Russian dark tablet emulation. Review evidence, not shipping raster assets.",
+          "limits": "Emulator and tablet-emulation evidence does not establish real-device Google sign-in coverage."
+        }
+      },
       "surfaceBrief": ".impeccable/surfaces/android-settings.md"
     },
     "nativeSurfaces": {
@@ -156,6 +175,20 @@
         "elevation": "Settings content stays flat. AppKit window chrome and the floating recording panel retain native shadows.",
         "motion": "No decorative motion or web hover lift; a native mini spinner communicates processing. Waveform levels interpolate over 40ms with Reduce Motion support.",
         "components": [
+          {
+            "name": "Google Drive Source Choice",
+            "implementation": "GoogleDriveSettingsView.swift DriveSourceSelectionView; GoogleDriveSync.swift",
+            "description": "Scoped Operate native sheet with wrapping copy, native radioGroup picker, system type and semantic primary text. Cloud default; explicit source consequences and one result-named confirm plus Cancel.",
+            "geometry": {
+              "units": "points",
+              "width": 480,
+              "padding": 24,
+              "stackSpacing": 20
+            },
+            "interaction": "Enter confirms through defaultAction; Escape cancels through cancelAction; dismissal disconnects and preserves local/cloud settings.",
+            "behavior": "Cloud is read before choice; only differing known synced settings prompt. Empty or matching cloud bypasses choice. Cancel disconnects without replacing either source. Durable pending-connection state gates automatic merging across errors/restart. Confirmation re-downloads and checks both sources, renewing choice if either changed; explicit source overrides offline clocks. Ordinary automatic synchronization resumes after success.",
+            "scope": "Existing native identity and appearance; no new global token or raster asset."
+          },
           { "name": "Sidebar Navigation", "implementation": "SettingsView.navigation(_:_:_:)", "description": "SF Symbol plus sentence-case label; tonal selection, selected medium weight and separate native keyboard focus." },
           { "name": "Setup and Preferences Controls", "implementation": "SettingsView", "description": "Native secure/search fields, buttons, segmented mode picker, pop-up pickers, switches and confirmation alerts." },
           {
@@ -213,6 +246,21 @@
           "output": "Icon rasters and .icns are packaging build output; no generated shipping raster is committed."
         },
         "review": {
+          "driveSourceChoice": {
+            "verdict": "ship",
+            "scope": "Narrow first-connection source-choice addition",
+            "findings": "All five finish-review sections passed; no material fixes.",
+            "basis": "Native implementation and production NSHostingView captures; no HTML detector.",
+            "screenshots": [
+              ".impeccable/review/drive-source-en-NSAppearanceNameAqua.png",
+              ".impeccable/review/drive-source-en-NSAppearanceNameDarkAqua.png",
+              ".impeccable/review/drive-source-ru-NSAppearanceNameAqua.png",
+              ".impeccable/review/drive-source-ru-NSAppearanceNameDarkAqua.png"
+            ],
+            "captureScope": "English/Russian production NSHostingView renders in Aqua and Dark Aqua; review evidence rather than shipping assets.",
+            "verification": "Supplied Swift verification reports 138 passing tests.",
+            "limits": "Offscreen production-view renders do not verify live sheet presentation or Google OAuth interaction."
+          },
           "verdict": "ship",
           "basis": "Code-led adaptation in the established visual world; implementation inspection and actual captures, with no approved comp or native detector.",
           "screenshots": [

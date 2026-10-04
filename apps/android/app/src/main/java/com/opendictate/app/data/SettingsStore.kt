@@ -120,6 +120,10 @@ class SettingsStore(context: Context) {
         get() = prefs.getBoolean("drive_sync_enabled", false)
         set(value) = prefs.edit { putBoolean("drive_sync_enabled", value) }
 
+    var driveConnectionPending: Boolean
+        get() = prefs.getBoolean("drive_connection_pending", false)
+        set(value) = prefs.edit { putBoolean("drive_connection_pending", value) }
+
     val syncDeviceId: String
         get() = synchronized(SYNC_LOCK) {
             prefs.getString("sync_device_id", null) ?: UUID.randomUUID().toString().also {
@@ -170,18 +174,15 @@ class SettingsStore(context: Context) {
     /** Called after all downloads succeed. Includes edits made while the network was suspended. */
     fun recordReplacementChange() { saveSynced {} }
 
-    fun mergeSyncDocument(remote: SettingsSyncDocument, replacements: ReplacementStore): SettingsSyncDocument = synchronized(SYNC_LOCK) {
-        val merged = syncDocument().merge(remote).promoteSeeds(syncDeviceId, System.currentTimeMillis())
-        SettingsSyncDocument.fromJson(merged.toJson())
+    fun mergeSyncDocument(remote: SettingsSyncDocument, replacements: ReplacementStore,
+                          source: SettingsSyncDocument.ConnectionSource? = null): SettingsSyncDocument = synchronized(SYNC_LOCK) {
+        val local = syncDocument()
+        val merged = if (source == null) local.merge(remote).promoteSeeds(syncDeviceId, System.currentTimeMillis())
+            else local.resolvingConnection(remote, source, syncDeviceId, System.currentTimeMillis())
+        validateSyncDocument(merged)
         val values = merged.entries
-        require(values["mode"]?.value in listOf(null, "live", "accurate"))
-        listOf("liveModel", "accurateModel", "textModel").forEach { key ->
-            values[key]?.value?.let { require(it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"))) }
-        }
         val replacementJSON = values["wordReplacements"]?.value
-        replacementJSON?.let(ReplacementDocument::fromJson)
         val enabled = values["wordReplacementsEnabled"]?.value
-        require(enabled in listOf(null, "true", "false"))
         if (replacementJSON != null || enabled != null) replacements.applySync(replacementJSON, enabled?.toBooleanStrict())
         prefs.edit {
             values["dictionary"]?.let { putString(KEY_PROMPT, it.value) }
@@ -192,6 +193,19 @@ class SettingsStore(context: Context) {
             putString("sync_document", merged.toJson())
         }
         merged
+    }
+
+    fun validateSyncDocument(merged: SettingsSyncDocument) {
+        SettingsSyncDocument.fromJson(merged.toJson())
+        val values = merged.entries
+        require(values["mode"]?.value in listOf(null, "live", "accurate"))
+        listOf("liveModel", "accurateModel", "textModel").forEach { key ->
+            values[key]?.value?.let { require(it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"))) }
+        }
+        val replacementJSON = values["wordReplacements"]?.value
+        replacementJSON?.let(ReplacementDocument::fromJson)
+        val enabled = values["wordReplacementsEnabled"]?.value
+        require(enabled in listOf(null, "true", "false"))
     }
 
     companion object {

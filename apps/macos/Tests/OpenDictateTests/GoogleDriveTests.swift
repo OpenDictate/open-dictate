@@ -151,6 +151,101 @@ final class GoogleDriveTests: XCTestCase {
         XCTAssertEqual(saved?.refreshToken, "synthetic-refresh")
     }
 
+    @MainActor private func awaitStatus(_ sync: GoogleDriveSync, _ status: GoogleDriveSync.Status) async throws {
+        for _ in 0..<500 {
+            if sync.status == status { return }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTFail("Synchronization did not reach the expected status")
+    }
+
+    @MainActor func testConnectionWaitsWithoutApplyingOrUploadingAndCancelPreservesSettings() async throws {
+        let suite = "drive-choice-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        preferences.dictionary = "Offline edit"
+        preferences.driveConnectionPending = true; preferences.driveSyncEnabled = true
+        var writes = 0
+        DriveHTTP.handler = { request in
+            if request.httpMethod != "GET" { writes += 1; return (200, Data("{}".utf8)) }
+            if request.url?.query?.contains("alt=media") == true {
+                return (200, Data(#"{"schemaVersion":1,"entries":{"dictionary":{"value":"Cloud","modifiedAt":1,"deviceId":"android"}}}"#.utf8))
+            }
+            return (200, Data(#"{"files":[{"id":"cloud-file","name":"opendictate-settings-v1-android.json"}]}"#.utf8))
+        }
+        let sync = GoogleDriveSync(preferences: preferences, client: client(), refreshToken: { "synthetic" },
+            automaticallySync: false, deleteCredentials: {})
+        let before = try preferences.syncDocument()
+        sync.syncNow(); try await awaitStatus(sync, .sourceSelection)
+        XCTAssertEqual(preferences.dictionary, "Offline edit")
+        XCTAssertEqual(try preferences.syncDocument(), before)
+        XCTAssertEqual(writes, 0)
+        sync.syncNow()
+        XCTAssertTrue(sync.needsSourceSelection)
+        sync.disconnect()
+        XCTAssertFalse(sync.needsSourceSelection); XCTAssertFalse(preferences.driveSyncEnabled)
+        XCTAssertFalse(preferences.driveConnectionPending)
+        XCTAssertEqual(preferences.dictionary, "Offline edit"); XCTAssertEqual(writes, 0)
+    }
+
+    @MainActor func testSourceSelectionRedownloadsAndPromptsAgainIfCloudChanged() async throws {
+        let suite = "drive-choice-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        preferences.dictionary = "Offline edit"
+        preferences.driveConnectionPending = true; preferences.driveSyncEnabled = true
+        var cloud = "Cloud", writes = 0
+        DriveHTTP.handler = { request in
+            if request.httpMethod != "GET" { writes += 1; return (200, Data("{}".utf8)) }
+            if request.url?.query?.contains("alt=media") == true {
+                var remote = SettingsSyncDocument()
+                remote.entries["dictionary"] = .init(value: cloud, modifiedAt: 1, deviceId: "android")
+                return (200, try JSONEncoder().encode(remote))
+            }
+            return (200, Data(#"{"files":[{"id":"cloud-file","name":"opendictate-settings-v1-android.json"}]}"#.utf8))
+        }
+        let sync = GoogleDriveSync(preferences: preferences, client: client(), refreshToken: { "synthetic" },
+            automaticallySync: false, deleteCredentials: {})
+        sync.syncNow(); try await awaitStatus(sync, .sourceSelection)
+        cloud = "Changed on another device"
+        sync.chooseSource(.cloud); try await awaitStatus(sync, .sourceSelection)
+        XCTAssertEqual(writes, 0); XCTAssertEqual(preferences.dictionary, "Offline edit")
+        sync.chooseSource(.cloud); try await awaitStatus(sync, .synced)
+        XCTAssertEqual(preferences.dictionary, cloud)
+        XCTAssertEqual(writes, 1); XCTAssertFalse(preferences.driveConnectionPending)
+    }
+
+    @MainActor func testPendingConnectionSurvivesFailureAndRestartAndLocalChoicePublishes() async throws {
+        let suite = "drive-choice-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var preferences = Preferences(defaults: defaults)
+        preferences.dictionary = "Offline edit"
+        preferences.driveConnectionPending = true; preferences.driveSyncEnabled = true
+        var fail = true, writes = 0
+        DriveHTTP.handler = { request in
+            if fail { return (503, Data("{}".utf8)) }
+            if request.httpMethod != "GET" { writes += 1; return (200, Data("{}".utf8)) }
+            if request.url?.query?.contains("alt=media") == true {
+                return (200, Data(#"{"schemaVersion":1,"entries":{"dictionary":{"value":"Cloud","modifiedAt":1,"deviceId":"android"}}}"#.utf8))
+            }
+            return (200, Data(#"{"files":[{"id":"cloud-file","name":"opendictate-settings-v1-android.json"}]}"#.utf8))
+        }
+        let failed = GoogleDriveSync(preferences: preferences, client: client(), refreshToken: { "synthetic" },
+            automaticallySync: false, deleteCredentials: {})
+        failed.syncNow(); try await awaitStatus(failed, .failed)
+        XCTAssertTrue(preferences.driveConnectionPending); XCTAssertEqual(writes, 0)
+        preferences = Preferences(defaults: defaults); fail = false
+        let resumed = GoogleDriveSync(preferences: preferences, client: client(), refreshToken: { "synthetic" },
+            automaticallySync: false, deleteCredentials: {})
+        resumed.syncNow(); try await awaitStatus(resumed, .sourceSelection)
+        resumed.chooseSource(.local); try await awaitStatus(resumed, .synced)
+        XCTAssertEqual(preferences.dictionary, "Offline edit")
+        XCTAssertEqual(writes, 1); XCTAssertFalse(preferences.driveConnectionPending)
+    }
+
     @MainActor func testCancellingOAuthClosesListenerAndDoesNotPersistCredentials() async {
         var saved = false
         let opened = expectation(description: "Browser URL ready")

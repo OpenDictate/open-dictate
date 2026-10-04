@@ -250,4 +250,12 @@
     <string name="accurate_punctuation_subtitle">Via OpenAI. Only on this device.</string>
     <string name="overlay_correcting_punctuation_description">Correcting punctuation. Swipe left to cancel.</string>
     <string name="settings_correcting_punctuation">Correcting punctuation…</string>
+    <string name="drive_sync_source_title">Choose a settings source</string>
+    <string name="drive_sync_source_message">Cloud and local settings differ. Choose which dictionary, word replacements, dictation mode and models to use.</string>
+    <string name="drive_sync_source_cloud">Cloud settings</string>
+    <string name="drive_sync_source_cloud_description">Replace this device’s settings with cloud settings.</string>
+    <string name="drive_sync_source_local">Local settings</string>
+    <string name="drive_sync_source_local_description">Replace cloud settings with this device’s settings. Other connected devices will receive them.</string>
+    <string name="drive_sync_use_cloud">Use cloud settings</string>
+    <string name="drive_sync_use_local">Use local settings</string>
 </resources>

@@ -1,14 +1,14 @@
-OpenDictate for macOS **0.3.0** adds retranscription of your latest recording. Requires macOS 14+ on Apple Silicon or Intel.
+OpenDictate for macOS **0.4.0** adds safe settings-source selection when connecting Google Drive. Requires macOS 14+ on Apple Silicon or Intel.
 
-- Choose **Retranscribe last recording** (Перетранскрибировать последнюю запись) in the menu bar to recognize the latest Live or Accurate recording again through Accurate, without recording new audio.
-- Uses current Accurate settings, including model, languages, dictionary, punctuation correction and word replacements, without changing your selected dictation mode.
-- Keeps the recording available after recognition errors and cancelled retries. Escape cancels processing; duplicate requests are blocked while busy.
-- Inserts into the eligible field focused at invocation. If focus changes or no eligible field exists, the result is available to copy and in optional history.
-- Retains only the latest ordinary dictation audio in memory until the next ordinary dictation or quitting. Cancelled recordings and voice-edit instructions are not retained for retry. Audio is never saved to disk or synced.
+- When cloud and local settings differ, choose **Cloud settings** (the default) or **Local settings** before either source changes. The choice covers dictionary, word replacements, dictation mode and selected models.
+- Cloud settings replace synced values on this Mac. Local settings are published to Google Drive and received by other connected devices. Dictionaries and replacement lists are selected as a whole.
+- Cancel leaves local and cloud settings unchanged. A pending choice blocks automatic synchronization, including after network errors or restarting the app.
+- Settings are downloaded again before applying your choice; if either source changed while you were choosing, the app asks again. Empty clouds and matching values connect without an extra step.
+- After connecting, automatic synchronization continues as before. Existing connections are preserved; reconnect to choose a source again. API keys, audio and history remain excluded.
 
 ### Install
 
-Download `OpenDictate-macOS-0.3.0-universal.dmg`, open it and drag OpenDictate to Applications. Quit an existing copy before replacing it. Existing settings and your Keychain API key are retained. Allow Microphone and Accessibility if prompted.
+Download `OpenDictate-macOS-0.4.0-universal.dmg`, open it and drag OpenDictate to Applications. Quit an existing copy before replacing it. Existing settings and your Keychain API key are retained. Allow Microphone and Accessibility if prompted.
 
 This release is **locally signed and not notarized**. If Gatekeeper blocks launching it, use **System Settings → Privacy & Security → Open Anyway** for OpenDictate, then launch it again. The disk image includes bilingual instructions.
 

@@ -75,6 +75,37 @@ final class SettingsSyncTests: XCTestCase {
             XCTAssertThrowsError(try SettingsSyncDocument.decode(Data(json.utf8)))
         }
     }
+    func testConnectionChoiceForDifferencesButNotEmptyCloudOrMatchingValues() {
+        let local = document("dictionary", "Local", 500, "mac")
+        XCTAssertFalse(local.needsConnectionChoice(with: SettingsSyncDocument()))
+        XCTAssertFalse(local.needsConnectionChoice(with: document("future.setting", "unknown", 600, "android")))
+        XCTAssertFalse(local.needsConnectionChoice(with: document("dictionary", "Local", 1, "android")))
+        XCTAssertTrue(local.needsConnectionChoice(with: document("dictionary", "Cloud", 1, "android")))
+        XCTAssertTrue(local.needsConnectionChoice(with: document("dictionary", "", 1, "android")))
+        XCTAssertTrue(local.hasSameSettings(as: document("dictionary", "Local", 1, "android")))
+    }
+
+    func testExplicitSourceWinsRegardlessOfOfflineClockAndCannotBeUndoneByStaleReplicas() {
+        var local = document("dictionary", "Local", 500, "mac")
+        local.merge(document("mode", "live", 500, "mac"))
+        var cloud = document("dictionary", "", 100, "android")
+        cloud.merge(document("mode", "accurate", 900, "android"))
+        cloud.merge(document("future.setting", "preserved", 1000, "future"))
+        for source in [SettingsSyncDocument.ConnectionSource.cloud, .local] {
+            var resolved = local.resolvingConnection(with: cloud, source: source, deviceId: "new", now: 10)
+            XCTAssertEqual(resolved.entries["dictionary"]?.value, source == .cloud ? "" : "Local")
+            XCTAssertEqual(resolved.entries["mode"]?.value, source == .cloud ? "accurate" : "live")
+            XCTAssertEqual(resolved.entries["future.setting"], cloud.entries["future.setting"])
+            let chosen = resolved
+            resolved.merge(local); resolved.merge(cloud)
+            XCTAssertEqual(resolved, chosen)
+        }
+        // Cloud journals from older versions may lack newer fields; keep local values for them.
+        let partial = local.resolvingConnection(with: document("dictionary", "Cloud", 1, "a"),
+            source: .cloud, deviceId: "new", now: 2)
+        XCTAssertEqual(partial.entries["mode"]?.value, "live")
+    }
+
     func testSelectedModelsReachBothTranscriptionRequests() throws {
         var context = TranscriptionContext()
         context.liveModel = "custom-live-model"; context.accurateModel = "custom-file-model"

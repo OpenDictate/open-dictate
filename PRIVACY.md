@@ -26,6 +26,10 @@ Google and stored in your account's hidden app-data folder. Sync requests only `
 ordinary Drive files. API keys, audio, transcripts/history, exclusions and
 permissions are excluded; other preferences remain local.
 
+When connecting, the app reads cloud settings first. If synced values differ,
+you choose cloud or local settings before either source changes. Cancel leaves
+settings unchanged. A pending choice blocks automatic sync even after a restart.
+
 Android uses Google Play services authorization and token caching. macOS stores
 its OAuth client secret and refresh token in device-only, non-synchronizing
 Keychain storage. The client ID stays in preferences. macOS sign-in opens your

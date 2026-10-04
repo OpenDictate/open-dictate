@@ -33,6 +33,9 @@ refresh tokens use a separate device-only, non-synchronizing Keychain item.
 Access tokens stay in memory. Disconnect stops local delivery and removes
 macOS credentials, without deleting cloud data or revoking Google's grant.
 
+Connection source selection blocks application and upload until differences are
+resolved explicitly. Pending connections persist across restart and network
+failure; choices are checked against a fresh download before application.
 Per-device replicas and per-field merge preserve concurrent writes. Incoming
 settings do not change an active dictation's captured settings. See
 [Google Cloud setup and verification](docs/google-drive-sync.md).
