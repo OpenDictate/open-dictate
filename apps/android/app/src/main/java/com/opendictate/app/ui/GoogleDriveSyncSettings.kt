@@ -37,19 +37,19 @@ internal fun GoogleDriveSyncSettings() {
     val sync = (context.applicationContext as OpenDictateApplication).driveSync
     val state by sync.state.collectAsState()
     var authorizing by remember { mutableStateOf(false) }
+    // Feedback belongs to the user's sign-in action, never to persisted sync failures.
+    fun showAuthorizationFailure() {
+        authorizing = false
+        sync.authorizationFailed()
+        Toast.makeText(context, R.string.drive_sync_sign_in_again, Toast.LENGTH_LONG).show()
+    }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         authorizing = false
         if (result.resultCode == Activity.RESULT_OK) {
             try {
                 val token = Identity.getAuthorizationClient(context).getAuthorizationResultFromIntent(result.data).accessToken
-                if (token != null) sync.connect(token) else sync.authorizationFailed()
-            } catch (_: Exception) { sync.authorizationFailed() }
-        }
-    }
-    LaunchedEffect(state.failed, state.needsAuthorization) {
-        if (state.failed) {
-            Toast.makeText(context, if (state.needsAuthorization) R.string.drive_sync_sign_in_again
-                else R.string.drive_sync_failed, Toast.LENGTH_LONG).show()
+                if (token != null) sync.connect(token) else showAuthorizationFailure()
+            } catch (_: Exception) { showAuthorizationFailure() }
         }
     }
     if (state.needsSourceSelection) {
@@ -63,7 +63,7 @@ internal fun GoogleDriveSyncSettings() {
                 if (!enabled) sync.disconnect()
                 else {
                     val activity = context.findActivity()
-                    if (activity == null) sync.authorizationFailed()
+                    if (activity == null) showAuthorizationFailure()
                     else {
                         authorizing = true
                         Identity.getAuthorizationClient(activity).authorize(GoogleDriveSync.request())
@@ -71,12 +71,12 @@ internal fun GoogleDriveSyncSettings() {
                                 if (result.hasResolution()) {
                                     val intent = result.pendingIntent
                                     if (intent != null) launcher.launch(IntentSenderRequest.Builder(intent).build())
-                                    else { authorizing = false; sync.authorizationFailed() }
+                                    else showAuthorizationFailure()
                                 } else {
                                     authorizing = false
-                                    result.accessToken?.let(sync::connect) ?: sync.authorizationFailed()
+                                    result.accessToken?.let(sync::connect) ?: showAuthorizationFailure()
                                 }
-                            }.addOnFailureListener { authorizing = false; sync.authorizationFailed() }
+                            }.addOnFailureListener { showAuthorizationFailure() }
                     }
                 }
             })

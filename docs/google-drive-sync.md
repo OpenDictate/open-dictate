@@ -20,7 +20,9 @@ Offline checks wait for connectivity. There is no background daemon or Android
 scheduled worker.
 
 Network errors retry after **1, 5, 15 and then 30 minutes**, capped at 30 minutes.
-Local edits and automatic lifecycle checks respect retry backoff. Authorization
+On Android, background failures produce no toast or notification, including when
+Settings opens after a failure. Only failed user-initiated Google sign-in shows a
+message. Local edits and automatic lifecycle checks respect retry backoff. Authorization
 errors pause automatic attempts until sign-in; an explicit retry may attempt again.
 **Sync now**, connecting and choosing a source request an immediate check, but
 unfinished local edits still wait for the 15-second quiet period. Edits made
