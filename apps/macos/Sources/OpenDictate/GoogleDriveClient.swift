@@ -9,6 +9,8 @@ actor GoogleDriveClient {
         let ownFileID: String?
         func needsUpload(_ merged: SettingsSyncDocument) -> Bool { ownFileID == nil || merged != document }
     }
+    private struct CachedReplica { let version: String; let document: SettingsSyncDocument }
+    private var replicas: [String: CachedReplica] = [:]
     private let session: URLSession
     init(session: URLSession? = nil) {
         let config = URLSessionConfiguration.ephemeral
@@ -17,14 +19,16 @@ actor GoogleDriveClient {
         self.session = session ?? URLSession(configuration: config, delegate: NoDriveRedirects(), delegateQueue: nil)
     }
 
-    func download(token: String, deviceID: String) async throws -> Remote {
+    func download(token: String, deviceID: String, forceRefresh: Bool = false) async throws -> Remote {
+        if forceRefresh { replicas.removeAll() }
+        var nextReplicas: [String: CachedReplica] = [:]
         var document = SettingsSyncDocument(), ownID: String?, page: String?
         var count = 0
         repeat {
             var components = URLComponents(string: "https://www.googleapis.com/drive/v3/files")!
             components.queryItems = [URLQueryItem(name: "spaces", value: "appDataFolder"),
                 URLQueryItem(name: "q", value: "trashed = false and name contains 'opendictate-settings-v1-'"),
-                URLQueryItem(name: "fields", value: "nextPageToken,files(id,name,size)"), URLQueryItem(name: "pageSize", value: "100")]
+                URLQueryItem(name: "fields", value: "nextPageToken,files(id,name,size,version)"), URLQueryItem(name: "pageSize", value: "100")]
             if let page { components.queryItems?.append(URLQueryItem(name: "pageToken", value: page)) }
             let data = try await send(URLRequest(url: components.url!), token: token)
             guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -37,15 +41,25 @@ actor GoogleDriveClient {
                 guard count <= 100, (Int(file["size"] as? String ?? "0") ?? Int.max) <= SettingsSyncDocument.maximumBytes else { throw DriveError.invalidData }
                 var media = URLComponents(url: URL(string: "https://www.googleapis.com/drive/v3/files")!.appendingPathComponent(id), resolvingAgainstBaseURL: false)!
                 media.queryItems = [URLQueryItem(name: "alt", value: "media")]
-                document.merge(try SettingsSyncDocument.decode(await send(URLRequest(url: media.url!), token: token)))
+                let version = (file["version"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                let replica: SettingsSyncDocument
+                if let version, let cached = replicas[id], cached.version == version {
+                    replica = cached.document
+                } else {
+                    replica = try SettingsSyncDocument.decode(await send(URLRequest(url: media.url!), token: token))
+                }
+                document.merge(replica)
+                if let version { nextReplicas[id] = CachedReplica(version: version, document: replica) }
                 if name == fileName(deviceID), ownID == nil || id < ownID! { ownID = id }
             }
             page = (root["nextPageToken"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         } while page != nil
+        replicas = nextReplicas
         return Remote(document: document, ownFileID: ownID)
     }
 
     func upload(token: String, deviceID: String, fileID: String?, document: SettingsSyncDocument) async throws {
+        if let fileID { replicas.removeValue(forKey: fileID) }
         let data = try JSONEncoder().encode(document)
         guard data.count <= SettingsSyncDocument.maximumBytes else { throw DriveError.invalidData }
         var request: URLRequest

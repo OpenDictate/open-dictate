@@ -58,6 +58,65 @@ class GoogleDriveSettingsClientTest {
         assertEquals(5, calls)
     }
 
+    @Test fun `cache follows versions deletion reconnect missing versions and own uploads`() = runTest {
+        var version = "1"
+        var present = true
+        var mediaCalls = 0
+        val client = client { request ->
+            when {
+                request.method == "PATCH" -> 200 to "{}"
+                request.url.queryParameter("alt") == "media" -> {
+                    mediaCalls++
+                    200 to """{"schemaVersion":1,"entries":{"dictionary":{"value":"v$version","modifiedAt":1,"deviceId":"android"}}}"""
+                }
+                else -> {
+                    assertTrue(request.url.queryParameter("fields")!!.contains("version"))
+                    val metadata = if (version.isEmpty()) "" else """, "version":"$version""""
+                    val files = if (present) """{"id":"own-file","name":"opendictate-settings-v1-android.json","size":"150"$metadata}""" else ""
+                    200 to """{"files":[$files]}"""
+                }
+            }
+        }
+        client.download("synthetic", "android")
+        client.download("synthetic", "android")
+        assertEquals(1, mediaCalls)
+        version = "2"
+        val changed = client.download("synthetic", "android")
+        assertEquals("v2", changed.document.entries["dictionary"]?.value)
+        assertEquals(2, mediaCalls)
+        present = false
+        val deleted = client.download("synthetic", "android")
+        assertTrue(deleted.document.entries.isEmpty()); assertNull(deleted.ownFileId)
+        present = true
+        client.download("synthetic", "android")
+        assertEquals(3, mediaCalls)
+        client.download("synthetic", "android", forceRefresh = true)
+        assertEquals(4, mediaCalls)
+        client.upload("synthetic", "android", "own-file", changed.document)
+        client.download("synthetic", "android")
+        assertEquals(5, mediaCalls)
+        version = ""
+        client.download("synthetic", "android")
+        client.download("synthetic", "android")
+        assertEquals(7, mediaCalls)
+    }
+
+    @Test fun `invalid replica is not cached and a corrected retry downloads again`() = runTest {
+        var invalid = true
+        var mediaCalls = 0
+        val client = client { request ->
+            if (request.url.queryParameter("alt") == "media") {
+                mediaCalls++
+                200 to if (invalid) "invalid" else """{"schemaVersion":1,"entries":{}}"""
+            } else 200 to """{"files":[{"id":"cloud","name":"opendictate-settings-v1-mac.json","version":"1"}]}"""
+        }
+        try { client.download("synthetic", "android"); fail("Invalid data must fail") } catch (_: org.json.JSONException) { }
+        invalid = false
+        client.download("synthetic", "android")
+        client.download("synthetic", "android")
+        assertEquals(2, mediaCalls)
+    }
+
     @Test fun `initial upload creates a private appdata replica`() = runTest {
         val client = client { request ->
             assertEquals("POST", request.method)

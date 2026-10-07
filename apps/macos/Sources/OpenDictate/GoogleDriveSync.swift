@@ -1,5 +1,7 @@
 import Foundation
 import Combine
+import AppKit
+import Network
 import OpenDictateCore
 
 @MainActor
@@ -22,17 +24,25 @@ final class GoogleDriveSync: ObservableObject {
     private let authorization = GoogleDriveAuthorization()
     private var task: Task<Void, Never>?
     private var debounce: Task<Void, Never>?
-    private var polling: Task<Void, Never>?
+    private let automaticallySync: Bool
+    private let pathMonitor = NWPathMonitor()
+    private var networkAvailable = true
+    private var wakeSubscription: AnyCancellable?
     private var subscription: AnyCancellable?
     private var generation = 0
     private var schedule = SettingsSyncSchedule()
-    private var now: Int64 { Int64(ProcessInfo.processInfo.systemUptime * 1000) }
+    private let clockOrigin = ContinuousClock.now
+    private var now: Int64 {
+        let elapsed = clockOrigin.duration(to: .now).components
+        return elapsed.seconds * 1_000 + elapsed.attoseconds / 1_000_000_000_000_000
+    }
     private let localOnly: Bool
 
     init(preferences: Preferences, localOnly: Bool = false, client: GoogleDriveClient = GoogleDriveClient(),
          refreshToken: (() async throws -> String)? = nil, automaticallySync: Bool = true,
          deleteCredentials: @escaping () throws -> Void = DriveCredentialStore.delete) {
         self.preferences = preferences; self.localOnly = localOnly
+        self.automaticallySync = automaticallySync
         self.client = client; self.refreshToken = refreshToken; self.deleteCredentials = deleteCredentials
         guard !localOnly else { return }
         status = preferences.driveSyncEnabled ? .waiting : .disconnected
@@ -40,12 +50,21 @@ final class GoogleDriveSync: ObservableObject {
             self?.settingsChanged()
         }
         guard automaticallySync else { return }
-        polling = Task { [weak self] in
-            while !Task.isCancelled {
-                self?.syncNow()
-                do { try await Task.sleep(nanoseconds: 60_000_000_000) } catch { return }
+        wakeSubscription = NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
+            .sink { [weak self] _ in self?.refreshIfStale() }
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            let available = path.status == .satisfied
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let restored = !networkAvailable && available
+                networkAvailable = available
+                if restored { schedule.networkRestored(now: now) }
+                pump()
             }
         }
+        networkAvailable = false
+        pathMonitor.start(queue: DispatchQueue(label: "OpenDictate.settings-connectivity"))
+        pump()
     }
 
     private func settingsChanged() {
@@ -57,8 +76,10 @@ final class GoogleDriveSync: ObservableObject {
     private func pump() {
         guard !localOnly, preferences.driveSyncEnabled, !needsSourceSelection, task == nil else { return }
         debounce?.cancel()
+        guard networkAvailable else { return }
+        if automaticallySync { schedule.refreshIfStale(now: now, maxAge: SettingsSyncSchedule.backgroundInterval) }
         guard schedule.begin(now: now) else {
-            if let delay = schedule.delayUntilReady(now: now) {
+            if let delay = schedule.delayUntilReady(now: now, includePeriodic: automaticallySync) {
                 debounce = Task { [weak self] in
                     do { try await Task.sleep(nanoseconds: UInt64(delay) * 1_000_000) } catch { return }
                     self?.pump()
@@ -70,20 +91,24 @@ final class GoogleDriveSync: ObservableObject {
         let run = generation
         task = Task { [weak self] in
             guard let self else { return }
-            defer { finish(run: run) }
+            var completion = SettingsSyncSchedule.Completion.deferred
+            defer { finish(run: run, completion: completion) }
             do {
                 let token: String
                 if let refreshToken { token = try await refreshToken() }
                 else { token = try await authorization.refresh(client: client) }
-                try await synchronize(token: token, run: run)
+                completion = try await synchronize(token: token, run: run) ? .success : .deferred
             }
-            catch { if generation == run { show(error) } }
+            catch {
+                completion = error as? DriveError == .authorization || error as? DriveError == .signInTimedOut ? .authorization : .retry
+                if generation == run { show(error) }
+            }
         }
     }
 
-    private func finish(run: Int) {
+    private func finish(run: Int, completion: SettingsSyncSchedule.Completion) {
         guard generation == run else { return }
-        task = nil; schedule.finish(); pump()
+        task = nil; schedule.finish(now: now, completion: completion); pump()
     }
 
     func connect(clientSecret: String) {
@@ -93,16 +118,22 @@ final class GoogleDriveSync: ObservableObject {
         let clientID = preferences.driveClientID.trimmingCharacters(in: .whitespacesAndNewlines)
         task = Task { [weak self] in
             guard let self else { return }
-            defer { finish(run: run) }
+            var completion = SettingsSyncSchedule.Completion.deferred
+            defer { finish(run: run, completion: completion) }
             do {
                 let token = try await authorization.connect(clientID: clientID, clientSecret: clientSecret, client: client)
                 try Task.checkCancellation()
                 guard generation == run else { return }
+                schedule.refresh()
+                _ = schedule.begin(now: now)
                 preferences.driveConnectionPending = true
                 connectionChoice = nil; needsSourceSelection = false
                 preferences.driveSyncEnabled = true
-                try await synchronize(token: token, run: run)
-            } catch { if generation == run { show(error) } }
+                completion = try await synchronize(token: token, run: run) ? .success : .deferred
+            } catch {
+                completion = error as? DriveError == .authorization || error as? DriveError == .signInTimedOut ? .authorization : .retry
+                if generation == run { show(error) }
+            }
         }
     }
 
@@ -119,14 +150,20 @@ final class GoogleDriveSync: ObservableObject {
         pump()
     }
 
-    private func synchronize(token: String, run: Int) async throws {
-        let remote = try await client.download(token: token, deviceID: preferences.syncDeviceID)
+    func refreshIfStale() {
+        guard !localOnly, preferences.driveSyncEnabled else { return }
+        schedule.refreshIfStale(now: now)
+        pump()
+    }
+
+    private func synchronize(token: String, run: Int) async throws -> Bool {
+        let remote = try await client.download(token: token, deviceID: preferences.syncDeviceID, forceRefresh: preferences.driveConnectionPending)
         try Task.checkCancellation()
-        guard generation == run else { return }
+        guard generation == run else { return false }
         // Do not apply or publish a dictionary edit until its quiet period has elapsed.
         if schedule.hasPendingChange {
-            schedule.refresh(); status = .waiting
-            return
+            status = .waiting
+            return false
         }
         var source: SettingsSyncDocument.ConnectionSource?
         if preferences.driveConnectionPending {
@@ -139,7 +176,7 @@ final class GoogleDriveSync: ObservableObject {
                 } else {
                     connectionChoice = ConnectionChoice(local: local, cloud: remote.document)
                     needsSourceSelection = true; status = .sourceSelection
-                    return
+                    return false
                 }
             }
         }
@@ -148,10 +185,11 @@ final class GoogleDriveSync: ObservableObject {
             try await client.upload(token: token, deviceID: preferences.syncDeviceID, fileID: remote.ownFileID, document: merged)
         }
         try Task.checkCancellation()
-        guard generation == run else { return }
+        guard generation == run else { return false }
         preferences.driveConnectionPending = false
         connectionChoice = nil
         lastSyncedAt = Date(); status = .synced
+        return true
     }
 
     func disconnect() {
@@ -164,6 +202,8 @@ final class GoogleDriveSync: ObservableObject {
         do { try deleteCredentials(); status = .disconnected; lastSyncedAt = nil }
         catch { status = .authorization }
     }
+
+    deinit { pathMonitor.cancel() }
 
     private func show(_ error: Error) {
         if error is CancellationError { status = preferences.driveSyncEnabled ? .waiting : .disconnected }
