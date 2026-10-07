@@ -20,6 +20,13 @@ only on the current device and is excluded from Google Drive sync; the transcrip
 
 ## Optional Google Drive synchronization
 
+Replica versions and validated settings are cached only in process memory to avoid
+re-downloading unchanged cloud files. The cache adds no persistent storage and
+contains no API keys, audio or transcript history. Android uses the normal
+`ACCESS_NETWORK_STATE` permission only to defer sync offline and resume when
+connectivity returns; macOS monitors network availability for the same purpose.
+
+
 If you connect Google Drive in Settings, the dictionary, word replacement rules and
 enabled states, dictation mode and selected model IDs are sent directly to
 Google and stored in your account's hidden app-data folder. Sync requests only `drive.appdata`, without access to

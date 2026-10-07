@@ -18,6 +18,11 @@ The enabled switch stays on the current device and is excluded from Drive sync.
 
 ## Optional Google Drive synchronization
 
+Validated replicas and Drive versions are cached only in process memory, without
+persistent storage or credentials, audio or history. Android's normal
+`ACCESS_NETWORK_STATE` permission and macOS path monitoring are used only to defer
+sync offline and resume queued work when connectivity returns.
+
 Sync uses Google's HTTPS endpoints without a backend, requests only
 `drive.appdata` and exports an allowlist of dictionary, replacement, mode and
 model settings. Legacy Accurate punctuation sync entries are discarded.

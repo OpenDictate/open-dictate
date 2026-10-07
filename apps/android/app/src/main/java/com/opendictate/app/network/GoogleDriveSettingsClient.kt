@@ -19,13 +19,17 @@ class GoogleDriveSettingsClient(
     private val client: OkHttpClient = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
         .callTimeout(45, TimeUnit.SECONDS).build(),
 ) {
+    private data class CachedReplica(val version: String, val document: SettingsSyncDocument)
+    private var replicas = emptyMap<String, CachedReplica>()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
     data class Remote(val document: SettingsSyncDocument, val ownFileId: String?) {
         fun needsUpload(merged: SettingsSyncDocument): Boolean = ownFileId == null || merged != document
     }
 
-    suspend fun download(token: String, deviceId: String): Remote = withContext(Dispatchers.IO) {
+    suspend fun download(token: String, deviceId: String, forceRefresh: Boolean = false): Remote = withContext(Dispatchers.IO) {
+        if (forceRefresh) replicas = emptyMap()
+        val nextReplicas = mutableMapOf<String, CachedReplica>()
         var document = SettingsSyncDocument()
         var ownId: String? = null
         var page: String? = null
@@ -34,7 +38,7 @@ class GoogleDriveSettingsClient(
             val url = "https://www.googleapis.com/drive/v3/files".toHttpUrl().newBuilder()
                 .addQueryParameter("spaces", "appDataFolder")
                 .addQueryParameter("q", "trashed = false and name contains 'opendictate-settings-v1-'")
-                .addQueryParameter("fields", "nextPageToken,files(id,name,size)")
+                .addQueryParameter("fields", "nextPageToken,files(id,name,size,version)")
                 .addQueryParameter("pageSize", "100")
             page?.let { url.addQueryParameter("pageToken", it) }
             val listing = JSONObject(send(Request.Builder().url(url.build()).build(), token))
@@ -47,15 +51,21 @@ class GoogleDriveSettingsClient(
                 val id = file.getString("id")
                 val urlData = "https://www.googleapis.com/drive/v3/files".toHttpUrl().newBuilder()
                     .addPathSegment(id).addQueryParameter("alt", "media").build()
-                document = document.merge(SettingsSyncDocument.fromJson(send(Request.Builder().url(urlData).build(), token)))
+                val version = file.optString("version").takeIf { it.isNotEmpty() }
+                val cached = replicas[id]?.takeIf { version != null && it.version == version }
+                val replica = cached?.document ?: SettingsSyncDocument.fromJson(send(Request.Builder().url(urlData).build(), token))
+                document = document.merge(replica)
+                if (version != null) nextReplicas[id] = CachedReplica(version, replica)
                 if (name == fileName(deviceId) && (ownId == null || id < ownId)) ownId = id
             }
             page = listing.optString("nextPageToken").takeIf { it.isNotEmpty() }
         } while (page != null)
+        replicas = nextReplicas
         Remote(document, ownId)
     }
 
     suspend fun upload(token: String, deviceId: String, fileId: String?, document: SettingsSyncDocument) = withContext(Dispatchers.IO) {
+        if (fileId != null) replicas = replicas - fileId
         val json = document.toJson()
         require(json.toByteArray().size <= SettingsSyncDocument.MAXIMUM_BYTES)
         val request = if (fileId == null) {

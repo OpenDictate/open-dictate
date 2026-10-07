@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import androidx.test.platform.app.InstrumentationRegistry
 import com.opendictate.app.network.GoogleDriveSettingsClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -20,6 +21,56 @@ import org.junit.Test
 import java.util.UUID
 
 class GoogleDriveConnectionTest {
+    @Test fun freshResumeSkipsNetworkButManualSyncReadsAgain() = runBlocking {
+        withContext(Dispatchers.Main) {
+            val base = InstrumentationRegistry.getInstrumentation().targetContext
+            val prefix = "freshness-test-${UUID.randomUUID()}"
+            val names = mutableSetOf<String>()
+            val context = object : ContextWrapper(base) {
+                override fun getSharedPreferences(name: String, mode: Int): SharedPreferences {
+                    names += "$prefix-$name"
+                    return base.getSharedPreferences("$prefix-$name", mode)
+                }
+            }
+            val settings = SettingsStore(context)
+            var document = settings.syncDocument()
+            var reads = 0
+            val http = OkHttpClient.Builder().addInterceptor { chain ->
+                val request = chain.request()
+                val body = when {
+                    request.method != "GET" -> {
+                        val buffer = okio.Buffer(); request.body!!.writeTo(buffer)
+                        document = SettingsSyncDocument.fromJson(buffer.readUtf8())
+                        "{}"
+                    }
+                    request.url.queryParameter("alt") == "media" -> document.toJson()
+                    else -> {
+                        reads++
+                        """{"files":[{"id":"own-file","name":"opendictate-settings-v1-${settings.syncDeviceId}.json"}]}"""
+                    }
+                }
+                Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(body.toResponseBody("application/json".toMediaType())).build()
+            }.build()
+            val sync = GoogleDriveSync(context, ReplacementStore(context), GoogleDriveSettingsClient(http), { "synthetic" }, false)
+            try {
+                sync.connect("synthetic")
+                withTimeout(5000) { sync.state.first { it.lastSyncedAt > 0 } }
+                assertEquals(1, reads)
+                repeat(5) { sync.refreshIfStale() }
+                delay(100)
+                assertEquals(1, reads)
+                val revision = sync.state.value.settingsRevision
+                sync.requestSync()
+                withTimeout(5000) { sync.state.first { !it.busy && it.settingsRevision > revision } }
+                assertEquals(2, reads)
+            } finally {
+                sync.disconnect()
+                names.forEach { base.getSharedPreferences(it, Context.MODE_PRIVATE).edit().clear().commit() }
+            }
+        }
+    }
+
     @Test fun connectionWaitsBeforeAnyApplyOrUploadAndCloudChoiceRechecksLatestData() = runBlocking {
         withContext(Dispatchers.Main) {
             val base = InstrumentationRegistry.getInstrumentation().targetContext

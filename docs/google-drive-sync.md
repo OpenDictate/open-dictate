@@ -7,17 +7,32 @@ The Accurate punctuation switch is saved only on each device and never synced.
 API keys, audio, transcripts/history, app exclusions and permissions are excluded. Model access still depends on each device's
 OpenAI API key and local model catalogue.
 
-Local changes upload automatically after three seconds without further edits.
-Typing in the dictionary is batched into one update; saving a replacement rule,
-toggling it or changing a model also triggers synchronization. No button press
-is required. Only changes to synchronized settings trigger an upload.
+Local changes upload automatically after **15 seconds without further edits**.
+Dictionary typing and consecutive replacement/model edits are batched into one update.
+Only changes to synchronized settings trigger an upload.
 
-Cloud settings are checked at startup, every minute while the app process runs,
-and whenever Android resumes or macOS Settings opens. Checks wait for unfinished
-local edits and skip uploading when the merged settings are already in Drive.
-Edits made during a network request remain queued. **Sync now** is an optional
-retry and respects the same editing delay. There is no background daemon or
-Android scheduled worker. Errors preserve local settings for retry.
+Cloud settings are checked at startup and **every 15 minutes after a successful
+sync** while the process runs. Opening macOS Settings, waking the Mac or resuming
+Android requests a check only when the last successful sync is at least **five
+minutes old**. Returning connectivity sends queued edits or retries a failed sync;
+without pending work it checks only when data is at least five minutes old.
+Offline checks wait for connectivity. There is no background daemon or Android
+scheduled worker.
+
+Network errors retry after **1, 5, 15 and then 30 minutes**, capped at 30 minutes.
+Local edits and automatic lifecycle checks respect retry backoff. Authorization
+errors pause automatic attempts until sign-in; an explicit retry may attempt again.
+**Sync now**, connecting and choosing a source request an immediate check, but
+unfinished local edits still wait for the 15-second quiet period. Edits made
+during a request remain queued. Errors preserve local settings for retry.
+
+Each check lists replica metadata. Validated replicas are cached **only in memory**
+by file ID and Drive `version`; unchanged files are not downloaded again. Missing
+versions are always downloaded, deleted replicas leave the cache, and uploading
+invalidates the own-file cache. Connecting or choosing a connection source forces
+a fresh download. Restarting the process clears the cache. Uploads remain conditional
+on actual merged changes or a missing own replica. API keys, audio and history
+never enter the cache or synchronization payload.
 
 ## Google Cloud setup
 

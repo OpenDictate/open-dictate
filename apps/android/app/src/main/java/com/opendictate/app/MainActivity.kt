@@ -9,7 +9,7 @@ import com.opendictate.app.ui.OpenDictateApp
 class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
-        (application as OpenDictateApplication).driveSync.requestSync()
+        (application as OpenDictateApplication).driveSync.refreshIfStale()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

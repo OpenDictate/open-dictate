@@ -64,6 +64,84 @@ final class GoogleDriveTests: XCTestCase {
         try await client.upload(token: "synthetic-drive-token", deviceID: "mac", fileID: remote.ownFileID, document: remote.document)
         XCTAssertEqual(calls, 5)
     }
+    func testReplicaCacheTracksVersionsDeletionReconnectAndOwnUploads() async throws {
+        var version = "1", present = true, mediaCalls = 0
+        DriveHTTP.handler = { request in
+            if request.httpMethod == "PATCH" { return (200, Data("{}".utf8)) }
+            if request.url?.query?.contains("alt=media") == true {
+                mediaCalls += 1
+                return (200, Data("{\"schemaVersion\":1,\"entries\":{\"dictionary\":{\"value\":\"v\(version)\",\"modifiedAt\":1,\"deviceId\":\"mac\"}}}".utf8))
+            }
+            XCTAssertTrue(request.url!.absoluteString.contains("version"))
+            let metadata = version.isEmpty ? "" : ",\"version\":\"\(version)\""
+            let files = present ? "{\"id\":\"own-file\",\"name\":\"opendictate-settings-v1-mac.json\",\"size\":\"150\"\(metadata)}" : ""
+            return (200, Data("{\"files\":[\(files)]}".utf8))
+        }
+        let client = client()
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertEqual(mediaCalls, 1)
+        version = "2"
+        let changed = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertEqual(changed.document.entries["dictionary"]?.value, "v2")
+        XCTAssertEqual(mediaCalls, 2)
+        present = false
+        let deleted = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertTrue(deleted.document.entries.isEmpty); XCTAssertNil(deleted.ownFileID)
+        present = true
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertEqual(mediaCalls, 3)
+        _ = try await client.download(token: "synthetic", deviceID: "mac", forceRefresh: true)
+        XCTAssertEqual(mediaCalls, 4)
+        try await client.upload(token: "synthetic", deviceID: "mac", fileID: "own-file", document: changed.document)
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertEqual(mediaCalls, 5)
+        version = ""
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertEqual(mediaCalls, 7)
+    }
+
+    func testFailedReplicaReadDoesNotCacheInvalidData() async throws {
+        var invalid = true, mediaCalls = 0
+        DriveHTTP.handler = { request in
+            if request.url?.query?.contains("alt=media") == true {
+                mediaCalls += 1
+                return (200, Data((invalid ? "invalid" : "{\"schemaVersion\":1,\"entries\":{}}").utf8))
+            }
+            return (200, Data(#"{"files":[{"id":"cloud","name":"opendictate-settings-v1-android.json","version":"1"}]}"#.utf8))
+        }
+        let client = client()
+        do { _ = try await client.download(token: "synthetic", deviceID: "mac"); XCTFail("Invalid data must fail") }
+        catch {}
+        invalid = false
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        _ = try await client.download(token: "synthetic", deviceID: "mac")
+        XCTAssertEqual(mediaCalls, 2)
+    }
+
+    @MainActor func testReopeningFreshSettingsDoesNotMakeAnotherRequestButManualSyncDoes() async throws {
+        let suite = "drive-freshness-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults); preferences.driveSyncEnabled = true
+        var reads = 0
+        DriveHTTP.handler = { request in
+            if request.httpMethod == "GET" { reads += 1 }
+            return (200, Data("{\"files\":[]}".utf8))
+        }
+        let sync = GoogleDriveSync(preferences: preferences, client: client(), refreshToken: { "synthetic" },
+            automaticallySync: false, deleteCredentials: {})
+        sync.syncNow(); try await awaitStatus(sync, .synced)
+        XCTAssertEqual(reads, 1)
+        for _ in 0..<5 { sync.refreshIfStale() }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(reads, 1)
+        sync.syncNow(); try await awaitStatus(sync, .synced)
+        XCTAssertEqual(reads, 2)
+        sync.disconnect()
+    }
+
     func testInitialUploadUsesAppDataAndMultipart() async throws {
         DriveHTTP.handler = { request in
             XCTAssertEqual(request.httpMethod, "POST")

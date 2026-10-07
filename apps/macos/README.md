@@ -217,6 +217,12 @@ provider access and transcription accuracy; mock tests cannot establish either.
 
 ## Google Drive synchronization
 
+Changes sync after 15 seconds without edits; background checks run every 15 minutes.
+Opening Settings or waking this Mac checks only if the last successful sync is at
+least five minutes old. Network recovery resumes queued work; errors back off and
+authorization failures pause automatic attempts. Unchanged Drive replicas are
+cached only in memory.
+
 Connect Google Drive in Settings to sync the dictionary, word replacements, dictation
 mode and selected models with Android. It uses a Desktop OAuth client from the same
 Google Cloud project as the Android client, browser sign-in with PKCE and a
