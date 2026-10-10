@@ -17,7 +17,7 @@ no backend, analytics or account to create.
 | Voice editing | Long-press → Edit text | **Option + Shift + Space** |
 | Installation | Signed APK | Universal DMG, Apple Silicon + Intel |
 | Requires | Android 8+ | macOS 14+ |
-| Downloads | [Android releases](https://github.com/OpenDictate/open-dictate/releases/latest) | [macOS releases](https://github.com/OpenDictate/open-dictate/releases?q=macos-v) |
+| Downloads | [Android releases](https://github.com/lebedev-nikita/open-dictate/releases/latest) | [macOS releases](https://github.com/lebedev-nikita/open-dictate/releases?q=macos-v) |
 
 ## Features
 
@@ -34,7 +34,20 @@ no backend, analytics or account to create.
 
 ## Install on macOS
 
-1. Choose a release from [macOS Releases](https://github.com/OpenDictate/open-dictate/releases?q=macos-v)
+Install the latest stable macOS release with [Homebrew](https://brew.sh):
+
+```bash
+brew install --cask lebedev-nikita/tap/open-dictate
+```
+
+Quit OpenDictate before updating with `brew update` followed by
+`brew upgrade --cask lebedev-nikita/tap/open-dictate`. If you already installed
+the DMG, see the [tap's migration instructions](https://github.com/lebedev-nikita/homebrew-tap#readme).
+After installation, continue with step 3 below.
+
+To install manually:
+
+1. Choose a release from [macOS Releases](https://github.com/lebedev-nikita/open-dictate/releases?q=macos-v)
    and download its universal DMG for Apple Silicon and Intel. Releases marked
    **Pre-release** are release candidates.
 2. Open it, drag **OpenDictate** into **Applications**, and eject the disk image.
@@ -64,7 +77,7 @@ to your OpenAI API project. See [macOS documentation](apps/macos/README.md).
 
 ## Install on Android
 
-1. Download and install the latest signed APK from [Android Releases](https://github.com/OpenDictate/open-dictate/releases/latest).
+1. Download and install the latest signed APK from [Android Releases](https://github.com/lebedev-nikita/open-dictate/releases/latest).
 2. Save your OpenAI API key, grant microphone access and enable the OpenDictate
    service in the system accessibility settings.
 3. Open a text field and tap the overlay to dictate. Long-press for voice editing,

@@ -3,6 +3,16 @@
 A native menu bar application built with SwiftUI, AppKit, AVAudioEngine,
 Accessibility, Keychain and URLSession. No third-party dependencies or backend.
 
+## Installation
+
+```bash
+brew install --cask lebedev-nikita/tap/open-dictate
+```
+
+See the [setup guide](../../README.md#install-on-macos) for permissions and
+manual installation, and the [Homebrew tap](https://github.com/lebedev-nikita/homebrew-tap#readme)
+for upgrades and migration from a manually installed DMG.
+
 ## Development
 
 Requires macOS 14+ and Xcode 16+ (Swift 5.9 package, compatible with Swift 6).
@@ -260,6 +270,11 @@ To release, update `VERSION`, `Resources/Info.plist` and `RELEASE_NOTES.md`, pas
 platform checks, merge to main and push a matching `macos-vX.Y.Z` tag. Verify
 the green release workflow, the DMG and checksum attachments before reporting
 completion. macOS and Android versions are independent.
+
+The [Homebrew tap](https://github.com/lebedev-nikita/homebrew-tap) checks for
+stable macOS releases every six hours and verifies the DMG against its checksum
+before updating the cask. Run its **Update OpenDictate** workflow manually to
+publish a cask update sooner. It does not need an additional release secret.
 
 Release candidates use `X.Y.Z-rc.N` in `VERSION`, the displayed app version,
 DMG filename and `macos-v*` tag. The Apple bundle short version contains only
